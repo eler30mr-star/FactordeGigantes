@@ -126,3 +126,14 @@ El propietario ha definido una voz objetivo más adulta, profesional, seria, nat
 - El panel necesitará configuración persistente de identidad vocal: modelo, velocidad, pausas, pronunciaciones especiales, prueba auditiva y control de versión.
 - No activar publicación comercial de ningún modelo sin revisar términos del dataset, pesos y entrenamiento.
 
+## Política económica definitiva — cero pagos (2026-10-20)
+
+Decisión expresa del propietario: **no utilizar servicios de pago, suscripciones, saldos de prueba que luego se facturen, ni motores que requieran contratar un nivel pagado para explotar comercialmente los audios**.
+
+- Descartar la contratación Azure Speech S0 y cualquier API TTS pagada. La voz Microsoft `es-EC-LuisNeural` se conserva **solo como referencia de estilo** (natural, formal, fluida), no como dependencia, proveedor ni voz oficial aprobada.
+- Priorizar motores locales, de código abierto y modelos con derechos de uso comercial **verificados para cada voz/modelo**, no solo para el motor base.
+- Antes de integrar un proveedor, comprobar licencia de pesos, dataset, referencias y restricciones de redistribución y uso comercial.
+- No activar por defecto facturación, claves de servicios cobrables, upgrades de planes ni workflows que incurran en cargo sin autorización explícita posterior del propietario.
+- **Gratis no significa ilimitado:** verificar cuotas de GitHub Actions/Cloudflare; establecer límites de duración, reintentos y frecuencia para mantener el proyecto dentro de las franquicias gratuitas. Ante agotamiento, detener/posponer en vez de generar cargos.
+- No reducir calidad con filtros artificiales de pitch; la identidad vocal final será una voz natural seleccionada mediante audición real y fijada para todos los videos.
+- Desarrollo y registro de avance directamente en `main`.
