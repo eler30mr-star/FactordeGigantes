@@ -367,3 +367,11 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Qwen3-TTS Base 0.6B y paquete Qwen TTS publican licencia Apache-2.0. **Aún pendiente** la verificación legal completa de referencia/audios para usos comerciales, y la viabilidad/costo operativo de narraciones largas.
 - Para evitar ejecuciones involuntarias de modelos pesados, se retira el disparo `push` del workflow CPU; queda **sólo manual `workflow_dispatch`** y restringido a repositorio público (evitar runners facturables si cambia a privado).
 - Prioridades siguientes: aprobación auditiva del resultado CPU, persistencia a largo plazo de la voz ya conseguida (realizada), mediciones más extensas del narrador y, sólo con calidad/licencias/costos aptos, integración a `render.yml` y documentos completos; publicar en YouTube siempre bajo aprobación humana.
+
+## 2026-10-20 · Evaluación del propietario del narrador local 0,6B
+
+- Tras escuchar `FactorDeGigantes_Qwen_Local_CPU.mp3`, el propietario indicó **«Está bien el tono, como que ha cambiado un poco»**. El tono le parece aceptable, pero identifica una **variación perceptible de la identidad vocal** respecto a la toma de referencia aprobada. **Esto no equivale a aprobación del nuevo narrador** ni autoriza sustituir la voz definitiva.
+- La referencia editorial aprobada (`assets/voice/approved/narrador_documental_aprobado.mp3`; SHA-256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`) permanece intacta. No alterar ni reemplazar.
+- Se creó `tools/qwen17_local_smoke.py` y `.github/workflows/voice-qwen17-cpu.yml` para probar **Qwen3-TTS Base 1.7B en CPU**, el tamaño de modelo usado para generar la toma preferida, frente al 0,6B. El test usa **el mismo texto** que el experimento ligero, la misma referencia aprobada y los mismos parámetros de cadencia; limita la prueba a 12 min en runner de repositorio público, y la síntesis a 420s sin API o GPU de pago.
+- **GitHub Actions run 39512992392** se inició; su resultado, consumo de memoria, duración y calidad **todavía están pendientes** en el momento de esta anotación. El éxito técnico no demuestra semejanza perceptual: el propietario decidirá al escuchar la nueva muestra.
+- Mantener `render.yml` sin modificación y no publicar vídeos automáticamente; priorizar similitud con voz aprobada y recursos gratuitos verificables.
