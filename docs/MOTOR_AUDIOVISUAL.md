@@ -126,3 +126,11 @@ El propietario indicó que la demo enlazada presenta una sola voz femenina y no 
 - Modelo abierto: https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign (licencia Apache-2.0 declarada por proyecto); no requiere muestra humana en modo Voice Design.
 - Demostración gratuita sujeta a colas/cuotas del proveedor; ninguna garantía de funcionamiento indefinido ni de acento exacto. No intentar generación automática de videos ni establecer voz fija sin aprobación.
 - **Pendiente técnico:** medir RAM/CPU/tiempo del modelo 1.7B, licencias de dependencias/modelos, coste cero real y persistencia de identidad vocal en documentales largos.
+
+## Qwen3 Voice Design — demostración generada y verificada
+
+- `tools/audition_qwen.py` es una prueba de voz por descripción que utiliza el **Space público** de Qwen, no una cuenta de Azure ni una API pagada. `.github/workflows/voice-qwen.yml` ejecuta la audición en GitHub Actions para `main`.
+- Prompt: voz masculina madura, española latinoamericana neutra, profesional, cálida, profunda pero humana, pausada, sin actuación exagerada.
+- Audio real confirmado: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39502577947 . Resultado MP3 de 14,112 s / 24 kHz, artefacto 12302050983, generado con éxito mediante endpoint Voice Design del Space oficial.
+- El modelo abierto Qwen3-TTS Voice Design 1.7B está publicado bajo Apache-2.0; **los términos del proveedor del Space y sus cuotas pueden diferir**. Usarlo para una audición puntual no garantiza producción comercial automatizada gratuita, continua ni sin límites.
+- El propietario debe escuchar la muestra y decidir si encaja con la identidad; **no se ha cambiado la voz oficial ni el workflow de render**.
