@@ -19,3 +19,38 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Validar manifest de ejemplo
         run: python tools/render.py --manifest examples/documental.json --validate-only
+
+      - name: Diagnosticar conexion HTTP a Cloudflare
+        # Chequeo no bloqueante: distinguir secreto API_BASE_URL incorrecto de HTTP 403 externo.
+        continue-on-error: true
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python - <<'PY'
+          import os
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          base = os.environ.get("API_BASE_URL", "").rstrip("/")
+          host = urllib.parse.urlsplit(base).hostname
+          expected = "factor-de-gigantes.martin30-eler.workers.dev"
+          print("API_BASE_URL corresponde al Worker esperado:", host == expected)
+          if host != expected:
+              raise SystemExit("La URL configurada en GitHub Actions no corresponde al Worker")
+          request = urllib.request.Request(
+              base + "/health",
+              headers={"User-Agent": "FactorDeGigantes-CI/1.0", "Accept": "application/json"},
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  body = response.read(400)
+                  print("HTTP /health:", response.status)
+                  print("Respuesta del Worker esperado:", b'Factor de Gigantes' in body)
+          except urllib.error.HTTPError as exc:
+              print("HTTP /health:", exc.code)
+              print("Server:", exc.headers.get("Server", "?"))
+              print("CF-Ray presente:", bool(exc.headers.get("CF-Ray")))
+              print("Content-Type:", exc.headers.get("Content-Type", "?"))
+              raise SystemExit(1)
+          PY
