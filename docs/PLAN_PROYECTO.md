@@ -172,7 +172,7 @@ No se acepta automáticamente el 0,6B ni el 1,7B local como sustituto, aunque se
 ## Subhito de Fase 2 — continuidad vocal segmentada sin pagos (2026-10-20)
 
 - [x] Crear banco de dos fragmentos para experimentar continuidad de la voz fija en Qwen Base 1,7B CPU (script, tests y workflow manual en `main`); CI de contratos [39515949183](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39515949183) exitosa.
-- [ ] Ejecutar el workflow manual `voice-continuity-cpu.yml`, comprobar dos MP3 nuevos y revisar métricas y límites gratuitos (crear el workflow no equivale a ejecutarlo).
+- [x] Ejecutar una sola vez `voice-continuity-cpu.yml`, comprobar los dos MP3 nuevos y sus métricas: [GitHub Actions 39516609592](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592) `success`; artefacto 12307719223, audios 8,496 y 9,960 s, memoria pico ~11,28 GiB. La prueba fue lanzada con disparador temporal y revertida a ejecución exclusivamente manual.
 - [ ] Obtener aceptación auditiva **expresa de ambas tomas** por el propietario comparándolas con `FactorDeGigantes_Documental_TomaNatural.mp3` inalterado.
 - [ ] Demostrar continuidad en narraciones largas, validar derechos comerciales de todos los componentes, implementar QA de voz/visual y recién entonces evaluar integración en `render.yml`.
 - [ ] Continuar investigación con fuentes verificables, activos originales con licencia y producción de primer documental 8–14 min.
