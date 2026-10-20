@@ -1,0 +1,32 @@
+name: Audición narrador profesional
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/audition.py'
+      - '.github/workflows/voice-audition.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  comparar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Piper CPU gratuito
+        run: python -m pip install piper-tts==1.8.0
+      - name: Cachear modelos comprobados
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/factor-de-gigantes/voices
+          key: audicion-piper-ald-claude-davefx-v1
+      - name: Sintetizar tres muestras con el mismo texto
+        run: python -m tools.audition --output dist/audicion
+      - name: Archivar audición sin publicar
+        uses: actions/upload-artifact@v4
+        with:
+          name: audicion-narrador-factor-de-gigantes
+          path: dist/audicion/
+          if-no-files-found: error
+          retention-days: 7
