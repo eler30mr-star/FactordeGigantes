@@ -170,7 +170,7 @@ def _motion_clip(scene, audio, clip, length, fmt):
 
 def _burn_subtitles(input_file, subtitle_file, output_file, fmt):
     # Directorio temporal propio, ruta controlada sin caracteres de FFmpeg peligrosos.
-    if not re.fullmatch(r"[\\w/.\\-]+", str(subtitle_file)):
+    if not re.fullmatch(r"[\w/.\-]+", str(subtitle_file)):
         raise ValueError("Ruta de subtítulos incompatible con FFmpeg")
     fontsize, bottom = (19, 150) if fmt == "short" else (22, 43)
     style = (f"FontName=DejaVu Sans,FontSize={fontsize},"
@@ -215,7 +215,7 @@ def render(manifest, output, voice_engine="espeak", captions="burn",
             times.append(duration(clip))
             print(f"Escena {i}/{len(manifest['segments'])}: {times[-1]:.1f} s", flush=True)
         playlist = root / "concat.txt"
-        playlist.write_text("".join(f"file '{p.name}'\\n" for p in clips), encoding="utf-8")
+        playlist.write_text("".join(f"file '{p.name}'\n" for p in clips), encoding="utf-8")
         merged = root / "montaje.mp4"
         command("ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
                 "-f", "concat", "-safe", "0", "-i", str(playlist),
@@ -228,9 +228,9 @@ def render(manifest, output, voice_engine="espeak", captions="burn",
             output.write_bytes(merged.read_bytes())
     info = _video_info(output, manifest["format"])
     (output.parent / "creditos.txt").write_text(
-        "FACTOR DE GIGANTES - PREVISUALIZACION TECNICA. NO PUBLICAR.\\n"
-        "Graficos abstractos: originales, no metraje historico real.\\n"
-        "Subtitulos: tiempos estimados desde el audio, no alineacion fonetica.\\n"
+        "FACTOR DE GIGANTES - PREVISUALIZACION TECNICA. NO PUBLICAR.\n"
+        "Graficos abstractos: originales, no metraje historico real.\n"
+        "Subtitulos: tiempos estimados desde el audio, no alineacion fonetica.\n"
         + credits(voice_engine), encoding="utf-8")
     metadata = {
         "schema_version": 1, "brand": "Factor de Gigantes", "render": "preview",
