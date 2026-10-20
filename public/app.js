@@ -1,4 +1,5 @@
 let adminToken = "";
+let editingJobId = null;
 const $ = id => document.getElementById(id);
 function notice(message) { $("notice").textContent=message; $("notice").classList.add("active"); }
 async function request(path, method = "GET", body) {
@@ -55,7 +56,21 @@ async function load() {
     if(j.review_note) card.append(tag("p","muted","Correcciones: "+j.review_note));
     if(j.last_error) card.append(tag("p","muted","Error: "+j.last_error));
     const actions=tag("div","actions","");
-    if (j.status==="draft") actions.append(actionButton("Enviar a revisión","submit"));
+    if (j.status==="draft") {
+      const edit=tag("button","secondary","Editar");
+      edit.type="button";
+      edit.addEventListener("click",()=>{
+        editingJobId=j.id;
+        $("title").value=j.manifest.title;
+        $("angle").value=j.manifest.angle;
+        $("format").value=j.manifest.format;
+        $("sources").value=j.manifest.sources.join("\n");
+        $("segments").value=j.manifest.segments.map(s=>s.headline+" | "+s.voiceover).join("\n");
+        $("save").textContent="Actualizar borrador";
+        $("create").scrollIntoView({behavior:"smooth"});
+      });
+      actions.append(edit,actionButton("Enviar a revisión","submit"));
+    }
     if (j.status==="review") actions.append(actionButton("Aprobar","approve"),actionButton("Pedir cambios","request-changes"));
     if (j.status==="approved") actions.append(actionButton("Generar prueba","dispatch"),actionButton("Pedir cambios","request-changes"));
     if (j.status==="failed") actions.append(actionButton("Rehacer guion","request-changes"));
@@ -90,7 +105,13 @@ $("create").addEventListener("submit",async e => {
       sources:$("sources").value.split("\n").map(s=>s.trim()).filter(Boolean),
       segments
     };
-    await request("/api/jobs","POST",manifest);
+    if (editingJobId) {
+      await request("/api/jobs/"+encodeURIComponent(editingJobId),"PUT",manifest);
+    } else {
+      await request("/api/jobs","POST",manifest);
+    }
+    editingJobId=null;
+    $("save").textContent="Guardar borrador";
     $("create").reset();
     notice("Borrador guardado; necesita revisión y aprobación");
     await load();
