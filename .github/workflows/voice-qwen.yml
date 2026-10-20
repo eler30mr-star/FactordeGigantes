@@ -1,0 +1,31 @@
+name: Audición narrador Qwen3 Voice Design gratuita
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/audition_qwen.py'
+      - '.github/workflows/voice-qwen.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audicion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar cliente público y FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          python -m pip install 'gradio_client>=1.15,<3'
+      - name: Crear voz masculina adulta sin API pagada
+        run: |
+          python tools/audition_qwen.py
+      - name: Publicar solo el archivo de audición
+        uses: actions/upload-artifact@v4
+        with:
+          name: audicion-qwen-voz-masculina-factor-de-gigantes
+          path: dist/audicion-qwen/
+          if-no-files-found: error
+          retention-days: 3
