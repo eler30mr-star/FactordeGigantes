@@ -33,4 +33,13 @@
 Nunca confundir “archivo creado”, “test pasado”, “desplegado” o “publicado”. El avance registra expresamente cuál de esas etapas se ha comprobado.
 
 ### Última entrega
-Base técnica inicial y documentación. Ver historial de commits de `main` para cambios concretos.
+Se ha guardado en `main` la estructura inicial del motor:
+- Panel responsivo en `public/` con formulario y cola editorial; edición de borradores y botones de revisión/aprobación.
+- API Cloudflare Worker con D1, eventos y credenciales separadas para administración y render.
+- Guion a previsualización mediante `tools/render.py` y `.github/workflows/render.yml` (secuencia de escenas originales y voz técnica eSpeak NG).
+- Test de contrato del manifest en `tests/test_render.py` y CI `.github/workflows/check.yml`.
+- Documento de despliegue con recursos, secretos y advertencias de coste.
+
+**Verificación efectuada:** archivos visibles/recuperables por la conexión de GitHub en la rama `main`. **Sin verificación de tests ejecutados**, pues no se obtuvo estado de GitHub Actions para estos commits, y **sin despliegue** en Cloudflare. La producción audiovisual todavía es una previsualización técnica, no apta como documental final de monetización.
+
+**Siguiente paso exacto:** validar CI/manifest, corregir cualquier fallo, y desplegar Worker/D1 usando los recursos reales de Cloudflare y secretos seguros. Después probar creación → revisión → aprobación → render real → descarga del MP4 y mejorar voz/arte documental.
