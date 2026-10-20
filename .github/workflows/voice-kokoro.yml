@@ -1,0 +1,50 @@
+name: Audición voces maduras Kokoro
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/audition_kokoro.py'
+      - '.github/workflows/voice-kokoro.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audicion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar sintetizador neural Kokoro y FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y espeak-ng ffmpeg
+          python -m pip install 'kokoro==0.9.4' 'soundfile>=0.12,<1' 'numpy<3'
+      - name: Conservar modelo gratuito entre ejecuciones
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface/hub
+          key: kokoro82m-espanol-v1
+      - name: Generar tres muestras con texto idéntico
+        run: python tools/audition_kokoro.py --out dist/audicion-kokoro
+      - name: Comprobar tres WAV y procedencia
+        run: |
+          python - <<'PY'
+          import json, wave
+          from pathlib import Path
+          folder=Path('dist/audicion-kokoro')
+          info=json.loads((folder/'comparacion.json').read_text(encoding='utf-8'))
+          assert len(info['samples'])==3
+          for item in info['samples']:
+              with wave.open(str(folder/item['filename'])) as wav:
+                  assert wav.getframerate()==24000
+                  assert wav.getnchannels()==1
+                  assert wav.getnframes() > 6*24000
+          print("Tres muestras reales verificadas")
+          PY
+      - name: Archivar audición sin publicar
+        uses: actions/upload-artifact@v4
+        with:
+          name: audicion-kokoro-factor-de-gigantes
+          path: dist/audicion-kokoro/
+          if-no-files-found: error
+          retention-days: 7
