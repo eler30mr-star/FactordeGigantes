@@ -218,3 +218,17 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Se anotó matriz técnica, procedencia y restricciones en `docs/MOTOR_AUDIOVISUAL.md` con enlaces directos a model cards oficiales. Ninguno de estos motores se declara voz oficial por tener licencia abierta; falta prueba auditiva y verificación de dependencias y datos de entrenamiento.
 - Se crearon `tools/audition_melo.py` y `.github/workflows/voice-melo.yml`, solo en `main`, para generar muestras de la **misma voz** MeloTTS en velocidad 1.0 y 0.9 sin distorsionar el tono. Workflow GitHub Actions `39497786790` lanzado automáticamente, sujeto a `timeout-minutes: 17` y sin credenciales externas ni publicación.
 - **Resultado pendiente al registrar esta entrada**: confirmar que el workflow produjo dos WAV válidos y artefactos, y escuchar. No se cambió `render.yml` ni el narrador provisional Piper. Si el workflow falla, consignar fallo y no marcar la voz como probada.
+
+
+## 2026-10-20 · Audición MeloTTS completada y verificada
+
+- Se realizaron tres ejecuciones de `.github/workflows/voice-melo.yml` en `main`:
+  - 39497786790: falló al importar MeloTTS por `pkg_resources` eliminado en versiones recientes de `setuptools`.
+  - 39498261483: se solucionó `pkg_resources` fijando `setuptools<81`; después falló el inicializador MeCab por diccionario UniDic ausente, aunque la voz de destino era español.
+  - **39498716070: éxito completo**, tras instalar `python -m unidic download` como exige el origen. Todas las etapas de instalación, síntesis de audio, archivo y publicación de artefacto pasaron.
+- Artefacto oficial GitHub Actions **12299087396**: `audicion-melotts-factor-de-gigantes`; https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39498716070 .
+- Se descargó y extrajo el artefacto. Contiene `melo_normal.wav` (17,59 s), `melo_pausada.wav` (18,96 s) y `ficha.json` con procedencia, licencia y estado no aprobado. Ambos WAV verificados: PCM mono, 44.100 Hz, 16 bit, sin errores de decodificación. También se generaron MP3 160 kbps para audición en el teléfono.
+- **La segunda muestra es la misma voz** a velocidad 0,9, NO otra voz ni efecto de pitch. No se ha evaluado ni aprobado la idoneidad del timbre como narrador profesional.
+- El modelo y proyecto upstream `myshell-ai/MeloTTS-Spanish` publican licencia MIT, y el proveedor afirma capacidad de síntesis en CPU. Se debe revisar el uso comercial de dependencias/modelos antes de lanzar documentales monetizados. No hubo llamadas a servicios de pago.
+- `render.yml` y el narrador provisional permanecen sin modificación. No se conectó Azure ni se publicó contenido en YouTube.
+- **Siguiente acción**: propietario escucha las dos variantes de MeloTTS y califica si suena adulto y profesional. Si no, buscar modelos Chatterbox/CosyVoice/VoiceDesign viables sin tarjeta, clonación de terceros ni gasto; mantener cuotas y pruebas bajo control.
