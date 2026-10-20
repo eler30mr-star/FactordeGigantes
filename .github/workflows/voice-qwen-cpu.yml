@@ -1,14 +1,11 @@
 name: Prueba Qwen local sin pagos - CPU
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/voice-qwen-cpu.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   cpu-only:
+    if: github.event.repository.private == false
     runs-on: ubuntu-latest
     timeout-minutes: 13
     env:

@@ -146,3 +146,12 @@ El usuario elige **como referencia de ESTILO**, no como persona a imitar, el nar
 - La última versión de prueba se ralentizó con `atempo=0.94` (sin cambiar altura) y se añadieron tres pausas de 160 ms en silencios entre frases; los resultados se mantendrán sujetos a evaluación humana.
 - La corrección de la «a» prolongada en **«Durante años»** es un ajuste puntual, no una modificación global del ritmo ni una voz nueva.
 - Cero pagos, sin clonación de personas identificables, cambios solo en rama `main`; pendiente integración al render hasta que la voz y la arquitectura sean sostenibles.
+
+
+## Hito alcanzado: referencia vocal guardada y motor CPU experimental funcional (2026-10-20)
+
+- Patrón auditivo del narrador aprobado, inalterado en `assets/voice/approved/narrador_documental_aprobado.mp3`, con verificador SHA-256, manifest y protección frente a cambios accidentales.
+- Qwen3 Base 1.7B ha generado correctamente nueva frase al usar la referencia en la **demo pública con cuota limitada**; no permite asumir producción masiva.
+- Qwen3 Base 0.6B ya ha sintetizado por primera vez localmente en CPU de GitHub Actions, sin API ni GPU pagada; rendimiento medido para solo 8,424 segundos de audio. La **aprobación audible de la muestra 0.6B no existe todavía**.
+- Para llegar a la meta final, falta: verificar calidad y consistencia de la voz en muchos fragmentos; medir coste temporal en documentales completos sin sobrepasar recursos gratuitos; comprobar derechos de uso comercial y eliminar la dependencia de demos con cuotas; integrar al motor/render y panel sólo después de esas verificaciones.
+- Nada de pagar, no incorporar automáticamente voces peores, ni publicar audiovisuales sin revisión.

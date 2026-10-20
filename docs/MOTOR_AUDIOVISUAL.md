@@ -196,3 +196,14 @@ Muestra aprobada versionada: `assets/voice/approved/narrador_documental_aprobado
 **Nueva frase generada usando el timbre de referencia**: `tools/qwen_consistency.py`, Qwen3-TTS Base 1.7B por demo pública con límite diario. Ejecución `39510650716`: exitosa, 13.584s. La comparación auditiva por el propietario **sigue pendiente**; no certifica fidelidad de voz ni viabilidad para producciones largas.
 
 **Prueba local CPU (experimental):** `tools/qwen_local_smoke.py` y workflow `voice-qwen-cpu.yml`; opción Qwen3-TTS-12Hz-0.6B-Base (Apache-2.0), CPU float32, SDPA, 4 hilos, sin GPU ni API facturable. Estimar uso de RAM, descarga, duración y similitud; limitar ejecución a 13 minutos. Un 0.6B no es intercambiable acústicamente con 1.7B sin una nueva aprobación humana. No integrar en `render.yml` ni publicar hasta confirmar operación y licencia suficiente.
+
+
+## Experimento CPU local de Qwen, comprobado — 2026-10-20
+
+**Run:** [39511351086](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39511351086), éxito real. Modelo `Qwen/Qwen3-TTS-12Hz-0.6B-Base`, licencia Apache-2.0; PyTorch CPU, `dtype=torch.float32`, SDPA, cuatro hilos; audio de referencia fijo validado por checksum. Sin API pagada, Hugging Face Space o GPU.
+
+**Salida:** `FactorDeGigantes_Qwen_Local_CPU.mp3`, 8,424 s, mono 48kHz, 169005 bytes; SHA-256 `d9ff665031859c351acff5a781b3b73d8b914be2934c3b2bf748465bdb281fb1`. Artefacto 12305867860 (retención limitada).
+
+**Recursos de síntesis:** carga de modelo 22,47 s; tiempo total 79,97 s; máximo de RAM 6,07 GiB. La instalación y descarga de pesos son adicionales. No existen pruebas de audio de 10 a 15 minutos continuos ni de que el 0.6B replique idénticamente el narrador 1.7B aprobado.
+
+El workflow `voice-qwen-cpu.yml` se deja solo manual y **no ejecuta cuando el repositorio es privado** para evitar riesgo de minutos facturables. El motor productivo actual no se modifica: integración condicionada a la audición, derechos de uso comercial y desempeño sostenido.

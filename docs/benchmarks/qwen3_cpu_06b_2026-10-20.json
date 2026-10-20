@@ -1,0 +1,21 @@
+{
+  "generated_on": "2026-10-20",
+  "run": 39511351086,
+  "artifact_id": 12305867860,
+  "source": "https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39511351086",
+  "status": "success",
+  "model": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+  "model_license": "apache-2.0",
+  "run_environment": "public GitHub Actions ubuntu-latest CPU only",
+  "os_cpu_threads": 4,
+  "output_duration_seconds": 8.424,
+  "output_bytes": 169005,
+  "output_sha256": "d9ff665031859c351acff5a781b3b73d8b914be2934c3b2bf748465bdb281fb1",
+  "voice_reference_sha256": "78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d",
+  "loading_seconds": 22.47,
+  "total_execution_seconds": 79.97,
+  "max_resident_kib": 6362008,
+  "external_paid_api": false,
+  "voice_quality_user_approval": "pending",
+  "production_ready": false
+}
