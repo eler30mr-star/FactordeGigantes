@@ -12,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "factor-de-gigantes-db",
-      "database_id": "REEMPLAZAR_ID_D1",
+      "database_id": "ef699e75-b50a-4e28-a665-69316d10cdaf",
       "migrations_dir": "migrations"
     }
   ],
