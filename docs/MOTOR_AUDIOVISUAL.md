@@ -231,3 +231,11 @@ La única muestra de referencia autorizada es `FactorDeGigantes_Documental_TomaN
 **No equiparar** «mismo modelo», «parecido de timbre», «misma transcripción» ni «salida técnica exitosa» con «voz aprobada». Las pruebas 0,6B y 1,7B CPU constituyen experimentos de ingeniería, **no alternativas aprobadas** para videos. El audio canónico nunca debe sobreescribirse por ellas ni retocarse para hacerlo parecer más profesional.
 
 Para construir la narración continua, partir de esa referencia exacta y auditar nuevas tomas; si cambia perceptiblemente el carácter vocal, descartar la salida y conservar la referencia. No habilitar narración productiva ni publicación automática sin superar calidad, derechos y recursos gratuitos.
+
+## Continuidad segmentada y protocolo de audición (2026-10-20)
+
+Se añadió `tools/qwen_voice_continuity_batch.py` y el workflow manual `voice-continuity-cpu.yml` para ensayar, en CPU gratuito de GitHub Actions público y sin servicios de pago, dos fragmentos NUEVOS con Qwen Base 1,7B. La referencia vocal canónica se verifica antes y después, y se copia idéntica dentro del artefacto para comparación auditiva. El flujo no edita `assets/voice/approved/narrador_documental_aprobado.mp3`, no modifica `render.yml` y no publica videos.
+
+La auditoría entrega MP3 separados, hashes y duraciones, junto con un JSON de estado **no aprobado**. Un hash válido únicamente demuestra integridad del archivo de referencia: **no demuestra igualdad de voz en una síntesis nueva**. La aprobación humana requiere escuchar **cada fragmento** y comparar timbre, naturalidad, dicción, cadencia y artefactos antes de autorizar cualquier integración. La revisión de licencias comerciales de la referencia y salidas, capacidad del runner para clips largos y la validación editorial del guion siguen pendientes.
+
+CI [39515949183](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39515949183) valida contratos en código; la ejecución real de este nuevo experimento permanece sin realizar. Para activarlo de forma consciente, usar [Run workflow en GitHub](https://github.com/eler30mr-star/FactordeGigantes/actions/workflows/voice-continuity-cpu.yml) desde `main`. No convertir este ensayo en ejecución automática en cada push.
