@@ -1,0 +1,28 @@
+{
+  "identity": "Factor de Gigantes / narrador documental",
+  "status": "approved_by_owner_for_editorial_reference",
+  "approved_on": "2026-10-20",
+  "file": "narrador_documental_aprobado.mp3",
+  "sha256": "78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d",
+  "bytes": 247245,
+  "duration_seconds": 12.336,
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "model": "Qwen3-TTS-12Hz-1.7B-Base",
+  "source_run": 39509095680,
+  "source_artifact_id": 12303639971,
+  "reference_text": "Durante años, Blákberri parecía invencible. Sus decisiones definían el futuro de la comunicación. Hasta que una nueva generación cambió las reglas. Esto es Factor de Gigantes.",
+  "editorial_text": "Durante años, BlackBerry parecía invencible. Sus decisiones definían el futuro de la comunicación. Hasta que una nueva generación cambió las reglas. Esto es Factor de Gigantes.",
+  "pacing": {
+    "atempo": 0.94,
+    "extra_pause_seconds": 0.16,
+    "max_pauses": 3
+  },
+  "rights_status": "pending_commercial_verification",
+  "production_status": "not_integrated",
+  "policy": [
+    "no paid API",
+    "no automatic YouTube publication",
+    "no word-level audio surgery"
+  ]
+}
