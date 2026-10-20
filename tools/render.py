@@ -11,6 +11,8 @@ import re
 import subprocess
 import tempfile
 import urllib.request
+import urllib.error
+import urllib.parse
 
 
 def validate_manifest(data):
@@ -165,10 +167,40 @@ def remote_manifest(job_id):
         raise RuntimeError("Configura secretos API_BASE_URL (HTTPS) y RENDERER_TOKEN")
     if not re.fullmatch(r"[0-9a-f-]{36}", job_id):
         raise ValueError("job_id inválido")
+    # Diagnóstico seguro: muestra solamente el host público, nunca los tokens.
+    host = urllib.parse.urlsplit(base).hostname or ""
+    print("Destino del motor:", host, flush=True)
+    headers = {"User-Agent": "FactorDeGigantes-Renderer/1.0", "Accept": "application/json"}
+    health_req = urllib.request.Request(base + "/health", headers=headers)
+    try:
+        with urllib.request.urlopen(health_req, timeout=30) as response:
+            health = json.load(response)
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(
+            f"El servicio configurado en API_BASE_URL rechaza /health (HTTP {exc.code}). "
+            "Comprueba que API_BASE_URL sea la URL HTTPS exacta del Worker; "
+            "si el dominio es correcto, revisa bloqueos de Cloudflare."
+        ) from None
+    if health.get("ok") is not True or health.get("product") != "Factor de Gigantes":
+        raise RuntimeError("API_BASE_URL no apunta al Worker Factor de Gigantes esperado")
+    print("Conexión /health confirmada", flush=True)
     url = base + "/api/renderer/jobs/" + job_id
-    req = urllib.request.Request(url, headers={"Authorization": "Bearer " + token})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.load(r)["manifest"]
+    req = urllib.request.Request(url, headers={**headers, "Authorization": "Bearer " + token})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            return json.load(response)["manifest"]
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401:
+            raise RuntimeError(
+                "El Worker rechazó RENDERER_TOKEN (HTTP 401): "
+                "comprobar que coincide en Cloudflare y GitHub Actions."
+            ) from None
+        if exc.code == 403:
+            raise RuntimeError(
+                "La consulta autenticada recibió HTTP 403; "
+                "comprobar protección y reglas de Cloudflare."
+            ) from None
+        raise RuntimeError(f"Error al consultar el guion: HTTP {exc.code}") from None
 
 
 def main():
