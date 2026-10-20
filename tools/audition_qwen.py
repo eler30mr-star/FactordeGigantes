@@ -18,11 +18,15 @@ TEXT = (
     "Esto es Factor de Gigantes."
 )
 DESCRIPTION = (
-    "A naturally mature male voice, like a senior Latin American Spanish business documentary narrator. "
-    "Warm full-bodied low-mid register, reassuring authority, subtle resonant chest voice, "
-    "realistic human pitch variation and nuanced pauses, fluent Spanish with a neutral Latin American accent. "
-    "Calm, precise, sophisticated, understated, credible, confident. "
-    "No youthful tenor, no female timbre, no robotic TTS, no movie-trailer exaggeration."
+    "An energetic yet sophisticated Latin American Spanish male documentary storyteller, "
+    "with the naturally resonant, warm and full-bodied voice of a mature professional host. "
+    "Deliver this narration with captivating forward momentum and strong presence, not slow or sleepy. "
+    "Medium-brisk conversational pace, vivid human intonation, compelling rising suspense, "
+    "expressive emphasis on 'BlackBerry', 'invencible', 'cambió las reglas' and 'Factor de Gigantes'. "
+    "Dynamic rhythm and audible enthusiasm for a remarkable business story. "
+    "Crisp articulation and clear Latin American Spanish vowels; confident, intriguing, alive, "
+    "engaging and credible without shouting or imitating a movie trailer. "
+    "Authentically masculine adult voice, not robotic, not artificially lowered."
 )
 SPACE = "Qwen/Qwen3-TTS"
 
@@ -48,7 +52,7 @@ def run(output="dist/audicion-qwen"):
         raise RuntimeError("El Space devolvió formato de audio desconocido: " + str(type(audio)))
     if not source.is_file() or source.stat().st_size < 12000:
         raise RuntimeError("El archivo recibido no existe o está incompleto")
-    final = directory / "Qwen3_FactorDeGigantes_VozMasculina.mp3"
+    final = directory / "Qwen3_FactorDeGigantes_MasEnergia.mp3"
     subprocess.run([
         "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
         "-i", str(source), "-vn", "-ac", "1", "-codec:a", "libmp3lame", "-b:a", "160k", str(final)
@@ -72,6 +76,8 @@ def run(output="dist/audicion-qwen"):
             "seconds": seconds,
             "status": "demo_not_official_voice",
             "voice_decision": "PENDING_HUMAN_REVIEW",
+            "revision_reason": "El propietario considera la primera muestra demasiado calmada; solicita más energía manteniendo madurez y naturalidad.",
+            "same_text_as_previous": True,
             "distribution": "test_only_not_for_youtube",
             "cost": "public_demo_no_payment",
         }, ensure_ascii=False, indent=2), encoding="utf-8"
