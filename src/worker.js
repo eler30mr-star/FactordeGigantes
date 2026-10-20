@@ -143,7 +143,24 @@ async function handle(request,env) {
       "X-GitHub-Api-Version":"2022-11-28","User-Agent":"FactorDeGigantes-Worker",
       "Content-Type":"application/json"
     },body:JSON.stringify({ref:"main", inputs:{job_id:id}})});
-    if (!response.ok) return err("GitHub rechazó el render (HTTP "+response.status+")",502);
+    if (!response.ok) {
+      // GitHub no devuelve los valores de las credenciales en su campo "message".
+      // Exponer solo causas conocidas permite corregir permisos sin filtrar detalles.
+      let reason = "";
+      try {
+        const data = await response.json();
+        const message = typeof data?.message === "string" ? data.message : "";
+        if (/Resource not accessible by personal access token/i.test(message))
+          reason = "El token no tiene acceso suficiente al repositorio. Revisar propietario, selección del repositorio y permiso Actions: Read and write.";
+        else if (/Bad credentials/i.test(message))
+          reason = "El token de GitHub no es válido o está vencido.";
+        else if (/rate limit/i.test(message))
+          reason = "GitHub limitó temporalmente las solicitudes.";
+        else if (/GitHub Actions is disabled/i.test(message))
+          reason = "GitHub Actions está deshabilitado para este repositorio.";
+      } catch { /* respuesta sin JSON: mantener código HTTP */ }
+      return err("GitHub rechazó el render (HTTP "+response.status+")"+(reason ? ": "+reason : ""),502);
+    }
     await setStatus(env,id,"queued","render_dispatched"); return json({ok:true});
   }
   return err("Acción no válida para este estado",409);
