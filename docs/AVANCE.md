@@ -1,6 +1,6 @@
 # Historial de avance — Factor de Gigantes
 
-> **Estado vigente 2026-10-20:** plataforma MVP conectada; voz canónica protegida; banco de continuidad en dos fragmentos implementado y CI validada. La síntesis de las dos tomas y su audición siguen pendientes. Consultar la última entrada.
+> **Estado vigente 2026-10-20:** el banco Qwen 1.7B CPU de dos fragmentos se ejecutó con éxito; ambos MP3 fueron generados, conservados y verificados. Pendiente indispensable: audición y aceptación humanas, licencia comercial y pruebas de narración larga.
 
 ## 2026-10-20 · Inicio del proyecto
 
@@ -416,3 +416,17 @@ Se ha guardado en `main` la estructura inicial del motor:
 4. Avanzar paralelamente la investigación con fuentes y la trazabilidad de derechos audiovisuales, y después pruebas de un documental original 8–14 min. YouTube sigue sin OAuth ni subida automática.
 
 **Estado inequívoco:** código en GitHub y tests CI **confirmados**; ejecución manual de dos audios, escucha/identidad, licencia comercial y producción **pendientes**. No se ha desplegado otro Worker ni alterado el renderizador principal.
+
+## 2026-10-20 · Audición REAL de continuidad Qwen 1,7B: dos tomas generadas y verificadas
+
+**Hito ejecutado, no solo preparado.** Se activó **una sola vez** el workflow en `main` usando un disparador `push` temporal autorizado por el propietario para ejecutar su prueba. El workflow se devolvió inmediatamente a **solo `workflow_dispatch` manual** (commit `08b4357`). No quedan disparadores automáticos del ensayo intensivo.
+
+- GitHub Actions: [run 39516609592](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592), conclusión **`success`**. Ejecución de generación, verificación de SHA y carga del artefacto completadas. Commit del disparador único `83af430`.
+- Artefacto [12307719223](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592/artifacts/12307719223): `factor-gigantes-continuidad-cpu-dos-tomas` (ZIP, cinco archivos: patrón original sin retocar, dos nuevos MP3, JSON de métricas e instrucciones). **Caduca 2026-10-23 a las 23:45 UTC** por retención gratuita de tres días; guardar una copia local antes. Los MP3 se recuperaron y sus checksums/duraciones coinciden con el reporte.
+- `00_referencia_aprobada.mp3`: 12,336 s y SHA-256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`. **Idéntica a la referencia canónica original, que continúa sin modificación**.
+- `01_decision.mp3`: 8,496 s, SHA-256 `68b6437729fd085e65af3e35099bd9ebf97b088d399f479199839d9e3dea4c4f`; 70,82 s generación y procesamiento.
+- `02_transformacion.mp3`: 9,960 s, SHA-256 `f7019bfe413165ec2dbdee7745f8306ffff51a4ba560508bbf3712592b4990b6`; 80,23 s generación y procesamiento.
+- Informe del proceso: `elapsed_seconds_without_dependency_install=172.5`, tiempo externo del paso de síntesis `2:58.30` y **máximo RSS 11 826 580 KiB ≈ 11,28 GiB** (incluye carga y procesamiento; no incluye instalación inicial). CPU PyTorch, cuatro hilos, 1.7B Base, sin API pagada.
+- El informe mantuvo explícitos `generated_clips_owner_approved=false`, `voice_identity_verified_by_human=false`, `commercial_rights_verified=false` y `production_ready=false`; **éxito técnico de los MP3 NO implica continuidad vocal validada al oído**.
+
+**Próximo paso prioritario del plan:** el propietario escuchará la muestra canónica y las dos tomas nuevas, y evaluará por separado si ambas conservan exactamente la identidad, la dicción y la naturalidad. Si hay deriva, no integrar. Si ambas son aprobadas, medir continuidad de párrafos más extensos con límites CPU gratuitos, investigar licencias de voz y contenido, y avanzar a narración de un documental de 8–14 minutos con fuentes y recursos licenciados. Sin YouTube automático, sin cambios en `render.yml`, sin cobros. No ejecutar de nuevo este workflow pesado salvo necesidad editorial expresa.
