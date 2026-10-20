@@ -140,3 +140,13 @@ El propietario indicó que la demo enlazada presenta una sola voz femenina y no 
 - Versión de audición revisada para pedir un narrador adulto entusiasta, con ritmo dinámico, tensión narrativa, énfasis y voz humana natural; no simplemente aumentar volumen o modificar artificialmente el pitch.
 - Prueba real: GitHub Actions 39503709220 completado, artefacto 12301563544. MP3 de 15,0 s (mono, 24 kHz) verificado por `ffprobe`.
 - Precaución: Voice Design genera un timbre nuevo en cada petición, así que la consistencia de una identidad vocal a lo largo de docenas de escenas requiere estudio. La voz oficial aún no ha sido aprobada; render del canal intacto.
+
+## Pronunciación de marcas y referencia vocal Qwen v3
+
+La voz Qwen3 Voice Design **v3 de dicción profesional** fue la primera considerada claramente mejor por el propietario. Halló un fallo fonético en el nombre BlackBerry. Para no perder el timbre, se implementó un flujo de ensayo con:
+- **Léxico de síntesis** en `tools/voice_lexicon.py`: conserva «BlackBerry» en guion, titulares y subtítulos, pero envía «Blákberi» al TTS como una sola palabra. También admite `blackberry` con variaciones de mayúsculas. No altera plurales ni términos que contienen el nombre como subcadena.
+- **Referencia sintética propia**: Qwen3 v3 del run 39504363557. Validación de checksum SHA-256 antes de usarla; convertida a WAV 24 kHz.
+- **Voice Clone** oficial Qwen3 Base 1.7B: demo https://huggingface.co/spaces/Qwen/Qwen3-TTS , método `/generate_voice_clone` con referencia v3 y texto idéntico.
+- **Run de prueba** https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39505217153, completo y exitoso. Artefacto 12302578597, MP3 mono 48 kHz y 11.304 s.
+
+Advertencias: `Voice Clone` no garantiza coincidencia perfecta con el timbre original ni pronunciación correcta, requieren validación al oído. `voice_lexicon.py` aún no está conectado al `render.yml` productivo: solo forma parte del ensayo. Las demos públicas tienen colas, restricciones y no garantizan producción gratuita perpetua. No hay voz institucional irrevocablemente aprobada ni proveedor con facturación activada.
