@@ -11,7 +11,7 @@ class FixedNarratorTests(unittest.TestCase):
     def test_excerpt_valid(self):
         self.assertEqual(validate_text(EDITORIAL_TEXT),EDITORIAL_TEXT)
     def test_input_limits_and_no_pitch_hacks(self):
-        for bad in ("","Hola","a"*231,"Durante años, algo cambió.\\nUna nueva decisión que cambió el mundo."):
+        for bad in ("","Hola","a"*231,"Durante años, algo cambió.\nUna nueva decisión que cambió el mundo."):
             with self.assertRaises(ValueError):
                 validate_text(bad)
     def test_brand_lexicon_is_only_for_synthesis(self):
