@@ -268,3 +268,13 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Audio descargado, extraído y verificado: **MP3 mono, 24 kHz, 15,00 s, 300.525 bytes**. Entregado a través de ChatGPT como `FactorDeGigantes_Qwen3_MasEnergia.mp3`. URL evidencia: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39503709220 .
 - No hubo pagos, clave de Azure, clonación de voces ni cambios en `render.yml`. El generador Voice Design puede variar identidad vocal entre llamadas; mantener el narrador consistente a lo largo de un documental es aún una limitación arquitectónica por resolver.
 - **Pendiente:** el propietario debe escuchar y decidir si la energía de esta versión se acerca al objetivo; no asumir aprobación a partir del éxito técnico ni incorporar la voz al canal hasta validar calidad y sostenibilidad gratuita.
+
+## 2026-10-20 - Audicion Qwen v3: claridad y pronunciacion
+
+- Evaluacion del propietario de v2: voz poco profesional, vaga, sin la claridad y pronunciacion exigidas.
+- Cambio de prioridad: narrador masculino profesional de documentales, articulacion precisa, palabras completas, consonantes y vocales nitidas, ritmo medio con proyeccion firme, voz no arrastrada.
+- Archivo actualizado en main: tools/audition_qwen.py. Misma frase sobre BlackBerry para comparar versiones. Nuevo MP3 Qwen3_FactorDeGigantes_DiccionProfesional.mp3.
+- Postprocesamiento: filtro de graves por debajo de 70 Hz y loudnorm EBU R128 -17 LUFS, sin modificar el tono. No se afirma que estos filtros arreglen la diccion sintetizada.
+- Prueba real GitHub Actions run 39504363557: SUCCESS, artefacto 12301594283. El ZIP contiene MP3 y audicion.json; MP3 verificado con ffprobe: 11.688 s, mono, 48 kHz, 234285 bytes.
+- Archivo entregado al propietario para revision auditiva; voz NO aprobada aun. No hubo pagos, no se modifico el render de produccion ni se publico en YouTube.
+- Pendiente: evaluar pronunciacion, timbre, autoridad y consistencia de voz entre fragmentos antes de integrar.
