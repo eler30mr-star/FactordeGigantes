@@ -52,3 +52,9 @@ Validación: ejecución GitHub Actions 39487653479 terminó en success, con tres
 Se inició una audición con Kokoro 82M para no limitar las opciones a Piper. El modelo declara licencia Apache-2.0 y cuenta con voces españolas `em_alex` y `em_santa`. Son candidatas, no la voz oficial. Se generará una tercera **variante procesada** de `em_alex` con reducción de tono suave (-6 %), no un narrador independiente. Workflow `.github/workflows/voice-kokoro.yml` y generador `tools/audition_kokoro.py`.
 
 Requisitos para elegir voz: adulto, profesional, profundidad real sin efecto robótico, articulación clara, español aceptable para público internacional, licencia de explotación y modelo estable. La voz elegida deberá aplicarse consistentemente a futuros videos, y los cambios de identidad requerirán aprobación humana. No hay selección definitiva.
+
+## Rechazo editorial de Kokoro y futura alternativa
+
+El propietario rechazó las voces `em_alex`, `em_santa` y `em_alex_grave_sutil`: las percibe extrañas como narradores documentales. También había observado que Piper `es_ES-davefx-medium` suena demasiado fina. **No se ha escogido voz institucional definitiva**.
+
+La nueva pauta es no seguir afinando pitches de voces de poca naturalidad. Evaluar **Chatterbox Multilingual v3** (modelo MIT con español, paquete latinoamericano) como candidato aún **no integrado ni probado**. Estimar uso de CPU/RAM y minutos de GitHub Actions antes de ejecutar. Una voz de referencia deberá tener cesión explícita para clonación o ser una grabación propia. Ninguna opción puede declararse comercialmente apta solo por el permiso general del repositorio.
