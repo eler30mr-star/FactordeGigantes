@@ -239,3 +239,11 @@ Se añadió `tools/qwen_voice_continuity_batch.py` y el workflow manual `voice-c
 La auditoría entrega MP3 separados, hashes y duraciones, junto con un JSON de estado **no aprobado**. Un hash válido únicamente demuestra integridad del archivo de referencia: **no demuestra igualdad de voz en una síntesis nueva**. La aprobación humana requiere escuchar **cada fragmento** y comparar timbre, naturalidad, dicción, cadencia y artefactos antes de autorizar cualquier integración. La revisión de licencias comerciales de la referencia y salidas, capacidad del runner para clips largos y la validación editorial del guion siguen pendientes.
 
 CI [39515949183](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39515949183) valida contratos en código; la ejecución real de este nuevo experimento permanece sin realizar. Para activarlo de forma consciente, usar [Run workflow en GitHub](https://github.com/eler30mr-star/FactordeGigantes/actions/workflows/voice-continuity-cpu.yml) desde `main`. No convertir este ensayo en ejecución automática en cada push.
+
+## Resultado de audición segmentada CPU, dos clips reales (2026-10-20)
+
+Workflow [39516609592](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592) terminó `success`, generó MP3 nuevos (`01_decision.mp3` 8,496 s y `02_transformacion.mp3` 9,960 s), un reporte estructurado y una copia **idéntica** de la referencia vocal aprobada. Artefacto temporal [12307719223](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592/artifacts/12307719223), retención hasta 2026-10-23 23:45 UTC. No hubo proveedor TTS de pago; se ejecutó Qwen3-TTS Base 1,7B en CPU.
+
+Los fragmentos requirieron 70,82 s y 80,23 s, respectivamente, para síntesis y procesamiento. La ejecución Python reportó 172,5 s sin contar instalación de dependencias; /usr/bin/time midió un máximo RSS de 11 826 580 KiB (~11,28 GiB). No asumir throughput lineal, continuidad larga ni identidad acústica: el propietario todavía debe escucharlos y aprobarlos uno por uno.
+
+El disparador `push` de uso único fue eliminado tras el lanzamiento y el workflow volvió a `workflow_dispatch` únicamente. `render.yml` no fue modificado. Continúan bloqueados uso comercial y publicación automática hasta completar verificación de identidad vocal, legalidad y sostenibilidad.
