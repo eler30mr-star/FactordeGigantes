@@ -15,7 +15,7 @@ jobs:
       OMP_NUM_THREADS: '4'
       OPENBLAS_NUM_THREADS: '2'
       HF_HUB_DISABLE_TELEMETRY: '1'
-      HF_HOME: ${{ runner.temp }}/qwen-cache
+      HF_HOME: /tmp/qwen-cache
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
