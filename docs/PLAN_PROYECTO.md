@@ -114,3 +114,15 @@ Un documental puede investigarse, guionizarse, producirse con calidad, revisarse
 - Workflows de render usan voz Piper predeterminada, gráficas editoriales con movimiento Ken Burns, subtítulos quemados y archivos auxiliares `subtitulos.srt`, `ficha.json`, `creditos.txt`.
 - Validación de códecs, resolución y duración mediante `ffprobe`. Se corrigió a partir de una revisión visual real la escala excesiva de subtítulos verticales.
 - Requisitos no alcanzados: calidad editorial cinematográfica, metraje con licencias, verificaciones de fuentes/afirmaciones, validación de derechos de voz derivada, alineación fonética y OAuth YouTube. Este hito es una previsualización **técnica mejorada**, no producción final apta para monetización.
+
+## 10. Identidad vocal del canal — decisión editorial
+
+El propietario ha definido una voz objetivo más adulta, profesional, seria, natural, con autoridad y pronunciación clara para historias de empresas, innovaciones y decisiones. Idealmente español latinoamericano comprensible internacionalmente. No asumir una edad real ni género del locutor a partir de los nombres de modelos; se evaluarán auditivamente.
+
+- Mantener una sola voz institucional estable para documentales y Shorts.
+- Conservar voces alternativas como candidatas para audición, pruebas o narraciones especiales; nunca sustituir automáticamente al narrador oficial.
+- El modelo actual, es_MX-ald-medium, queda como referencia técnica hasta aprobar una nueva identidad.
+- Audición A/B/C preparada con es_MX-ald-medium, es_MX-claude-high y es_ES-davefx-medium; reproducir el mismo texto y revisar timbre, neutralidad, pausas, claridad, pronunciación de empresas y licencias.
+- El panel necesitará configuración persistente de identidad vocal: modelo, velocidad, pausas, pronunciaciones especiales, prueba auditiva y control de versión.
+- No activar publicación comercial de ningún modelo sin revisar términos del dataset, pesos y entrenamiento.
+
