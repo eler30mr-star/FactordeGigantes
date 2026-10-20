@@ -40,6 +40,6 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Test de contrato del manifest en `tests/test_render.py` y CI `.github/workflows/check.yml`.
 - Documento de despliegue con recursos, secretos y advertencias de coste.
 
-**Verificación efectuada:** archivos visibles/recuperables por la conexión de GitHub en la rama `main`. **Sin verificación de tests ejecutados**, pues no se obtuvo estado de GitHub Actions para estos commits, y **sin despliegue** en Cloudflare. La producción audiovisual todavía es una previsualización técnica, no apta como documental final de monetización.
+**Verificación efectuada:** archivos visibles/recuperables por la conexión de GitHub en la rama `main`; verificación de **sintaxis JavaScript superada** en `src/worker.js` y `public/app.js` mediante compilación sintáctica aislada. **Sin verificación de tests ejecutados en GitHub Actions ni render FFmpeg real**, pues no se obtuvo estado de workflows para estos commits, y **sin despliegue** en Cloudflare. La producción audiovisual todavía es una previsualización técnica, no apta como documental final de monetización.
 
 **Siguiente paso exacto:** validar CI/manifest, corregir cualquier fallo, y desplegar Worker/D1 usando los recursos reales de Cloudflare y secretos seguros. Después probar creación → revisión → aprobación → render real → descarga del MP4 y mejorar voz/arte documental.
