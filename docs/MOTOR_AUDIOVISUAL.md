@@ -187,4 +187,12 @@ Muestra aprobada versionada: `assets/voice/approved/narrador_documental_aprobado
 
 `tools/qwen_consistency.py` usa el audio fijo y la transcripción exacta como condicionamiento para una audición de texto nuevo mediante `Qwen/Qwen3-TTS`, modo Base Voice Clone; `tools/documentary_pacing.py` conserva el tempo y pausas aceptados sin cortar fonemas. `.github/workflows/voice-consistency.yml` es una prueba de una toma, no un proceso automatizado para publicar videos. Ningún proveedor facturable ni tono alterado; resultados siempre sujetos a revisión auditiva.
 
-**Bloqueos reales pendientes**: un Space ZeroGPU público tiene cuota limitada y no garantiza producción masiva gratuita; la licencia de código y pesos no es por sí sola verificación completa de términos del Space, de la referencia y de las salidas para uso comercial. Priorizar ejecución local y comprobación legal antes de activar narrador Qwen en `render.yml`. 
+**Bloqueos reales pendientes**: un Space ZeroGPU público tiene cuota limitada y no garantiza producción masiva gratuita; la licencia de código y pesos no es por sí sola verificación completa de términos del Space, de la referencia y de las salidas para uso comercial. Priorizar ejecución local y comprobación legal antes de activar narrador Qwen en `render.yml`.
+
+## Progresos de integración a motor gratuito y limitaciones verificadas
+
+**Artefacto permanente aprobado:** `assets/voice/approved/narrador_documental_aprobado.mp3` en `main` con SHA-256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d` (247245 bytes). No depende de artefactos efímeros, ni debe reemplazarse sin aprobación.
+
+**Nueva frase generada usando el timbre de referencia**: `tools/qwen_consistency.py`, Qwen3-TTS Base 1.7B por demo pública con límite diario. Ejecución `39510650716`: exitosa, 13.584s. La comparación auditiva por el propietario **sigue pendiente**; no certifica fidelidad de voz ni viabilidad para producciones largas.
+
+**Prueba local CPU (experimental):** `tools/qwen_local_smoke.py` y workflow `voice-qwen-cpu.yml`; opción Qwen3-TTS-12Hz-0.6B-Base (Apache-2.0), CPU float32, SDPA, 4 hilos, sin GPU ni API facturable. Estimar uso de RAM, descarga, duración y similitud; limitar ejecución a 13 minutos. Un 0.6B no es intercambiable acústicamente con 1.7B sin una nueva aprobación humana. No integrar en `render.yml` ni publicar hasta confirmar operación y licencia suficiente.
