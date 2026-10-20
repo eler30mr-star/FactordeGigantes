@@ -327,3 +327,11 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Artefacto `qwen-narrador-toma-natural-sin-cortes` ID **12303639971**. MP3 `FactorDeGigantes_Documental_TomaNatural.mp3` descargado y comprobado con FFprobe: **12,336 s**, mono, **48 kHz**, 247 245 bytes. URL: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39509095680 .
 - **Estado de calidad: pendiente de evaluación auditiva del propietario.** No se considera solucionada la articulación de «años» hasta su confirmación. La toma anterior `FactorDeGigantes_Documental_Naturaleza_Pausado.mp3` queda preservada como referencia segura y la reparación quirúrgica `voice_fix_anos.py` sigue deshabilitada.
 - No se activaron servicios de pago ni se alteró el narrador del renderizador principal.
+
+## 2026-10-20 · Aprobación auditiva de la toma documental natural
+
+- El propietario escuchó `FactorDeGigantes_Documental_TomaNatural.mp3` y confirmó expresamente: **«Ahora está correcto»**. Se considera **muestra vocal aprobada para referencia editorial**: voz masculina profesional, clara, dicción entendible, ritmo pausado de documental de naturaleza, `BlackBerry` con doble erre según preferencia y «Durante años» natural.
+- Muestra exacta aprobada: GitHub Actions [39509095680](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39509095680), artefacto `12303639971`, archivo `FactorDeGigantes_Documental_TomaNatural.mp3` (12,336 s, mono, 48 kHz).
+- Se **rechaza y prohíbe reutilizar** el archivo `FactorDeGigantes_Documental_Anos_Corregido.mp3` y el método de recortar la vocal, porque generaron efecto autotune. La muestra anterior pausada queda solo como respaldo histórico.
+- La aprobación corresponde **al audio escuchado**, no certifica todavía que nuevas generaciones con el mismo modelo conserven exactamente el timbre. No se ha sustituido el narrador técnico en el flujo de renderizado ni se ha configurado almacenamiento permanente de la referencia. Las grabaciones de GitHub Actions tienen retención temporal: evitar pérdida de la muestra aprobada.
+- **Próximo paso prioritario:** conservar la muestra aprobada de forma persistente y verificable; diseñar un narrador reproducible con ese timbre y ese ritmo, validar derechos comerciales y ejecución sin pagos; después integrar al renderizador en `main` y probar narraciones largas sin publicar automáticamente.
