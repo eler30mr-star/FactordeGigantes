@@ -74,7 +74,7 @@ El sistema debe permitir gestionar varios proyectos editoriales y, en un futuro,
 - [x] API, D1, panel, controles de aprobación.
 - [x] Workflow GitHub Actions para renders bajo demanda.
 - [x] Script de render con escenas y narración provisional.
-- [ ] Configurar secretos reales y ejecutar de extremo a extremo con credenciales propias.
+- [x] Configurar secretos reales y ejecutar de extremo a extremo con credenciales propias. Confirmado en run 39471906672 (MP4 v0.1) y D1 `ready`.
 - [ ] Verificar costos, fallos y accesibilidad móvil.
 
 ### Fase 2 — Producción documental profesional
@@ -108,3 +108,9 @@ El sistema debe permitir gestionar varios proyectos editoriales y, en un futuro,
 ## 8. Aceptación final
 
 Un documental puede investigarse, guionizarse, producirse con calidad, revisarse, publicarse con permiso y medirse desde una plataforma coherente; con flujo automatizado, evidencias de originalidad y coste controlado. Ningún simple video genérico prueba esa meta.
+## 9. Entrega audiovisual v0.2 (2026-10-20)
+
+- Motor de voz neuronal local Piper y modelo `es_MX-ald-medium` incorporados; smoke y generación de MP4 comprobados en GitHub Actions, sin API de IA de pago.
+- Workflows de render usan voz Piper predeterminada, gráficas editoriales con movimiento Ken Burns, subtítulos quemados y archivos auxiliares `subtitulos.srt`, `ficha.json`, `creditos.txt`.
+- Validación de códecs, resolución y duración mediante `ffprobe`. Se corrigió a partir de una revisión visual real la escala excesiva de subtítulos verticales.
+- Requisitos no alcanzados: calidad editorial cinematográfica, metraje con licencias, verificaciones de fuentes/afirmaciones, validación de derechos de voz derivada, alineación fonética y OAuth YouTube. Este hito es una previsualización **técnica mejorada**, no producción final apta para monetización.
