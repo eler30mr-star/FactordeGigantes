@@ -320,3 +320,10 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Se **deshabilita** `tools/voice_fix_anos.py` de forma explícita, conservando aviso histórico para impedir cualquier reutilización involuntaria. No se aplicarán nuevos cortes intravocálicos ni clonaciones de una voz humana real.
 - Se añadió `tools/audition_qwen_retake.py` y se cambió `.github/workflows/voice-qwen-clone.yml` para generar **una nueva toma íntegra** mediante Qwen3 y la referencia vocal de la muestra profesional v3. Sólo después se aplica ralentización global moderada `atempo=0.94` y pausas entre frases, sin modificar segmentos de la palabra.
 - La corrección de «años» por regeneración queda **pendiente de audición humana**, ya que ejecutar el motor no demuestra que el fonema sea correcto o que la voz permanezca idéntica. No se modifica `render.yml`; política de cero pagos intacta.
+
+## 2026-10-20 · Toma íntegra sin recortes — resultado de ejecución
+
+- Ejecución real de GitHub Actions **39509095680**: **success**. La referencia Qwen v3 se descargó correctamente, el Space Qwen3 generó la locución completa y se aplicó la cadencia documental al audio entero, sin cirugía intravocálica.
+- Artefacto `qwen-narrador-toma-natural-sin-cortes` ID **12303639971**. MP3 `FactorDeGigantes_Documental_TomaNatural.mp3` descargado y comprobado con FFprobe: **12,336 s**, mono, **48 kHz**, 247 245 bytes. URL: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39509095680 .
+- **Estado de calidad: pendiente de evaluación auditiva del propietario.** No se considera solucionada la articulación de «años» hasta su confirmación. La toma anterior `FactorDeGigantes_Documental_Naturaleza_Pausado.mp3` queda preservada como referencia segura y la reparación quirúrgica `voice_fix_anos.py` sigue deshabilitada.
+- No se activaron servicios de pago ni se alteró el narrador del renderizador principal.
