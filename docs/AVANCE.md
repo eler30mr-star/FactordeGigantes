@@ -1,5 +1,7 @@
 # Historial de avance — Factor de Gigantes
 
+> **Estado vigente 2026-10-20:** plataforma MVP conectada; voz canónica protegida; banco de continuidad en dos fragmentos implementado y CI validada. La síntesis de las dos tomas y su audición siguen pendientes. Consultar la última entrada.
+
 ## 2026-10-20 · Inicio del proyecto
 
 **Repositorio:** https://github.com/eler30mr-star/FactordeGigantes
@@ -394,3 +396,23 @@ Se ha guardado en `main` la estructura inicial del motor:
 - **Decisión editorial vinculante:** fijar **exactamente ese timbre y esa toma** como patrón de voz; las audiciones locales `FactorDeGigantes_Qwen_Local_CPU.mp3` (0,6B) y `FactorDeGigantes_Qwen_17B_CPU_Voz.mp3` (1,7B), aunque técnicamente válidas, **no están aprobadas para reemplazar el narrador**. Que un modelo sea de 1,7B no significa que produzca la misma voz en otras tomas.
 - No regenerar, remezclar, ralentizar ni sustituir el archivo canónico. Para contenido nuevo, emplear la referencia inmutable y verificar identidad vocal con pruebas auditivas separadas; rechazar cualquier muestra perceptiblemente diferente.
 - **Estado técnico:** referencia persistida en `main` y validada; producción de nuevas frases con fidelidad exacta todavía **no demostrada ni aprobada**. `render.yml` sigue sin Qwen y no hay publicación automática. Mantener reglas de cero pagos y comprobar derechos comerciales/viabilidad.
+
+## 2026-10-20 · Banco de continuidad vocal en dos fragmentos (CPU 1,7B)
+
+**Objetivo del plan maestro:** avanzar en Fase 2 (voz profesional y QA) sin reemplazar la voz única aprobada, iniciar cobros ni activar YouTube.
+
+**Código realizado y confirmado en la rama `main`:**
+- `tools/qwen_voice_continuity_batch.py`: banco con dos textos editoriales nuevos, de longitud acotada y diferentes del patrón canónico; reutiliza UNA carga del modelo local `Qwen/Qwen3-TTS-12Hz-1.7B-Base` en CPU y la referencia de `assets/voice/approved/`, previamente validada por SHA-256. Genera cada MP3 con la cadencia parametrizada aprobada, comprueba duración/tamaño y vuelve a verificar el patrón exacto al finalizar.
+- Artefactos previstos si se ejecuta: `00_referencia_aprobada.mp3` (copia idéntica, sin modificar la original), `01_decision.mp3`, `02_transformacion.mp3`, `reporte_audicion.json` y guía de escucha. El reporte fija explícitamente `production_ready=false`, `generated_clips_owner_approved=false`, `commercial_rights_verified=false` y `youtube_publication_enabled=false`.
+- `.github/workflows/voice-continuity-cpu.yml`: **solo `workflow_dispatch` manual**, runner Linux de repositorio público, CPU sin CUDA/API de pago, tiempo máximo de trabajo, verificación de disco y artefactos retenidos tres días. Si el repositorio se hace privado, el job no se ejecuta.
+- `tests/test_qwen_voice_continuity_batch.py`: pruebas de límites, seguridad de identificadores, no repetición de texto y ausencia de aprobación automática.
+
+**Evidencia de integración de código:** commits `4d9da9b`, `5227af5`, `5fb0a40` y corrección de descubrimiento de tests `b5ff562`. CI general sobre `b5ff562`: [run 39515949183](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39515949183), resultado `success`. Este CI **sí ejecutó los tests locales**, pero **NO ejecutó inferencia de Qwen** ni creó las dos muestras; el workflow de audición es deliberadamente manual.
+
+**Pendiente real y prioridad inmediata:**
+1. Ejecutar manualmente el workflow [Continuidad Qwen 1.7B CPU - dos tomas sin pagos](https://github.com/eler30mr-star/FactordeGigantes/actions/workflows/voice-continuity-cpu.yml) desde la rama `main`, dentro de la capacidad gratuita disponible; revisar el resultado, consumo, artefacto MP3 e informe. No reportar audio generado hasta observar un run exitoso con muestras.
+2. Audición humana comparando las dos tomas contra **el MP3 original exacto**. Cualquier deriva o artificio vocal bloquea integración. No inferir identidad por checksum de referencia ni por coincidencia del modelo.
+3. Si ambas muestras son aceptadas, evaluar fragmentos de mayor duración y montaje editorial, con pruebas reales de coste, QA y licencia comercial; integrar `render.yml` **únicamente** cuando haya evidencia suficiente y autorización editorial. Mantener el narrador actual sin alteraciones hasta entonces.
+4. Avanzar paralelamente la investigación con fuentes y la trazabilidad de derechos audiovisuales, y después pruebas de un documental original 8–14 min. YouTube sigue sin OAuth ni subida automática.
+
+**Estado inequívoco:** código en GitHub y tests CI **confirmados**; ejecución manual de dos audios, escucha/identidad, licencia comercial y producción **pendientes**. No se ha desplegado otro Worker ni alterado el renderizador principal.
