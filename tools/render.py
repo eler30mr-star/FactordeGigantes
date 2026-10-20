@@ -172,10 +172,10 @@ def _burn_subtitles(input_file, subtitle_file, output_file, fmt):
     # Directorio temporal propio, ruta controlada sin caracteres de FFmpeg peligrosos.
     if not re.fullmatch(r"[\w/.\-]+", str(subtitle_file)):
         raise ValueError("Ruta de subtítulos incompatible con FFmpeg")
-    fontsize, bottom = (19, 150) if fmt == "short" else (22, 43)
+    fontsize, bottom = (9, 48) if fmt == "short" else (17, 62)
     style = (f"FontName=DejaVu Sans,FontSize={fontsize},"
-             "PrimaryColour=&H00FFFFFF,OutlineColour=&H00111111,"
-             f"Outline=2,Shadow=1,Alignment=2,MarginV={bottom}")
+             "PrimaryColour=&H00FFFFFF,OutlineColour=&H00111111,BackColour=&H77000000,"
+             f"BorderStyle=3,Outline=1,Shadow=0,Alignment=2,MarginV={bottom}")
     vf = f"subtitles=filename={subtitle_file}:force_style='{style}'"
     command("ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
             "-i", str(input_file), "-vf", vf,
@@ -221,7 +221,7 @@ def render(manifest, output, voice_engine="espeak", captions="burn",
                 "-f", "concat", "-safe", "0", "-i", str(playlist),
                 "-c", "copy", "-movflags", "+faststart", str(merged))
         subpath = output.parent / "subtitulos.srt"
-        subpath.write_text(make_srt(manifest["segments"], times), encoding="utf-8")
+        subpath.write_text(make_srt(manifest["segments"], times, max_chars=30 if manifest["format"] == "short" else 42), encoding="utf-8")
         if captions == "burn":
             _burn_subtitles(merged, subpath, output, manifest["format"])
         else:
