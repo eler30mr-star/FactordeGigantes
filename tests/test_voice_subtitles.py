@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tools.subtitles import make_srt, split_lines, timestamp
-from tools.voice import MODEL_SHA256, ensure_voice, sha256, synthesize
+from tools.voice import MODEL_NAME, MODEL_SHA256, VOICE_CATALOG, ensure_voice, sha256, synthesize
 
 class SubtitleTests(unittest.TestCase):
     def test_srt_starts_at_zero_and_second_scene_is_offset(self):
@@ -37,6 +37,18 @@ class VoiceTests(unittest.TestCase):
             with patch("tools.voice._download",side_effect=lambda u,p,n:p.write_bytes(b"fake")):
                 with self.assertRaisesRegex(RuntimeError,"Checksum"):
                     ensure_voice(d)
+    def test_model_catalog_is_pinned_and_explicit(self):
+        self.assertEqual(set(VOICE_CATALOG), {
+            MODEL_NAME, "es_MX-claude-high", "es_ES-davefx-medium"
+        })
+        for name, spec in VOICE_CATALOG.items():
+            self.assertEqual(len(spec["sha256"]), 64)
+            self.assertTrue(spec["base"].startswith("https://huggingface.co/"))
+            self.assertTrue(spec["card"].startswith("https://huggingface.co/"))
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaisesRegex(ValueError, "no autorizada"):
+                ensure_voice(d, model_name="modelo-inventado")
+
     def test_no_silent_fallback(self):
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
