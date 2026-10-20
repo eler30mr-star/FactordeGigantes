@@ -24,6 +24,7 @@ jobs:
           python -m pip install 'numpy<2'
           python -m pip install 'git+https://github.com/myshell-ai/MeloTTS.git'
           python -m pip install 'setuptools>=70,<81'
+          python -m unidic download
       - name: Generar dos velocidades sin cambios de tono
         run: python tools/audition_melo.py
       - name: Subir muestras auditivas
