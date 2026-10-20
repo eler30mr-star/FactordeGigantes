@@ -209,3 +209,12 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Próxima búsqueda: voz local/open source gratuita con calidad natural comparable, derechos comerciales claros y recursos compatibles con las cuotas gratuitas; descartar o pausar lo que exija gasto.
 - El narrador en producción sigue siendo provisional (`es_MX-ald-medium` para renders técnicos): **ninguna voz definitiva seleccionada**.
 - Vigilar los límites de ejecución gratuitos de GitHub Actions/Cloudflare; evitar renderizaciones o procesos masivos automáticos.
+
+
+## 2026-10-20 · Búsqueda independiente de TTS gratuitos tras descartar Azure
+
+- El propietario mantiene como condición que no haya pagos, suscripciones ni APIs de TTS facturables. Referencia acústica deseada: naturalidad profesional similar a Microsoft Luis, sin imitación/clonación de su voz.
+- Revisión de fuentes primarias: MeloTTS Spanish MIT (~208 MB, CPU), Chatterbox Multilingual v3 LATAM MIT (~2,14 GB en checkpoint T3, más archivos), Qwen3-TTS 0.6B CustomVoice Apache-2.0 (~2,5 GB de distribución), CosyVoice3 0.5B Apache-2.0 (9 idiomas, español), Qwen3 VoiceDesign 1.7B Apache-2.0 (~4,52 GB).
+- Se anotó matriz técnica, procedencia y restricciones en `docs/MOTOR_AUDIOVISUAL.md` con enlaces directos a model cards oficiales. Ninguno de estos motores se declara voz oficial por tener licencia abierta; falta prueba auditiva y verificación de dependencias y datos de entrenamiento.
+- Se crearon `tools/audition_melo.py` y `.github/workflows/voice-melo.yml`, solo en `main`, para generar muestras de la **misma voz** MeloTTS en velocidad 1.0 y 0.9 sin distorsionar el tono. Workflow GitHub Actions `39497786790` lanzado automáticamente, sujeto a `timeout-minutes: 17` y sin credenciales externas ni publicación.
+- **Resultado pendiente al registrar esta entrada**: confirmar que el workflow produjo dos WAV válidos y artefactos, y escuchar. No se cambió `render.yml` ni el narrador provisional Piper. Si el workflow falla, consignar fallo y no marcar la voz como probada.
