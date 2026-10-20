@@ -1,0 +1,23 @@
+{
+  "title": "Demostración técnica del motor Factor de Gigantes",
+  "angle": "Este guion ilustra el renderizador con texto de muestra. No debe subirse al canal ni presentarse como documental.",
+  "format": "short",
+  "sources": [
+    "https://www.sec.gov/edgar/search/",
+    "https://www.wipo.int/"
+  ],
+  "segments": [
+    {
+      "headline": "Una idea, grandes preguntas",
+      "voiceover": "Bienvenido a Factor de Gigantes. Esta es una prueba técnica del sistema de narración, imágenes y montaje automático."
+    },
+    {
+      "headline": "El futuro se investiga",
+      "voiceover": "Cada documental de nuestro canal necesitará fuentes verificadas, una explicación original y revisión humana antes de su publicación."
+    },
+    {
+      "headline": "El siguiente paso",
+      "voiceover": "El siguiente objetivo será mejorar la voz, los recursos visuales y el montaje cinematográfico, sin perder el control editorial."
+    }
+  ]
+}

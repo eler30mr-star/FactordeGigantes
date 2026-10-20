@@ -1,0 +1,52 @@
+name: Render de prueba
+run-name: Render ${{ inputs.job_id }}
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: UUID del trabajo aprobado en el panel
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: render-${{ inputs.job_id }}
+  cancel-in-progress: false
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar FFmpeg, voz local y Pillow
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg espeak-ng fonts-dejavu-core
+          python -m pip install Pillow==11.3.0
+      - name: Obtener guion aprobado y renderizar
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+          JOB_ID: ${{ inputs.job_id }}
+        run: python tools/render.py --remote --job-id "$JOB_ID" --output dist/video.mp4
+      - name: Subir video de prueba como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: vista-previa-${{ inputs.job_id }}
+          path: dist/video.mp4
+          if-no-files-found: error
+          retention-days: 7
+      - name: Reportar resultado correcto
+        if: success()
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+          JOB_ID: ${{ inputs.job_id }}
+        run: python tools/report.py ready "$JOB_ID"
+      - name: Reportar fallo
+        if: failure()
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+          JOB_ID: ${{ inputs.job_id }}
+        run: python tools/report.py failed "$JOB_ID"
