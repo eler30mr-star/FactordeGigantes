@@ -181,3 +181,13 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Modelo Kokoro-82M de pesos con licencia declarada Apache-2.0 (source: https://huggingface.co/hexgrad/Kokoro-82M); revisar licencias y procedencia de cada voz antes de publicación con fines comerciales.
 - La búsqueda responde a la evaluación del propietario de que `es_ES-davefx-medium` se acerca pero suena demasiado fina.
 - No se cambió el narrador predeterminado de `render.yml`, ni se generó publicación YouTube. Próximo paso: escuchar y elegir candidata (o buscar una voz más grave todavía), después construir el selector fijo de narrador por canal.
+
+## 2026-10-20 · Se rechaza la segunda audición Kokoro por artificiosidad
+
+- El propietario escuchó el lote Kokoro (`em_alex`, `em_santa` y variante `em_alex_grave_sutil`) y lo rechazó: "parece narrador raro". Ninguna de estas voces queda aprobada para ser identidad del canal.
+- Preferencia vigente: narración masculina adulta, natural, cálida pero con cuerpo, sobria, creíble, profesional y apta para documentales empresariales. No confundir graveza artificial con madurez; evitar pitch-shift.
+- No modificar automáticamente la voz del render actual, D1 ni secretos mientras no exista una identidad vocal aceptada.
+- Alternativa técnica investigada (no implementada ni probada): **ResembleAI Chatterbox Multilingual v3** y su paquete regional `Chatterbox-Multilingual-es-mx-latam`. El proveedor declara español LATAM y licencia MIT. Referencias: https://github.com/resemble-ai/chatterbox y https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam .
+- Chatterbox es más pesado que Piper/Kokoro; antes de añadirlo a renders se necesita comparar consumo real en GitHub Actions Free, disponibilidad CPU, coste temporal y calidad auditiva. No prometer ejecución gratuita ilimitada.
+- Si se usa una voz de referencia para identidad estable, requerir una muestra original/expresamente licenciada o autorización del locutor; no clonar voces de figuras conocidas sin permiso.
+- Próximo paso: decidir entre muestra de voz con derechos propios para una voz de marca y test de Chatterbox sin referencia, o seguir buscando una voz preentrenada natural con licencia comercial verificada. Mantener publicación de YouTube desactivada.
