@@ -297,3 +297,5 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Se actualizan a la vez el léxico, las pruebas del workflow y la salida `FactorDeGigantes_BlackBerry_RR_Fuerte.mp3`; se reutiliza como referencia la muestra sintética v3, sin introducir un locutor nuevo.
 - La regla fonética y el éxito técnico **no equivalen a pronunciación garantizada**: comprobar auditivamente la vibrante fuerte y el timbre antes de aceptar para el motor definitivo.
 - Coste cero, rama main; no se modifica `render.yml` ni se publica en YouTube.
+
+- Resultado comprobado de la corrección con doble `rr`: GitHub Actions run **39506360433** terminó **success**, artefacto **12303606616** (`audicion-qwen-blackberry-rr-fuerte`). MP3 extraído y validado con `ffprobe`: 10,896 segundos, mono 48 kHz, 218.445 bytes. Enlace: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39506360433 . Se entregó al propietario para que compruebe auditivamente la vibrante fuerte; **la generación correcta del archivo no acredita por sí sola que el fonema haya sido pronunciado como pidió**.
