@@ -20,7 +20,8 @@ def main():
     payload = {"status":status,"detail":"Revisar ejecución en GitHub Actions" if status=="failed" else ""}
     req = urllib.request.Request(url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Authorization":"Bearer "+key,"Content-Type":"application/json"},
+        headers={"Authorization":"Bearer "+key,"Content-Type":"application/json",
+                 "User-Agent":"FactorDeGigantes-Renderer/1.0","Accept":"application/json"},
         method="POST")
     with urllib.request.urlopen(req,timeout=30) as response:
         print("Estado reportado:",status,response.status)
