@@ -14,7 +14,7 @@ El sistema NO publica videos automáticamente en esta primera etapa. No está co
 
 - **Cloudflare Workers + D1 + static assets**: panel, API privada, revisión y estados.
 - **GitHub Actions**: motor de render activable desde el panel (workflow_dispatch).
-- **FFmpeg + Pillow + eSpeak NG**: ensamblado de previsualizaciones originales sin API de pago. eSpeak NG es una voz técnica provisional; no pretende ser la narración final del canal.
+- **FFmpeg + Pillow + Piper TTS (voz neuronal local)**: motor de previsualización con movimientos de cámara, subtítulos y ficha técnica. Piper se integra en la rama principal y se prueba en CI, antes de habilitarlo por defecto en los renders.\n- **eSpeak NG**: modo exclusivamente técnico para comparaciones y diagnósticos; la voz no constituye una versión publicable.
 - **Sin n8n obligatorio ni máquina local encendida**.
 
 ## Archivos clave
@@ -27,14 +27,14 @@ El sistema NO publica videos automáticamente en esta primera etapa. No está co
 - `migrations/` — modelo de datos D1.
 - `.github/workflows/render.yml` — ensamblado de videos.
 - `tools/render.py` — motor de video.
-- `examples/documental.json` — un ejemplo de prueba, NO un guion publicado.
+- `examples/documental.json` — ejemplo técnico, NO un guion publicado.\n- `tools/voice.py` — motor Piper local con checksum de modelo y motor eSpeak técnico.\n- `tools/subtitles.py` — generación de subtítulos SRT aproximados.\n- `.github/workflows/voice-smoke.yml` — prueba auditiva independiente de voz neuronal.\n- `docs/MOTOR_AUDIOVISUAL.md` — licencias, procedencia, mejoras y limitaciones del motor.
 
 ## Estado
 
-**Primera implementación de ingeniería.** No desplegado ni autenticado con YouTube. Se necesitan cuenta Cloudflare, D1, secretos y pruebas con ejecuciones reales. Consultar `docs/AVANCE.md`.
+**MVP técnico conectado:** Worker y D1 desplegados; aprobaciones privadas y flujo Cloudflare → GitHub Actions → FFmpeg → MP4 → reporte `ready` comprobados con un render real. La voz neuronal y el nuevo montaje aún requieren la verificación real del pipeline mejorado. **No hay OAuth ni publicación a YouTube**. Consultar `docs/AVANCE.md`.
 
 ## Límites y costes
 
-Los planes gratuitos tienen cuotas. Renders largos consumen minutos de GitHub Actions, y la base D1/Workers tiene límites. La generación comercial de video, la voz natural y material documental visual pueden requerir presupuestos y licencias.
+Los planes gratuitos tienen cuotas. Renders largos consumen minutos de GitHub Actions, y la base D1/Workers tiene límites. La generación de voz local no requiere una API de pago, pero las licencias de voz/entrenamiento y la investigación y producción cinematográfica con material licenciado todavía requieren evaluación editorial y costes controlados.
 
 La única cuenta de YouTube autorizada para el proyecto debe conectarse mediante OAuth oficial en una etapa posterior; nunca se almacenarán contraseñas de Google.
