@@ -247,3 +247,9 @@ Workflow [39516609592](https://github.com/eler30mr-star/FactordeGigantes/actions
 Los fragmentos requirieron 70,82 s y 80,23 s, respectivamente, para síntesis y procesamiento. La ejecución Python reportó 172,5 s sin contar instalación de dependencias; /usr/bin/time midió un máximo RSS de 11 826 580 KiB (~11,28 GiB). No asumir throughput lineal, continuidad larga ni identidad acústica: el propietario todavía debe escucharlos y aprobarlos uno por uno.
 
 El disparador `push` de uso único fue eliminado tras el lanzamiento y el workflow volvió a `workflow_dispatch` únicamente. `render.yml` no fue modificado. Continúan bloqueados uso comercial y publicación automática hasta completar verificación de identidad vocal, legalidad y sostenibilidad.
+
+## Dictamen auditivo del propietario — dos clips nuevos (2026-10-20)
+
+Tras escuchar las dos pruebas reales de `Qwen3-TTS Base 1,7B` generadas en CPU (workflow [39516609592](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592)), el propietario declaró: **«Sí ambas, la 1 es más fiel»**. Las dos muestras resultan aceptables para esta audición; `01_decision.mp3` (8,496 s) es la que más se acerca a la identidad aprobada, y `02_transformacion.mp3` (9,960 s) queda en segundo lugar por fidelidad relativa.
+
+**No elevar ninguna toma experimental a nueva referencia oficial.** La única voz canónica sigue siendo `narrador_documental_aprobado.mp3`. La aceptación de estos clips no valida automáticamente futuros textos ni el uso comercial. El siguiente ensayo debe comprobar estabilidad entre párrafos con límites de CPU y audición humana separada por tramo, sin proveedores de pago y sin cambios al `render.yml` hasta superar derechos y QA.
