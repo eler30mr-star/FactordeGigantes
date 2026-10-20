@@ -168,3 +168,13 @@ La variante local de mayor tamaño no reemplaza todavía la voz elegida ni supon
 Confirmación expresa del propietario mediante nueva subida: `FactorDeGigantes_Documental_TomaNatural.mp3` **es la voz correcta**. Coincide exactamente con el MP3 versionado en `assets/voice/approved/narrador_documental_aprobado.mp3` (SHA-256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`).
 
 No se acepta automáticamente el 0,6B ni el 1,7B local como sustituto, aunque sean ejecutables con CPU gratis. Ambos son ensayos sin aprobación vocal. Objetivo de ingeniería: producir nuevas frases que suenen como **esta identidad exacta**, sin modificar la referencia, sin usar servicios de pago y sin activar publicación en YouTube. Si no se demuestra continuidad, mantener bloqueada la integración de Qwen.
+
+## Subhito de Fase 2 — continuidad vocal segmentada sin pagos (2026-10-20)
+
+- [x] Crear banco de dos fragmentos para experimentar continuidad de la voz fija en Qwen Base 1,7B CPU (script, tests y workflow manual en `main`); CI de contratos [39515949183](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39515949183) exitosa.
+- [ ] Ejecutar el workflow manual `voice-continuity-cpu.yml`, comprobar dos MP3 nuevos y revisar métricas y límites gratuitos (crear el workflow no equivale a ejecutarlo).
+- [ ] Obtener aceptación auditiva **expresa de ambas tomas** por el propietario comparándolas con `FactorDeGigantes_Documental_TomaNatural.mp3` inalterado.
+- [ ] Demostrar continuidad en narraciones largas, validar derechos comerciales de todos los componentes, implementar QA de voz/visual y recién entonces evaluar integración en `render.yml`.
+- [ ] Continuar investigación con fuentes verificables, activos originales con licencia y producción de primer documental 8–14 min.
+
+**Restricciones vigentes:** cero pagos, únicamente `main`, patrón vocal canónico único, experimentos no equivalen a aprobación, y ninguna publicación en YouTube sin consentimiento expreso. Fase 2 sigue **abierta**.
