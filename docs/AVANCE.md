@@ -278,3 +278,14 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Prueba real GitHub Actions run 39504363557: SUCCESS, artefacto 12301594283. El ZIP contiene MP3 y audicion.json; MP3 verificado con ffprobe: 11.688 s, mono, 48 kHz, 234285 bytes.
 - Archivo entregado al propietario para revision auditiva; voz NO aprobada aun. No hubo pagos, no se modifico el render de produccion ni se publico en YouTube.
 - Pendiente: evaluar pronunciacion, timbre, autoridad y consistencia de voz entre fragmentos antes de integrar.
+
+## 2026-10-20 · Primer timbre Qwen bien valorado; pronunciación de BlackBerry corregida en prueba de continuidad
+
+- El propietario valoró la **tercera muestra Qwen3 Voice Design v3** como «Excelente, mucho mejor», especialmente por profesionalidad y dicción. Señaló una falla concreta: el nombre **BlackBerry** se escuchaba como «beri y berri», pronunciación inestable/repetida.
+- Decisión técnica: mantener Qwen v3 **como timbre candidato preferido** y no rediseñar otra voz por ese error. La aprobación completa sigue pendiente de corregir el nombre y asegurar continuidad vocal.
+- Se añadieron en la rama **`main`** los archivos `tools/voice_lexicon.py` (normalización solo para síntesis, `BlackBerry` → `Blákberi` sin afectar el texto visible), `tools/audition_qwen_clone.py` y el workflow `.github/workflows/voice-qwen-clone.yml`.
+- El workflow recupera exclusivamente el audio sintético v3 desde GitHub Actions run **39504363557**, verifica SHA-256 `e03ee9359a0323d958279ea22ccb37f07aafd681dcd36667a0d318214c06e675` y usa `Qwen3-TTS Base 1.7B Voice Clone` (Space público oficial) para intentar mantener el mismo timbre al corregir el nombre. No se clona a ninguna persona real; se reutiliza un audio generado previamente para este canal.
+- La ejecución **39505217153 finalizó con éxito**, artefacto **12302578597** `audicion-qwen-blackberry-con-voz-referencia`. El MP3 descargado fue examinado con ffprobe: **11.304 segundos, mono, 48 kHz, 226605 bytes**. Es una prueba verificable, no garantía de idéntica voz o pronunciación correcta; pendiente de escucha por el propietario.
+- Muestra entregada como `FactorDeGigantes_BlackBerry_Corregido.mp3`. El audio v3 original permanece sin sobrescribir. Costo de proveedores TTS: **0**; no se activó Azure, no se modificó el renderizador principal y no se publicó en YouTube.
+- **Riesgo de continuidad:** los artefactos GitHub Actions caducan (3 días en esta prueba); si se aprueba de forma definitiva el timbre, habrá que preservar una referencia vocal verificada y un léxico de marcas en almacenamiento persistente, sin depender de la disponibilidad del Space ni de su cuota de demo pública.
+- Siguiente verificación del propietario: (1) BlackBerry como única palabra clara; (2) parecido de timbre con Qwen3 v3; (3) dicción firme. De aprobarse, diseñar preservación de identidad de marca para todo el canal.
