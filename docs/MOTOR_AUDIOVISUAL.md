@@ -46,3 +46,9 @@ Modelos: es_MX-ald-medium (referencia), es_MX-claude-high (alternativa en españ
 
 Validación: ejecución GitHub Actions 39487653479 terminó en success, con tres WAV y comparacion.json, artefacto 12293493424. La presencia de muestras no garantiza afinidad editorial: el propietario debe escuchar y elegir. Las licencias de entrenamiento y el uso comercial aún requieren verificación.
 
+
+## Segunda ronda de búsqueda vocal (más grave y madura)
+
+Se inició una audición con Kokoro 82M para no limitar las opciones a Piper. El modelo declara licencia Apache-2.0 y cuenta con voces españolas `em_alex` y `em_santa`. Son candidatas, no la voz oficial. Se generará una tercera **variante procesada** de `em_alex` con reducción de tono suave (-6 %), no un narrador independiente. Workflow `.github/workflows/voice-kokoro.yml` y generador `tools/audition_kokoro.py`.
+
+Requisitos para elegir voz: adulto, profesional, profundidad real sin efecto robótico, articulación clara, español aceptable para público internacional, licencia de explotación y modelo estable. La voz elegida deberá aplicarse consistentemente a futuros videos, y los cambios de identidad requerirán aprobación humana. No hay selección definitiva.
