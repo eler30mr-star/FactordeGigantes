@@ -232,3 +232,13 @@ Se ha guardado en `main` la estructura inicial del motor:
 - El modelo y proyecto upstream `myshell-ai/MeloTTS-Spanish` publican licencia MIT, y el proveedor afirma capacidad de síntesis en CPU. Se debe revisar el uso comercial de dependencias/modelos antes de lanzar documentales monetizados. No hubo llamadas a servicios de pago.
 - `render.yml` y el narrador provisional permanecen sin modificación. No se conectó Azure ni se publicó contenido en YouTube.
 - **Siguiente acción**: propietario escucha las dos variantes de MeloTTS y califica si suena adulto y profesional. Si no, buscar modelos Chatterbox/CosyVoice/VoiceDesign viables sin tarjeta, clonación de terceros ni gasto; mantener cuotas y pruebas bajo control.
+
+
+## 2026-10-20 · Evaluación negativa del propietario de MeloTTS
+
+- El propietario escuchó la audición real MeloTTS (ritmo normal y 0,9) y concluyó: **«Se escucha como tts»**. La voz no alcanza el nivel de naturalidad humana, adulta y profesional requerido por Factor de Gigantes; no queda aprobada para identidad de marca.
+- Por acumulación de resultados insatisfactorios se cambia el enfoque: no seguir ajustando velocidad ni pitch de motores con timbre sintético. Evaluar primero **demos del modelo avanzado** con la misma frase, y solo integrar al motor si la audición convence y la ejecución local entra en el presupuesto gratuito.
+- Próximo candidato priorizado: Chatterbox Multilingual V3 **es-MX/LatAm**, finetune en https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam y demostración oficial https://huggingface.co/spaces/ResembleAI/Chatterbox-Multilingual-TTS-es-mx-latam. Licencia declarada MIT; modelo regional ocupa al menos 2,14 GB para la parte T3, además de decodificador de audio (1,06 GB en safetensors): estimar RAM/CPU antes de usar GitHub Actions.
+- Confirmado en código upstream que Chatterbox Multilingual V3 admite `device="cpu"`, `t3_model="v3"`, `language_id="es"`, y permite variar parámetros de expresividad; sin garantía de síntesis a tiempo razonable en runners gratuitos.
+- Alternativa editorial si ningún motor abierto cumple: voz humana grabada con autorización del locutor para crear un narrador propio sin usar voz ajena, y evaluar herramientas de edición de audio libres. Nunca imitar Microsoft Luis sin autorización.
+- Se conserva `render.yml` y Piper como **voz técnica provisional**, sin publicación automática ni cuentas de pago. Cero nuevas audiciones pesadas hasta validar calidad comparativa y coste del siguiente candidato.
