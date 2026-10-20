@@ -10,7 +10,7 @@ permissions:
 jobs:
   audition:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 9
     steps:
       - uses: actions/checkout@v4
       - name: Verificar que el MP3 aprobado está intacto
