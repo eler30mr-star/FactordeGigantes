@@ -169,3 +169,13 @@ La muestra `FactorDeGigantes_Documental_Anos_Corregido.mp3` resultó **rechazada
 La referencia de trabajo sin esa intervención es `FactorDeGigantes_Documental_Naturaleza_Pausado.mp3` (SHA-256 `9c608fe3d6c4a8280e14848a8fc3f3ac4d649ad403c727f2d833ea44cdf1c6bf`), con el problema leve de duración percibida de la vocal sin resolver, pero sin sonido sintetizado por recorte.
 
 Una nueva toma completa puede generarse desde `tools/audition_qwen_retake.py`, usando `tools/audition_qwen_clone.py` con el timbre Qwen3 v3 y una ralentización global del habla, más pausas entre frases. **No aprobar ni integrar automáticamente** esta voz sin audición y sin verificar términos/viabilidad de uso estable sin pago.
+
+## Referencia de narrador aprobada por el propietario — 2026-10-20
+
+El usuario declaró **«Ahora está correcto»** tras escuchar `FactorDeGigantes_Documental_TomaNatural.mp3`. La muestra se convierte en **patrón auditivo editorial aprobado** (no integración final en producción): narrador adulto masculino, tono de documental de naturaleza sin imitar a un locutor individual, voz limpia, dicción firme, articulación de «años» natural, `BlackBerry` con erre fuerte y cadencia ligeramente pausada.
+
+**Procedencia y validación:** workflow `39509095680` (success), artefacto `12303639971`, Qwen3 Voice Clone con referencia Qwen v3 y posprocesamiento de cadencia global `atempo=0.94` con pequeñas pausas entre frases; MP3 mono de 48 kHz y 12,336 s. El artefacto es temporal; preservar copia persistente con checksum antes de confiar en él para nuevos videos. La identidad vocal entre tomas está pendiente de prueba y no hay garantías de producción gratis ilimitada.
+
+**No usar:** archivo defectuoso `FactorDeGigantes_Documental_Anos_Corregido.mp3` o `tools/voice_fix_anos.py` para corregir fonemas. El script está deshabilitado. No alterar voz, velocidad, tono o palabras de la referencia aceptada sin una nueva evaluación auditiva.
+
+**Pendiente:** no está conectado todavía al workflow productivo; verificar derechos y sostenibilidad del motor y voz, persistir referencia, validar continuidad en piezas largas y mantener cero pagos.
