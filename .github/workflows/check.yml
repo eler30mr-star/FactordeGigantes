@@ -54,3 +54,46 @@ jobs:
               print("Content-Type:", exc.headers.get("Content-Type", "?"))
               raise SystemExit(1)
           PY
+
+      - name: Diagnosticar autenticacion del renderizador
+        # Consulta un UUID imposible: 404 confirma autenticación, sin alterar un trabajo.
+        continue-on-error: true
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          import urllib.error
+          import urllib.request
+
+          base = os.environ.get("API_BASE_URL", "").rstrip("/")
+          token = os.environ.get("RENDERER_TOKEN", "")
+          if len(token) < 24:
+              raise SystemExit("RENDERER_TOKEN faltante o demasiado corto en GitHub")
+          request = urllib.request.Request(
+              base + "/api/renderer/jobs/00000000-0000-0000-0000-000000000000",
+              headers={
+                  "Authorization": "Bearer " + token,
+                  "User-Agent": "FactorDeGigantes-Renderer/1.0",
+                  "Accept": "application/json",
+              },
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  print("Estado API autenticada:", response.status)
+                  raise SystemExit("Respuesta inesperada para un trabajo inexistente")
+          except urllib.error.HTTPError as exc:
+              print("HTTP API autenticada:", exc.code)
+              print("Server:", exc.headers.get("Server", "?"))
+              print("CF-Ray presente:", bool(exc.headers.get("CF-Ray")))
+              print("Content-Type:", exc.headers.get("Content-Type", "?"))
+              if exc.code == 404:
+                  print("RENDERER_TOKEN correcto: Worker autorizó la petición.")
+              elif exc.code == 401:
+                  raise SystemExit("RENDERER_TOKEN en GitHub no coincide con Cloudflare.")
+              elif exc.code == 403:
+                  raise SystemExit("Bloqueo HTTP 403 antes de /api/renderer: revisar Cloudflare.")
+              else:
+                  raise SystemExit(f"Respuesta inesperada: {exc.code}")
+          PY
