@@ -207,3 +207,9 @@ Muestra aprobada versionada: `assets/voice/approved/narrador_documental_aprobado
 **Recursos de síntesis:** carga de modelo 22,47 s; tiempo total 79,97 s; máximo de RAM 6,07 GiB. La instalación y descarga de pesos son adicionales. No existen pruebas de audio de 10 a 15 minutos continuos ni de que el 0.6B replique idénticamente el narrador 1.7B aprobado.
 
 El workflow `voice-qwen-cpu.yml` se deja solo manual y **no ejecuta cuando el repositorio es privado** para evitar riesgo de minutos facturables. El motor productivo actual no se modifica: integración condicionada a la audición, derechos de uso comercial y desempeño sostenido.
+
+## Deriva vocal observada en Qwen Base 0.6B — comparación contra 1.7B
+
+Feedback del propietario tras prueba local 0.6B: tono aceptable, **pero el timbre cambió un poco** frente a la muestra Qwen3 1.7B aprobada. La identidad debe ser coherente en toda la producción: no elevar 0.6B a narrador definitivo sin aprobación separada.
+
+Audición comparativa pendiente: `tools/qwen17_local_smoke.py` y workflow `voice-qwen17-cpu.yml` con modelo `Qwen/Qwen3-TTS-12Hz-1.7B-Base` CPU float32/SDPA, el mismo texto sobre ecosistemas y la misma muestra fija con checksum. Ejecutar de manera controlada en GitHub Actions **público**, límite 12 minutos, sin proveedores facturables. Evaluar simultáneamente memoria, duración, calidad, parecido de la voz y estabilidad de dicción. Conservación de la referencia original obligatoria; render en producción sin cambios.
