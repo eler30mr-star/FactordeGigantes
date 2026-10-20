@@ -24,5 +24,10 @@
     "no paid API",
     "no automatic YouTube publication",
     "no word-level audio surgery"
-  ]
+  ],
+  "canonical_reference": true,
+  "owner_reconfirmed_with_exact_file": true,
+  "canonical_filename_from_owner": "FactorDeGigantes_Documental_TomaNatural.mp3",
+  "replacement_policy": "No reemplazar ni alterar: toda toma nueva debe evaluarse y aprobarse separadamente",
+  "comparison_outputs_approved": false
 }

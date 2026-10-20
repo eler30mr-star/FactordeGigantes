@@ -16,7 +16,8 @@
   "peak_rss_kib": 11826680,
   "paid_api": false,
   "reference_voice_owner_approval": true,
-  "new_output_approval": "pending",
+  "new_output_approval": "not_approved_as_canonical_voice",
   "production_ready": false,
-  "workflow_mode": "manual_only_public_repository"
+  "workflow_mode": "manual_only_public_repository",
+  "owner_feedback": "El propietario confirmó que la única voz correcta es la muestra Documental_TomaNatural.mp3, no esta generación local."
 }

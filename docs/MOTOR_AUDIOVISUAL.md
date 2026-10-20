@@ -223,3 +223,11 @@ Run GitHub Actions **39512992392**, éxito: `Qwen/Qwen3-TTS-12Hz-1.7B-Base` en C
 - Carga: 20,44 s; tiempo total de ejecución de Python: 88,62 s; memoria pico: ~11,28 GiB. La comparación 0,6B utilizó el mismo texto, consumió ~6,07 GiB y produjo 8,424 s de audio.
 - `tools/qwen17_local_smoke.py` y workflow manual `.github/workflows/voice-qwen17-cpu.yml`. Los resultados locales **no avalan uso comercial ni equivalencia acústica automáticamente**. Pendiente evaluación auditiva y benchmarks de secuencias largas.
 - La muestra editorial aprobada del propietario permanece inmutable; `render.yml` no ha sido sustituido por Qwen.
+
+## Patrón CANÓNICO de voz confirmado con el audio que volvió a adjuntar el propietario
+
+La única muestra de referencia autorizada es `FactorDeGigantes_Documental_TomaNatural.mp3`, almacenada como `assets/voice/approved/narrador_documental_aprobado.mp3`. El propietario volvió a adjuntarla y la identificó inequívocamente como «esta es correcta». El archivo adjunto se verificó contra la muestra de GitHub con SHA-256 **`78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`**, 247 245 bytes, 12,336 segundos, mono 48kHz.
+
+**No equiparar** «mismo modelo», «parecido de timbre», «misma transcripción» ni «salida técnica exitosa» con «voz aprobada». Las pruebas 0,6B y 1,7B CPU constituyen experimentos de ingeniería, **no alternativas aprobadas** para videos. El audio canónico nunca debe sobreescribirse por ellas ni retocarse para hacerlo parecer más profesional.
+
+Para construir la narración continua, partir de esa referencia exacta y auditar nuevas tomas; si cambia perceptiblemente el carácter vocal, descartar la salida y conservar la referencia. No habilitar narración productiva ni publicación automática sin superar calidad, derechos y recursos gratuitos.

@@ -162,3 +162,9 @@ El usuario elige **como referencia de ESTILO**, no como persona a imitar, el nar
 Tras detectar una ligera diferencia de timbre en la audición Qwen 0,6B, se ejecutó la versión `Qwen3-TTS Base 1,7B` en CPU gratuita, con salida MP3 verificable, mismos datos de referencia y mismo guion. La prueba terminó con éxito: 7,680 s de audio, ~88,62 s de ejecución del proceso Python y ~11,28 GiB de RAM pico; workflow 39512992392.
 
 La variante local de mayor tamaño no reemplaza todavía la voz elegida ni supone autorización comercial. Faltan comparación auditiva humana, robustez en segmentos largos, cálculo real de throughput, licencias aplicables y conservación de la cadencia vocal. Las pruebas CPU pesadas son manuales y solo en repositorio público.
+
+## Decisión editorial vinculante: una sola voz canónica
+
+Confirmación expresa del propietario mediante nueva subida: `FactorDeGigantes_Documental_TomaNatural.mp3` **es la voz correcta**. Coincide exactamente con el MP3 versionado en `assets/voice/approved/narrador_documental_aprobado.mp3` (SHA-256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`).
+
+No se acepta automáticamente el 0,6B ni el 1,7B local como sustituto, aunque sean ejecutables con CPU gratis. Ambos son ensayos sin aprobación vocal. Objetivo de ingeniería: producir nuevas frases que suenen como **esta identidad exacta**, sin modificar la referencia, sin usar servicios de pago y sin activar publicación en YouTube. Si no se demuestra continuidad, mantener bloqueada la integración de Qwen.

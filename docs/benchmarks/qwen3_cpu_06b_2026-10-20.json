@@ -16,6 +16,7 @@
   "total_execution_seconds": 79.97,
   "max_resident_kib": 6362008,
   "external_paid_api": false,
-  "voice_quality_user_approval": "pending",
-  "production_ready": false
+  "voice_quality_user_approval": "not_approved_as_canonical_voice",
+  "production_ready": false,
+  "owner_feedback": "Tono aceptable, pero la voz ha cambiado algo. Referencia exacta reafirmada."
 }
