@@ -173,8 +173,14 @@ No se acepta automáticamente el 0,6B ni el 1,7B local como sustituto, aunque se
 
 - [x] Crear banco de dos fragmentos para experimentar continuidad de la voz fija en Qwen Base 1,7B CPU (script, tests y workflow manual en `main`); CI de contratos [39515949183](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39515949183) exitosa.
 - [x] Ejecutar una sola vez `voice-continuity-cpu.yml`, comprobar los dos MP3 nuevos y sus métricas: [GitHub Actions 39516609592](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592) `success`; artefacto 12307719223, audios 8,496 y 9,960 s, memoria pico ~11,28 GiB. La prueba fue lanzada con disparador temporal y revertida a ejecución exclusivamente manual.
-- [ ] Obtener aceptación auditiva **expresa de ambas tomas** por el propietario comparándolas con `FactorDeGigantes_Documental_TomaNatural.mp3` inalterado.
+- [x] Obtener evaluación auditiva del propietario de ambas tomas: «Sí ambas, la 1 es más fiel»; `01_decision.mp3` es la más cercana a la referencia; `02_transformacion.mp3` también aceptable en esta prueba breve. **No implica equivalencia perfecta en textos futuros ni sustituye la voz canónica**. Evidencia: workflow 39516609592.
 - [ ] Demostrar continuidad en narraciones largas, validar derechos comerciales de todos los componentes, implementar QA de voz/visual y recién entonces evaluar integración en `render.yml`.
 - [ ] Continuar investigación con fuentes verificables, activos originales con licencia y producción de primer documental 8–14 min.
 
 **Restricciones vigentes:** cero pagos, únicamente `main`, patrón vocal canónico único, experimentos no equivalen a aprobación, y ninguna publicación en YouTube sin consentimiento expreso. Fase 2 sigue **abierta**.
+
+### Resultado editorial de escucha A/B (2026-10-20)
+
+- **Ambas muestras cortas aceptadas por el propietario; preferencia por la primera por mayor fidelidad.** Mantener íntegra la muestra oficial ya aprobada.
+- [ ] Siguiente hito: evaluar constancia vocal en varios párrafos y validar rendimiento sin pagos, licencias comerciales y QA editorial antes de conectar el motor Qwen al render.
+- [ ] Primera producción documental completa 8–14 minutos, con guion investigado y recursos audiovisuales con derechos comprobados. No abrir OAuth ni publicación sin aprobación.
