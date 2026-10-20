@@ -18,15 +18,14 @@ TEXT = (
     "Esto es Factor de Gigantes."
 )
 DESCRIPTION = (
-    "An energetic yet sophisticated Latin American Spanish male documentary storyteller, "
-    "with the naturally resonant, warm and full-bodied voice of a mature professional host. "
-    "Deliver this narration with captivating forward momentum and strong presence, not slow or sleepy. "
-    "Medium-brisk conversational pace, vivid human intonation, compelling rising suspense, "
-    "expressive emphasis on 'BlackBerry', 'invencible', 'cambió las reglas' and 'Factor de Gigantes'. "
-    "Dynamic rhythm and audible enthusiasm for a remarkable business story. "
-    "Crisp articulation and clear Latin American Spanish vowels; confident, intriguing, alive, "
-    "engaging and credible without shouting or imitating a movie trailer. "
-    "Authentically masculine adult voice, not robotic, not artificially lowered."
+    "Native Latin American Spanish male broadcast journalist, mature professional narrator for a factual business documentary. "
+    "Clear, clean, focused, front-of-microphone studio speech with broadcast-standard diction and articulate delivery. "
+    "Every word fully pronounced; crisp consonants, precise syllables, well-formed vowels and clear word boundaries. "
+    "Firm well-supported voice, medium-low natural male register, direct confident projection, attentive and present. "
+    "Measured medium conversational pace, controlled energy and purposeful emphasis. "
+    "Smooth but decisive phrasing; short natural pauses at sentence boundaries. "
+    "High intelligibility and authority, without slurring, trailing off, lazy mumbling, breathiness, hoarseness, "
+    "nasal tone or radio-drama overacting. Professional news-documentary studio voice, neutral Latin American accent."
 )
 SPACE = "Qwen/Qwen3-TTS"
 
@@ -52,10 +51,12 @@ def run(output="dist/audicion-qwen"):
         raise RuntimeError("El Space devolvió formato de audio desconocido: " + str(type(audio)))
     if not source.is_file() or source.stat().st_size < 12000:
         raise RuntimeError("El archivo recibido no existe o está incompleto")
-    final = directory / "Qwen3_FactorDeGigantes_MasEnergia.mp3"
+    final = directory / "Qwen3_FactorDeGigantes_DiccionProfesional.mp3"
     subprocess.run([
         "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-        "-i", str(source), "-vn", "-ac", "1", "-codec:a", "libmp3lame", "-b:a", "160k", str(final)
+        "-i", str(source), "-vn", "-ac", "1",
+        "-af", "highpass=f=70,loudnorm=I=-17:TP=-1.5:LRA=9",
+        "-codec:a", "libmp3lame", "-b:a", "160k", str(final)
     ], check=True, timeout=35)
     analysis = subprocess.check_output([
         "ffprobe", "-v", "error", "-show_entries",
@@ -76,8 +77,9 @@ def run(output="dist/audicion-qwen"):
             "seconds": seconds,
             "status": "demo_not_official_voice",
             "voice_decision": "PENDING_HUMAN_REVIEW",
-            "revision_reason": "El propietario considera la primera muestra demasiado calmada; solicita más energía manteniendo madurez y naturalidad.",
+            "revision_reason": "El propietario considera v2 una voz vaga y poco profesional; exige dicción limpia, clara, entendible, sílabas y consonantes bien pronunciadas.",
             "same_text_as_previous": True,
+            "audio_processing": "High-pass 70Hz; loudness normalization EBU R128 at -17 LUFS. No pitch-shifting or speech time-stretch.",
             "distribution": "test_only_not_for_youtube",
             "cost": "public_demo_no_payment",
         }, ensure_ascii=False, indent=2), encoding="utf-8"
