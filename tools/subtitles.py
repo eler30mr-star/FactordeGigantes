@@ -29,14 +29,14 @@ def timestamp(seconds):
     sec, milli = divmod(rem, 1000)
     return f"{h:02}:{minute:02}:{sec:02},{milli:03}"
 
-def make_srt(segments, durations):
+def make_srt(segments, durations, max_chars=42):
     if len(segments) != len(durations):
         raise ValueError("El número de escenas y duraciones no coincide")
     count, offset, entries = 0, 0.0, []
     for segment, sec in zip(segments, durations):
         if sec <= 0:
             raise ValueError("Duración de escena inválida")
-        parts = split_lines(segment["voiceover"])
+        parts = split_lines(segment["voiceover"], max_chars=max_chars)
         weights = [len(re.sub(r"\s+", "", p)) for p in parts]
         total = sum(weights) or 1
         elapsed = 0
