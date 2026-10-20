@@ -45,6 +45,33 @@ jobs:
           )
           PY
           ffprobe -v error -show_entries stream=codec_name,sample_rate -of default=nw=1 muestra.wav
+      - name: Comprobar MP4 de muestra con Piper
+        run: |
+          sudo apt-get install -y fonts-dejavu-core
+          python -m pip install Pillow==11.3.0
+          python tools/render.py --manifest examples/documental.json --voice-engine piper --captions burn --output dist/video.mp4
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          info=json.loads(Path('dist/ficha.json').read_text(encoding='utf-8'))
+          assert info['voice_engine']=='piper', info
+          assert info['technical_quality']['width']==720
+          assert info['technical_quality']['height']==1280
+          assert info['technical_quality']['audio_codec']=='aac'
+          assert Path('dist/subtitulos.srt').stat().st_size > 100
+          print('QA de MP4, voz, resolución, audio y SRT: OK')
+          PY
+      - name: Guardar video técnico y metadatos
+        uses: actions/upload-artifact@v4
+        with:
+          name: muestra-audiovisual-piper-es-MX
+          path: |
+            dist/video.mp4
+            dist/subtitulos.srt
+            dist/ficha.json
+            dist/creditos.txt
+          if-no-files-found: error
+          retention-days: 3
       - name: Guardar muestra auditiva
         uses: actions/upload-artifact@v4
         with:
