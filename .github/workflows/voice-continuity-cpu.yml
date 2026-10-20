@@ -1,10 +1,6 @@
 name: Continuidad Qwen 1.7B CPU - dos tomas sin pagos
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/voice-continuity-cpu.yml'
 permissions:
   contents: read
 concurrency:
@@ -12,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   audit:
-    # Disparo temporal solicitado por el propietario para realizar una única prueba; volver a workflow_dispatch.
+    # Solo ejecución manual para evitar consumo de minutos no solicitado.
     if: github.event.repository.private == false
     runs-on: ubuntu-latest
     timeout-minutes: 18
