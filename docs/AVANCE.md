@@ -191,3 +191,12 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Chatterbox es más pesado que Piper/Kokoro; antes de añadirlo a renders se necesita comparar consumo real en GitHub Actions Free, disponibilidad CPU, coste temporal y calidad auditiva. No prometer ejecución gratuita ilimitada.
 - Si se usa una voz de referencia para identidad estable, requerir una muestra original/expresamente licenciada o autorización del locutor; no clonar voces de figuras conocidas sin permiso.
 - Próximo paso: decidir entre muestra de voz con derechos propios para una voz de marca y test de Chatterbox sin referencia, o seguir buscando una voz preentrenada natural con licencia comercial verificada. Mantener publicación de YouTube desactivada.
+
+## 2026-10-20 · Referencia exacta de voz: Microsoft Luis (Ecuador)
+
+- El propietario mostró una captura de Microsoft Speech Studio y seleccionó la voz **Luis, Español (Ecuador)** como ejemplo del estilo vocal deseado para Factor de Gigantes: narración masculina fluida, formal y profesional. Esta referencia reemplaza la búsqueda vaga de voces graves por un objetivo concreto.
+- Se verificó en el catálogo oficial Microsoft Azure Speech el identificador API `es-EC-LuisNeural` (voz masculina estándar precompilada). Referencia: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support?tabs=text-to-speech
+- Integración posible mediante Azure Speech SDK/REST y un recurso Speech en Azure, utilizando clave y región en secretos (nunca en Git), **pendiente de cuenta, autorización del propietario y revisión de costos**; no se ha integrado ni sustituido la voz actual.
+- Azure Speech F0 indica hasta **500.000 caracteres TTS neural/mes** para evaluación: https://azure.microsoft.com/es-es/pricing/details/speech/
+- **Restricción decisiva:** según los términos de Microsoft, los derechos de uso del audio generado por voces precompiladas, incluido el uso comercial, se conceden expresamente a **clientes del nivel de pago de TTS**, no al nivel F0: https://www.microsoft.com/licensing/terms/en-US/productoffering/MicrosoftAzure/allprograms . No usar F0 como voz final de vídeos potencialmente monetizados, salvo que Microsoft otorgue confirmación contractual explícita distinta.
+- Siguiente decisión: ¿priorizar la voz exacta `es-EC-LuisNeural` bajo nivel S0 medido por uso (con tope de gasto) o buscar una voz abierta/licenciada de carácter similar sin depender de Azure? Mantener la voz provisional en renders hasta resolverlo.
