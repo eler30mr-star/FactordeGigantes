@@ -82,3 +82,28 @@ No se ha configurado Azure ni se ha generado audio desde Azure en el proyecto.
 La voz Microsoft `es-EC-LuisNeural` es solo una **referencia de calidad**. Tras comprobar que el uso comercial requiere condiciones del nivel de pago de Azure, el propietario ha descartado Azure y todos los servicios con coste. No se implementará integración comercial Microsoft Speech ni se pedirá configurar una cuenta facturable.
 
 Priorizar motores locales gratuitos con derechos comerciales explícitos de pesos y voces; comparar naturalidad sin efectos artificiales. Comprobar requisitos de CPU/memoria y respetar las cuotas gratuitas existentes de GitHub Actions y Cloudflare, deteniendo el trabajo si no se puede garantizar coste cero. No confundir gratuidad de inferencia con autorización de licencia o ejecución ilimitada.
+
+
+## Búsqueda verificable de voces gratuitas — 2026-10-20
+
+**Referencia de sonido**: Luis de Microsoft Speech (`es-EC-LuisNeural`) exclusivamente como descripción de naturalidad, dicción formal y fluidez. No usar API Microsoft ni copiar su identidad vocal.
+
+| Modelo abierto | Licencia publicada | Idioma | Tamaño / viabilidad | Estado |
+| --- | --- | --- | --- | --- |
+| `myshell-ai/MeloTTS-Spanish` | MIT, incluido checkpoint | ES | ~208 MB, CPU en tiempo real según proveedor | Audición en GitHub Actions `39497786790`; pendiente resultado auditivo |
+| `ResembleAI/Chatterbox-Multilingual-es-mx-latam` | MIT | Español LATAM | Modelo especializado ~2.14 GB de pesos más archivos compartidos; riesgo de RAM/tiempo en runner CPU | Candidato, no probado |
+| `Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice` | Apache-2.0 | ES y nueve idiomas más | ~2.5 GB repositorio; sus nueve locutores nativos son de otros idiomas, evaluar acento en ES | Candidato técnico, no probado |
+| `FunAudioLLM/Fun-CosyVoice3-0.5B-2512` | Apache-2.0 | ES y ocho idiomas más | ~500M parámetros, dependencias exigentes; muestreo por voz de referencia legítima | Candidato técnico, no probado |
+| `Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign` | Apache-2.0 | ES y nueve idiomas más | ~4.52 GB; permite diseñar estilo vocal por instrucciones, alto coste CPU | Futuro, no usar por defecto |
+
+**Fuentes primarias**:
+- https://huggingface.co/myshell-ai/MeloTTS-Spanish
+- https://github.com/myshell-ai/MeloTTS
+- https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam
+- https://huggingface.co/Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice
+- https://huggingface.co/FunAudioLLM/Fun-CosyVoice3-0.5B-2512
+- https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
+
+**Descartados**: proveedores TTS que requieren suscripción para uso comercial (Azure Speech F0), modelos con pesos NC y cualquier clonación de Luis u otros narradores sin licencia/consentimiento.
+
+**Seguridad y control de gasto**: audiciones exclusivamente en CPU, con `timeout-minutes`, sin tarjeta ni claves API, sin acciones recurrentes de generación masiva; la existencia de un nivel gratis de GitHub no implica capacidad ilimitada. No declarar narrador aprobado hasta evaluación auditiva humana.
