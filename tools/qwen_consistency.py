@@ -22,7 +22,7 @@ EDITORIAL_TEXT = (
 def validate_text(text):
     if not isinstance(text, str) or not 40 <= len(text.strip()) <= 230:
         raise ValueError("El ensayo requiere entre 40 y 230 caracteres")
-    if "\\n" in text or "\\r" in text:
+    if "\n" in text or "\r" in text:
         raise ValueError("El ensayo requiere un solo párrafo")
     return spoken_text(text.strip())
 
