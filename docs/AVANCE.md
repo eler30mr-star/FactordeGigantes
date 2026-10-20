@@ -430,3 +430,18 @@ Se ha guardado en `main` la estructura inicial del motor:
 - El informe mantuvo explícitos `generated_clips_owner_approved=false`, `voice_identity_verified_by_human=false`, `commercial_rights_verified=false` y `production_ready=false`; **éxito técnico de los MP3 NO implica continuidad vocal validada al oído**.
 
 **Próximo paso prioritario del plan:** el propietario escuchará la muestra canónica y las dos tomas nuevas, y evaluará por separado si ambas conservan exactamente la identidad, la dicción y la naturalidad. Si hay deriva, no integrar. Si ambas son aprobadas, medir continuidad de párrafos más extensos con límites CPU gratuitos, investigar licencias de voz y contenido, y avanzar a narración de un documental de 8–14 minutos con fuentes y recursos licenciados. Sin YouTube automático, sin cambios en `render.yml`, sin cobros. No ejecutar de nuevo este workflow pesado salvo necesidad editorial expresa.
+
+
+## 2026-10-20 · Revisión auditiva humana de los dos clips Qwen CPU 1,7B
+
+**Evaluación directa del propietario:** «Sí ambas, la 1 es más fiel». La interpretación registrada es que **ambas tomas son aceptables en esta audición corta**, y que la toma **`01_decision.mp3` conserva con mayor fidelidad** el timbre de `FactorDeGigantes_Documental_TomaNatural.mp3` que `02_transformacion.mp3`.
+
+**Evidencia exacta:**
+- Ensayo completado: [workflow 39516609592](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592); ZIP temporal [artefacto 12307719223](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592/artifacts/12307719223), caduca el 23-10-2026.
+- **Preferida para estudiar continuidad:** `01_decision.mp3`, 8,496 s, SHA-256 `68b6437729fd085e65af3e35099bd9ebf97b088d399f479199839d9e3dea4c4f`.
+- **También aceptada en esta audición, menos fiel:** `02_transformacion.mp3`, 9,960 s, SHA-256 `f7019bfe413165ec2dbdee7745f8306ffff51a4ba560508bbf3712592b4990b6`.
+- **Única referencia canónica definitiva:** `assets/voice/approved/narrador_documental_aprobado.mp3`, SHA-256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`. Ni el clip 1 ni el 2 sustituyen esa referencia y **no debe copiarse el clip 1 sobre el MP3 aprobado**.
+
+**Conclusión rigurosa:** se supera **la audición humana de estas dos muestras cortas**; **no** se ha demostrado fidelidad idéntica en múltiples párrafos, control estadístico del timbre, narración larga, licencia comercial integral ni integración final al render. Las próximas pruebas deben comparar cada fragmento nuevo con la voz canónica y utilizar la mayor fidelidad relativa del clip 1 como pauta de selección, no como autorización automática para producción.
+
+**Próximas prioridades conforme al plan:** preparar un ensayo limitado de continuidad en varios párrafos (sin mezclar identidades), medir consumo CPU, registrar resultados por toma y aplicar validación humana; revisar derechos comerciales de modelo/referencia/audio y después integrar únicamente una narración que mantenga la identidad estable. No activar servicios pagos, triggers periódicos ni subida a YouTube. Rama única `main`.
