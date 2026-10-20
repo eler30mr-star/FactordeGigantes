@@ -1,0 +1,31 @@
+name: Prueba gratuita de continuidad del narrador aprobado
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/voice-consistency.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar que el MP3 aprobado está intacto
+        run: python -m tools.approved_voice --check
+      - name: Instalar cliente de audición y FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          python -m pip install 'gradio_client>=1.15,<3'
+      - name: Una sola prueba con texto diferente y misma referencia
+        run: python -m tools.qwen_consistency
+      - name: Guardar audición para evaluación del propietario
+        uses: actions/upload-artifact@v4
+        with:
+          name: audicion-qwen-continuidad-voz-aprobada
+          path: dist/continuidad-qwen/
+          retention-days: 5
+          if-no-files-found: error

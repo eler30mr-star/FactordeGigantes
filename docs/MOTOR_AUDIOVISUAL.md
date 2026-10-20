@@ -179,3 +179,12 @@ El usuario declaró **«Ahora está correcto»** tras escuchar `FactorDeGigantes
 **No usar:** archivo defectuoso `FactorDeGigantes_Documental_Anos_Corregido.mp3` o `tools/voice_fix_anos.py` para corregir fonemas. El script está deshabilitado. No alterar voz, velocidad, tono o palabras de la referencia aceptada sin una nueva evaluación auditiva.
 
 **Pendiente:** no está conectado todavía al workflow productivo; verificar derechos y sostenibilidad del motor y voz, persistir referencia, validar continuidad en piezas largas y mantener cero pagos.
+
+
+## Ensayo de continuidad vocal desde archivo permanente
+
+Muestra aprobada versionada: `assets/voice/approved/narrador_documental_aprobado.mp3`; contrato y checksum en `reference.json`. La verificación falla si hay ausencia o manipulación del archivo.
+
+`tools/qwen_consistency.py` usa el audio fijo y la transcripción exacta como condicionamiento para una audición de texto nuevo mediante `Qwen/Qwen3-TTS`, modo Base Voice Clone; `tools/documentary_pacing.py` conserva el tempo y pausas aceptados sin cortar fonemas. `.github/workflows/voice-consistency.yml` es una prueba de una toma, no un proceso automatizado para publicar videos. Ningún proveedor facturable ni tono alterado; resultados siempre sujetos a revisión auditiva.
+
+**Bloqueos reales pendientes**: un Space ZeroGPU público tiene cuota limitada y no garantiza producción masiva gratuita; la licencia de código y pesos no es por sí sola verificación completa de términos del Space, de la referencia y de las salidas para uso comercial. Priorizar ejecución local y comprobación legal antes de activar narrador Qwen en `render.yml`. 
