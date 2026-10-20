@@ -1,0 +1,33 @@
+name: Audición gratuita MeloTTS español
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/audition_melo.py'
+      - '.github/workflows/voice-melo.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  melotts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Instalar MeloTTS local en CPU
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install 'numpy<2'
+          python -m pip install 'git+https://github.com/myshell-ai/MeloTTS.git'
+      - name: Generar dos velocidades sin cambios de tono
+        run: python tools/audition_melo.py
+      - name: Subir muestras auditivas
+        uses: actions/upload-artifact@v4
+        with:
+          name: audicion-melotts-factor-de-gigantes
+          path: dist/voz-melotts/
+          if-no-files-found: error
+          retention-days: 5
