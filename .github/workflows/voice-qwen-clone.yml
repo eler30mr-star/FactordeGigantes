@@ -1,0 +1,49 @@
+name: Audición Qwen misma voz y pronunciación BlackBerry
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/audition_qwen_clone.py'
+      - 'tools/voice_lexicon.py'
+      - '.github/workflows/voice-qwen-clone.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  correccion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar únicamente la voz sintética aprobada como referencia
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist/referencia-qwen
+          gh run download 39504363557 --repo "${{ github.repository }}" \
+            --name audicion-qwen-voz-masculina-factor-de-gigantes \
+            --dir dist/referencia-qwen
+          test -s dist/referencia-qwen/Qwen3_FactorDeGigantes_DiccionProfesional.mp3
+      - name: Preparar cliente público y FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          python -m pip install 'gradio_client>=1.15,<3'
+      - name: Verificar léxico y generar audio con misma referencia vocal
+        run: |
+          python - <<'PY'
+          from tools.voice_lexicon import spoken_text
+          assert spoken_text("BlackBerry, blackberry.") == "Blákberi, Blákberi."
+          assert spoken_text("Las BlackBerrys no son BlackBerry.") == "Las BlackBerrys no son Blákberi."
+          assert spoken_text("Factor de Gigantes.") == "Factor de Gigantes."
+          print("Pruebas de pronunciación superadas")
+          PY
+          python -m tools.audition_qwen_clone
+      - name: Archivar únicamente la muestra corregida
+        uses: actions/upload-artifact@v4
+        with:
+          name: audicion-qwen-blackberry-con-voz-referencia
+          path: dist/audicion-blackberry/FactorDeGigantes_BlackBerry_Corregido.mp3
+          if-no-files-found: error
+          retention-days: 3
