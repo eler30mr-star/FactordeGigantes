@@ -25,7 +25,7 @@ jobs:
       - name: Preflight de identidad inmutable y espacio
         run: |
           python -m tools.approved_voice --check
-          python -m unittest tests.test_qwen_voice_continuity_batch -v
+          python -m unittest discover -s tests -p test_qwen_voice_continuity_batch.py -v
           free -h
           df -h . /tmp
           test "$(df -Pk /tmp | tail -n1 | awk '{print $4}')" -gt 8500000
