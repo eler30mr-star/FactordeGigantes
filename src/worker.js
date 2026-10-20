@@ -107,6 +107,14 @@ async function handle(request,env) {
     const e=await env.DB.prepare("SELECT action,note,created_at FROM events WHERE job_id=? ORDER BY id DESC LIMIT 40").bind(id).all();
     return json({job:dto(row),events:e.results});
   }
+  if (parts.length === 3 && method === "PUT") {
+    if (row.status !== "draft") return err("Solo se editan borradores",409);
+    const manifest=validateManifest(await parseBody(request));
+    await env.DB.prepare("UPDATE jobs SET title=?,format=?,manifest_json=?,review_note='',updated_at=datetime('now') WHERE id=?")
+      .bind(manifest.title,manifest.format,JSON.stringify(manifest),id).run();
+    await record(env,id,"edited");
+    return json({job:dto(await find(env,id))});
+  }
   if (parts.length !== 4 || method !== "POST") return err("Ruta no encontrada",404);
   const action=parts[3];
   if (action === "submit" && row.status === "draft") {
