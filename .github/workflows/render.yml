@@ -18,22 +18,31 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Instalar FFmpeg, voz local y Pillow
+      - name: Instalar FFmpeg y Piper neuronal
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y ffmpeg espeak-ng fonts-dejavu-core
-          python -m pip install Pillow==11.3.0
+          python -m pip install Pillow==11.3.0 piper-tts==1.8.0
+      - name: Cachear modelo neuronal gratuito
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/factor-de-gigantes/voices
+          key: piper-es-MX-ald-019b3803
       - name: Obtener guion aprobado y renderizar
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
           JOB_ID: ${{ inputs.job_id }}
-        run: python tools/render.py --remote --job-id "$JOB_ID" --output dist/video.mp4
+        run: python tools/render.py --remote --job-id "$JOB_ID" --voice-engine piper --captions burn --output dist/video.mp4
       - name: Subir video de prueba como artefacto
         uses: actions/upload-artifact@v4
         with:
           name: vista-previa-${{ inputs.job_id }}
-          path: dist/video.mp4
+          path: |
+            dist/video.mp4
+            dist/subtitulos.srt
+            dist/ficha.json
+            dist/creditos.txt
           if-no-files-found: error
           retention-days: 7
       - name: Reportar resultado correcto
