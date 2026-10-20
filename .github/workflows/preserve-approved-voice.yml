@@ -23,6 +23,10 @@ jobs:
           gh run download 39509095680 --repo "${{ github.repository }}" --name qwen-narrador-toma-natural-sin-cortes --dir /tmp/fdg-reference
           test "$(stat -c %s /tmp/fdg-reference/FactorDeGigantes_Documental_TomaNatural.mp3)" = "247245"
           echo '78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d  /tmp/fdg-reference/FactorDeGigantes_Documental_TomaNatural.mp3' | sha256sum -c -
+      - name: Comprobar los componentes de validación del repositorio
+        run: |
+          test -f tools/approved_voice.py
+          test -f assets/voice/approved/reference.json
       - name: Colocar audio aprobado en assets versionados
         run: |
           set -euo pipefail
