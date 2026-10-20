@@ -34,8 +34,8 @@ jobs:
         run: |
           python - <<'PY'
           from tools.voice_lexicon import spoken_text
-          assert spoken_text("BlackBerry, blackberry.") == "Blákberi, Blákberi."
-          assert spoken_text("Las BlackBerrys no son BlackBerry.") == "Las BlackBerrys no son Blákberi."
+          assert spoken_text("BlackBerry, blackberry.") == "Blákberri, Blákberri."
+          assert spoken_text("Las BlackBerrys no son BlackBerry.") == "Las BlackBerrys no son Blákberri."
           assert spoken_text("Factor de Gigantes.") == "Factor de Gigantes."
           print("Pruebas de pronunciación superadas")
           PY
@@ -43,7 +43,7 @@ jobs:
       - name: Archivar únicamente la muestra corregida
         uses: actions/upload-artifact@v4
         with:
-          name: audicion-qwen-blackberry-con-voz-referencia
-          path: dist/audicion-blackberry/FactorDeGigantes_BlackBerry_Corregido.mp3
+          name: audicion-qwen-blackberry-rr-fuerte
+          path: dist/audicion-blackberry/FactorDeGigantes_BlackBerry_RR_Fuerte.mp3
           if-no-files-found: error
           retention-days: 3

@@ -48,8 +48,8 @@ def run(reference_dir="dist/referencia-qwen", output_dir="dist/audicion-blackber
     )
 
     phrase = spoken_text(EDITORIAL_TEXT)
-    assert "BlackBerry" not in phrase and phrase.count("Blákberi") == 1
-    print("Control de nombre: BlackBerry (original) -> Blákberi (solo para el sintetizador)", flush=True)
+    assert "BlackBerry" not in phrase and phrase.count("Blákberri") == 1
+    print("Control de nombre: BlackBerry (original) -> Blákberri (solo para el sintetizador)", flush=True)
 
     demo = Client(SPACE, verbose=False)
     result = demo.predict(
@@ -70,7 +70,7 @@ def run(reference_dir="dist/referencia-qwen", output_dir="dist/audicion-blackber
         raise RuntimeError("Archivo de audio con formato inesperado")
     if not path.is_file() or path.stat().st_size < 14000:
         raise RuntimeError("Respuesta incompleta")
-    mp3 = directory / "FactorDeGigantes_BlackBerry_Corregido.mp3"
+    mp3 = directory / "FactorDeGigantes_BlackBerry_RR_Fuerte.mp3"
     subprocess.run(
         ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
          "-i", str(path), "-vn", "-ac", "1",
@@ -92,7 +92,7 @@ def run(reference_dir="dist/referencia-qwen", output_dir="dist/audicion-blackber
         "model": "Qwen3-TTS 1.7B Base Voice Clone",
         "language": "Spanish", "original_written": EDITORIAL_TEXT,
         "synthesized": phrase, "brand_written": "BlackBerry",
-        "brand_spoken": "Blákberi",
+        "brand_spoken": "Blákberri",
         "seconds": duration, "cost": "public_demo_no_payment",
         "voice_status": "PENDING_USER_AUDIT_NOT_OFFICIAL",
         "notes": "El modelo intenta conservar timbre; identidad y dicción deben verificarse al oído."

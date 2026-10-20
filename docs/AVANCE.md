@@ -289,3 +289,11 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Muestra entregada como `FactorDeGigantes_BlackBerry_Corregido.mp3`. El audio v3 original permanece sin sobrescribir. Costo de proveedores TTS: **0**; no se activó Azure, no se modificó el renderizador principal y no se publicó en YouTube.
 - **Riesgo de continuidad:** los artefactos GitHub Actions caducan (3 días en esta prueba); si se aprueba de forma definitiva el timbre, habrá que preservar una referencia vocal verificada y un léxico de marcas en almacenamiento persistente, sin depender de la disponibilidad del Space ni de su cuota de demo pública.
 - Siguiente verificación del propietario: (1) BlackBerry como única palabra clara; (2) parecido de timbre con Qwen3 v3; (3) dicción firme. De aprobarse, diseñar preservación de identidad de marca para todo el canal.
+
+## 2026-10-20 · Ajuste solicitado: r fuerte en Berry
+
+- El propietario precisó que el sintetizador pronuncia «ri» con r simple en lugar de «rri» con vibrante fuerte. La corrección exacta es **r fuerte**, sin cambiar la voz Qwen v3 de dicción profesional ya considerada la mejor.
+- El léxico de síntesis cambia sólo `BlackBerry` a `Blákberri` (doble `rr` entre vocales), manteniendo escritura comercial y subtítulos `BlackBerry`.
+- Se actualizan a la vez el léxico, las pruebas del workflow y la salida `FactorDeGigantes_BlackBerry_RR_Fuerte.mp3`; se reutiliza como referencia la muestra sintética v3, sin introducir un locutor nuevo.
+- La regla fonética y el éxito técnico **no equivalen a pronunciación garantizada**: comprobar auditivamente la vibrante fuerte y el timbre antes de aceptar para el motor definitivo.
+- Coste cero, rama main; no se modifica `render.yml` ni se publica en YouTube.
