@@ -160,3 +160,12 @@ Referente editorial de estilo: documentales de naturaleza narrados con calidez, 
 Tras la aprobación expresada como «Excelente» en la versión pausada, el propietario detectó una vocal `a` demasiado larga en `años` al inicio. `tools/voice_fix_anos.py` acorta esa vocal unos 65 ms con crossfade de 16 ms. **Su algoritmo incorpora el SHA256 del MP3 de referencia** y no debe aplicarse a otro audio sin reidentificar la posición exacta de la vocal. Resultado MP3: ~12,0 s, mono 48kHz.
 
 No usar ediciones quirúrgicas temporales como solución general para nombres o dicción deficiente. Para nuevos documentales crear un banco reproducible de referencias vocales y léxico de pronunciación con control de calidad auditivo. La voz institucional aún no está conectada al render; ningún proveedor de pago está autorizado.
+
+
+## Incidente de calidad: «años» con efecto autotune y bloqueo de ediciones intravocálicas
+
+La muestra `FactorDeGigantes_Documental_Anos_Corregido.mp3` resultó **rechazada** por el propietario: suena artificial al pronunciar «años». El script `tools/voice_fix_anos.py` quedó deshabilitado y documentado; **no se admiten operaciones de corte/empalme dentro de vocales ni fonemas** como técnica para arreglar dicción. El método de microedición se considera fallido, independientemente de que sus validaciones técnicas fueran correctas.
+
+La referencia de trabajo sin esa intervención es `FactorDeGigantes_Documental_Naturaleza_Pausado.mp3` (SHA-256 `9c608fe3d6c4a8280e14848a8fc3f3ac4d649ad403c727f2d833ea44cdf1c6bf`), con el problema leve de duración percibida de la vocal sin resolver, pero sin sonido sintetizado por recorte.
+
+Una nueva toma completa puede generarse desde `tools/audition_qwen_retake.py`, usando `tools/audition_qwen_clone.py` con el timbre Qwen3 v3 y una ralentización global del habla, más pausas entre frases. **No aprobar ni integrar automáticamente** esta voz sin audición y sin verificar términos/viabilidad de uso estable sin pago.

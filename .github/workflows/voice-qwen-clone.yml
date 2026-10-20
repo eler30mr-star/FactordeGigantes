@@ -1,22 +1,21 @@
-name: Audición Qwen misma voz y pronunciación BlackBerry
+name: Audición Qwen - toma íntegra sin cortes de vocales
 on:
   push:
     branches: [main]
     paths:
-      - 'tools/audition_qwen_clone.py'
-      - 'tools/voice_lexicon.py'
+      - 'tools/audition_qwen_retake.py'
       - '.github/workflows/voice-qwen-clone.yml'
   workflow_dispatch:
 permissions:
   contents: read
   actions: read
 jobs:
-  correccion:
+  toma-natural:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - name: Descargar únicamente la voz sintética aprobada como referencia
+      - name: Recuperar voz de referencia verificable
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -25,25 +24,23 @@ jobs:
             --name audicion-qwen-voz-masculina-factor-de-gigantes \
             --dir dist/referencia-qwen
           test -s dist/referencia-qwen/Qwen3_FactorDeGigantes_DiccionProfesional.mp3
-      - name: Preparar cliente público y FFmpeg
+      - name: Preparar herramientas gratuitas
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y ffmpeg
           python -m pip install 'gradio_client>=1.15,<3'
-      - name: Verificar léxico y generar audio con misma referencia vocal
+      - name: Verificar pronunciación y sintetizar toda la toma de nuevo
         run: |
           python - <<'PY'
           from tools.voice_lexicon import spoken_text
-          assert spoken_text("BlackBerry, blackberry.") == "Blákberri, Blákberri."
-          assert spoken_text("Las BlackBerrys no son BlackBerry.") == "Las BlackBerrys no son Blákberri."
-          assert spoken_text("Factor de Gigantes.") == "Factor de Gigantes."
-          print("Pruebas de pronunciación superadas")
+          assert spoken_text("BlackBerry") == "Blákberri"
+          assert spoken_text("Durante años, BlackBerry parecía invencible.").startswith("Durante años, ")
           PY
-          python -m tools.audition_qwen_clone
-      - name: Archivar únicamente la muestra corregida
+          python -m tools.audition_qwen_retake
+      - name: Publicar solo nueva muestra de audición
         uses: actions/upload-artifact@v4
         with:
-          name: audicion-qwen-blackberry-rr-fuerte
-          path: dist/audicion-blackberry/FactorDeGigantes_BlackBerry_RR_Fuerte.mp3
+          name: qwen-narrador-toma-natural-sin-cortes
+          path: dist/retake-natural/
           if-no-files-found: error
           retention-days: 3

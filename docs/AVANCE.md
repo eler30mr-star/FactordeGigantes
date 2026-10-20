@@ -310,3 +310,13 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Scripts añadidos para reproducción en `main`: `tools/documentary_pacing.py` para controlar velocidad y pausas sin pagos; `tools/voice_fix_anos.py` para reparar exclusivamente la muestra aprobada, con comprobación de hash SHA-256 del audio fuente; y tests `tests/test_documentary_pacing.py`.
 - No se modifica la voz provisional en `render.yml`, no se publica nada en YouTube y no se activa facturación.
 - Siguiente tarea: evaluar auditivamente la vocal de «años», fijar referencia vocal persistente si queda aprobada, y comprobar capacidad y derechos de producción continuada sin coste.
+
+
+## 2026-10-20 · Rechazo del recorte de «años»: efecto artificial (reversión inmediata)
+
+- El propietario denunció que el archivo `FactorDeGigantes_Documental_Anos_Corregido.mp3` **estropeó la palabra «años»**, dejándola con un sonido similar a autotune. **Se rechaza esa muestra.**
+- Causa concreta: la eliminación de 65 ms dentro de la vocal /a/ con crossfade de 16 ms creó una discontinuidad en la señal que el oído percibió como artificial. El archivo no debe servir como referencia para ningún documental.
+- **Versión segura restaurada como referencia de audición**: `FactorDeGigantes_Documental_Naturaleza_Pausado.mp3`, que había recibido el calificativo «Excelente» antes de la reparación fallida; SHA-256 `9c608fe3d6c4a8280e14848a8fc3f3ac4d649ad403c727f2d833ea44cdf1c6bf`. Mantiene cadencia y el detalle original de pronunciación en «años», sin introducir autotune.
+- Se **deshabilita** `tools/voice_fix_anos.py` de forma explícita, conservando aviso histórico para impedir cualquier reutilización involuntaria. No se aplicarán nuevos cortes intravocálicos ni clonaciones de una voz humana real.
+- Se añadió `tools/audition_qwen_retake.py` y se cambió `.github/workflows/voice-qwen-clone.yml` para generar **una nueva toma íntegra** mediante Qwen3 y la referencia vocal de la muestra profesional v3. Sólo después se aplica ralentización global moderada `atempo=0.94` y pausas entre frases, sin modificar segmentos de la palabra.
+- La corrección de «años» por regeneración queda **pendiente de audición humana**, ya que ejecutar el motor no demuestra que el fonema sea correcto o que la voz permanezca idéntica. No se modifica `render.yml`; política de cero pagos intacta.
