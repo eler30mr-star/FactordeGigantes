@@ -23,7 +23,7 @@ python -m pip install Pillow==11.3.0 piper-tts==1.8.0
 python tools/render.py --manifest examples/documental.json --voice-engine piper --captions burn --output dist/video.mp4
 ```
 
-El workflow remoto usará Piper **solo cuando su prueba real pase**. El primer MP4 del proyecto sigue siendo una maqueta histórica y no se altera.
+**Integración probada:** Piper es la voz elegida por defecto en `.github/workflows/render.yml`. CI real `39477498852` pasó una prueba de MP4 completo, audio, subtítulos y metadatos. El modelo permanece sujeto a revisión de licencias antes de publicación comercial. El primer MP4 histórico no se altera.
 
 ## Pendientes prioritarios
 1. Escuchar y evaluar voz, revisar licencia específica para uso monetizado.
@@ -31,3 +31,7 @@ El workflow remoto usará Piper **solo cuando su prueba real pase**. El primer M
 3. Mejorar subtítulos con alineación fonética, música con licencias y sonoridad.
 4. Validar flujo completo de documental 8–14 minutos sin exceder cuotas gratuitas.
 5. Añadir acceso seguro a artefactos desde panel, retención y controles de calidad humana.
+
+## Ajuste de contraste verificado (2026-10-20)
+
+La primera ejecución producía subtítulos desmesurados y tapaba la escena debido a la escala ASS en vertical. Se redujeron `FontSize` y `MarginV`, se introdujo un fondo semitransparente y se limitó cada línea a 30 caracteres en Shorts. Se inspeccionó un fotograma real del nuevo archivo: texto inferior legible y título despejado. Run de QA: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39477498852 .
