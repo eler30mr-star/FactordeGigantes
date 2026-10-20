@@ -1,0 +1,54 @@
+name: Probar voz neuronal Piper
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/voice.py'
+      - 'tools/render.py'
+      - '.github/workflows/voice-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  voice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar el motor Piper
+        run: |
+          python -m pip install piper-tts==1.8.0
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+      - name: Cachear voz verificada
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/factor-de-gigantes/voices
+          key: piper-es-MX-ald-019b3803
+      - name: Descargar ONNX y verificar SHA256
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from tools.voice import ensure_voice
+          model=ensure_voice(Path.home()/'.cache/factor-de-gigantes/voices')
+          print("Modelo verificado:", model.name)
+          PY
+      - name: Producir WAV real sin API de pago
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from tools.voice import synthesize
+          synthesize(
+              'Factor de Gigantes. Las decisiones que cambiaron el mundo.',
+              'muestra.wav', 'piper',
+              Path.home()/'.cache/factor-de-gigantes/voices'
+          )
+          PY
+          ffprobe -v error -show_entries stream=codec_name,sample_rate -of default=nw=1 muestra.wav
+      - name: Guardar muestra auditiva
+        uses: actions/upload-artifact@v4
+        with:
+          name: muestra-piper-es-MX
+          path: muestra.wav
+          if-no-files-found: error
+          retention-days: 3
