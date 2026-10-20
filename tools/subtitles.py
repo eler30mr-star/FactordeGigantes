@@ -2,7 +2,7 @@
 import re
 
 def split_lines(text, max_chars=42, max_lines=2):
-    words = re.sub(r"\\s+", " ", text).strip().split()
+    words = re.sub(r"\s+", " ", text).strip().split()
     lines, current = [], ""
     for word in words:
         while len(word) > max_chars:
@@ -20,7 +20,7 @@ def split_lines(text, max_chars=42, max_lines=2):
             current = word
     if current:
         lines.append(current)
-    return ["\\n".join(lines[i:i + max_lines]) for i in range(0, len(lines), max_lines)]
+    return ["\n".join(lines[i:i + max_lines]) for i in range(0, len(lines), max_lines)]
 
 def timestamp(seconds):
     ms = max(0, int(round(seconds * 1000)))
@@ -37,7 +37,7 @@ def make_srt(segments, durations):
         if sec <= 0:
             raise ValueError("Duración de escena inválida")
         parts = split_lines(segment["voiceover"])
-        weights = [len(re.sub(r"\\s+", "", p)) for p in parts]
+        weights = [len(re.sub(r"\s+", "", p)) for p in parts]
         total = sum(weights) or 1
         elapsed = 0
         usable = max(.1, sec - .15)
@@ -46,6 +46,6 @@ def make_srt(segments, durations):
             elapsed += weight
             end = offset + usable * elapsed / total
             count += 1
-            entries.append(f"{count}\\n{timestamp(begin)} --> {timestamp(end)}\\n{part}\\n")
+            entries.append(f"{count}\n{timestamp(begin)} --> {timestamp(end)}\n{part}\n")
         offset += sec
-    return "\\n".join(entries) + ("\\n" if entries else "")
+    return "\n".join(entries) + ("\n" if entries else "")
