@@ -14,7 +14,7 @@ El sistema NO publica videos automáticamente en esta primera etapa. No está co
 
 - **Cloudflare Workers + D1 + static assets**: panel, API privada, revisión y estados.
 - **GitHub Actions**: motor de render activable desde el panel (workflow_dispatch).
-- **FFmpeg + Pillow + Piper TTS (voz neuronal local)**: motor de previsualización con movimientos de cámara, subtítulos y ficha técnica. Piper se integra en la rama principal y se prueba en CI, antes de habilitarlo por defecto en los renders.\n- **eSpeak NG**: modo exclusivamente técnico para comparaciones y diagnósticos; la voz no constituye una versión publicable.
+- **FFmpeg + Pillow + Piper TTS (voz neuronal local)**: motor de previsualización con movimientos de cámara, subtítulos y ficha técnica. Piper ya está validado en GitHub Actions con WAV y MP4 reales, y ahora es el motor predeterminado del workflow de render.\n- **eSpeak NG**: modo exclusivamente técnico para comparaciones y diagnósticos; la voz no constituye una versión publicable.
 - **Sin n8n obligatorio ni máquina local encendida**.
 
 ## Archivos clave
