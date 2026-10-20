@@ -1,0 +1,50 @@
+name: Continuidad Qwen 1.7B CPU - dos tomas sin pagos
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: continuidad-qwen17-cpu
+  cancel-in-progress: false
+jobs:
+  audit:
+    # Sin runner de repositorio privado ni disparos por push.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      OMP_NUM_THREADS: '4'
+      OPENBLAS_NUM_THREADS: '2'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      HF_HOME: /tmp/qwen-continuity-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preflight de identidad inmutable y espacio
+        run: |
+          python -m tools.approved_voice --check
+          python -m unittest tests.test_qwen_voice_continuity_batch -v
+          free -h
+          df -h . /tmp
+          test "$(df -Pk /tmp | tail -n1 | awk '{print $4}')" -gt 8500000
+      - name: Preparar PyTorch CPU sin CUDA
+        run: python -m pip install torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Instalar dependencias libres en runner publico
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg sox
+          python -m pip install 'qwen-tts==0.1.1' --no-deps
+          python -m pip install 'transformers==4.57.3' 'accelerate==1.12.0' librosa soundfile sox onnxruntime einops
+      - name: Generar dos tomas y ficha para validacion humana
+        run: |
+          /usr/bin/time -v timeout -k 10s 750s python -m tools.qwen_voice_continuity_batch
+          python -m tools.approved_voice --check
+      - name: Conservar resultados solo para audicion
+        uses: actions/upload-artifact@v4
+        with:
+          name: factor-gigantes-continuidad-cpu-dos-tomas
+          path: dist/continuidad-cpu-17b/
+          retention-days: 3
+          if-no-files-found: error
