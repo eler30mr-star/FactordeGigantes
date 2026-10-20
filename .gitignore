@@ -1,0 +1,12 @@
+node_modules/
+.wrangler/
+.env
+.env.*
+!.env.example
+.dev.vars
+dist/
+__pycache__/
+*.pyc
+*.mp4
+*.wav
+.DS_Store

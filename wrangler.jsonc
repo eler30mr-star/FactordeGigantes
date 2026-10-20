@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "factor-de-gigantes",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-20",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/health"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "factor-de-gigantes-db",
+      "database_id": "REEMPLAZAR_ID_D1",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "GITHUB_REPO": "eler30mr-star/FactordeGigantes",
+    "GITHUB_WORKFLOW": "render.yml"
+  }
+}

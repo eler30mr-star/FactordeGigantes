@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="theme-color" content="#111318">
+ <meta name="robots" content="noindex,nofollow">
+ <title>Factor de Gigantes · Producción</title>
+ <link rel="stylesheet" href="/style.css">
+ <script type="module" src="/app.js"></script>
+</head>
+<body>
+ <header><div class="brand"><div class="mark">F</div><div><strong>FACTOR DE GIGANTES</strong><small>Estudio de producción documental</small></div></div><span class="pill">Control editorial</span></header>
+ <main>
+  <section class="intro"><p class="eyebrow">SISTEMA DE AUTOMATIZACIÓN</p><h1>Tu sala de producción</h1><p>Investigación, guiones, revisión y creación de videos de prueba. Ningún video se publica en YouTube desde esta versión.</p></section>
+  <section class="card" aria-label="Acceso">
+   <div class="heading"><h2>Conexión privada</h2><span id="indicator" class="muted">Sin conectar</span></div>
+   <div class="formrow"><label for="token">Token de administración</label><input id="token" type="password" autocomplete="off" placeholder="Pega el token ADMIN_TOKEN"><button id="connect">Conectar</button></div>
+   <p class="muted micro">El token permanece en memoria durante esta pestaña. No se guarda en el navegador.</p>
+  </section>
+  <div id="workspace" hidden>
+   <div class="stats"><div class="stat"><span>Trabajos</span><strong id="total">0</strong></div><div class="stat"><span>En revisión</span><strong id="review">0</strong></div><div class="stat"><span>Listos</span><strong id="ready">0</strong></div></div>
+   <section class="card">
+    <div class="heading"><h2>Nuevo documental</h2><span class="muted">Guion original con fuentes</span></div>
+    <form id="create">
+     <label for="title">Título provisional</label><input id="title" minlength="8" maxlength="150" required placeholder="¿Por qué BlackBerry perdió su liderazgo?">
+     <label for="angle">Pregunta central y enfoque documentado</label><textarea id="angle" required minlength="15" maxlength="700" rows="2" placeholder="Explica la transformación del mercado..."></textarea>
+     <label for="format">Formato</label><select id="format"><option value="short">Short vertical 9:16</option><option value="long">Documental horizontal 16:9</option></select>
+     <label for="sources">Fuentes verificables, una URL HTTPS por línea (mínimo 2)</label><textarea id="sources" rows="3" required placeholder="https://..."></textarea>
+     <label for="segments">Segmentos: una línea por escena con la forma «Título | Narración» (mínimo 2)</label><textarea id="segments" rows="6" required placeholder="El gran cambio | Una compañía que dominaba el mercado tuvo que adaptarse a un nuevo tipo de usuario."></textarea>
+     <button type="submit">Guardar borrador</button>
+    </form>
+   </section>
+   <section class="card"><div class="heading"><h2>Cola editorial</h2><button class="secondary" id="refresh">Actualizar</button></div><div id="jobs" class="jobs"></div></section>
+  </div>
+  <div id="notice" role="status" aria-live="polite"></div>
+ </main>
+</body>
+</html>
