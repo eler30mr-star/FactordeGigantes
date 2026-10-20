@@ -375,3 +375,14 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Se creó `tools/qwen17_local_smoke.py` y `.github/workflows/voice-qwen17-cpu.yml` para probar **Qwen3-TTS Base 1.7B en CPU**, el tamaño de modelo usado para generar la toma preferida, frente al 0,6B. El test usa **el mismo texto** que el experimento ligero, la misma referencia aprobada y los mismos parámetros de cadencia; limita la prueba a 12 min en runner de repositorio público, y la síntesis a 420s sin API o GPU de pago.
 - **GitHub Actions run 39512992392** se inició; su resultado, consumo de memoria, duración y calidad **todavía están pendientes** en el momento de esta anotación. El éxito técnico no demuestra semejanza perceptual: el propietario decidirá al escuchar la nueva muestra.
 - Mantener `render.yml` sin modificación y no publicar vídeos automáticamente; priorizar similitud con voz aprobada y recursos gratuitos verificables.
+
+
+## 2026-10-20 · Resultado Qwen Base 1,7B CPU y comparación del ligero 0,6B
+
+- La audición del modelo **`Qwen/Qwen3-TTS-12Hz-1.7B-Base` en CPU del runner GitHub Actions gratuito** fue exitosa: ejecución [39512992392](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39512992392), con voz de referencia aprobada intacta y validada por checksum, PyTorch CPU sin API pagada.
+- MP3 realmente generado: `FactorDeGigantes_Qwen_17B_CPU_Voz.mp3` (7,680 segundos, mono, 48 kHz, **154 125 bytes**), SHA-256 **`29fdef191c8571f0d5a21adcd6e2202c1aed83c016385794f599320d0427255b`**; artefacto **12306875340**.
+- Medición concreta: carga del modelo **20,44 segundos**, ejecución de Python hasta entrega de audio **88,62 segundos** y máximo de memoria residente **11 826 680 KiB (~11,28 GiB)**. No incluir la instalación de dependencias dentro de estos tiempos; no extrapolar directamente a documentales de larga duración.
+- Se usó exactamente el mismo texto de comparación que con el modelo 0,6B. La diferencia de duración (1,7B: 7,680 s frente a 0,6B: 8,424 s) muestra que el ritmo generado puede cambiar; **la semejanza acústica real requiere que el propietario escuche ambas tomas.**
+- **No se reemplaza la muestra Qwen aprobada**, en `assets/voice/approved/narrador_documental_aprobado.mp3`. El 1,7B local es candidato a preservar mejor la voz porque coincide en tamaño de modelo con el que generó la referencia, pero esto **no equivale a prueba de igualdad de timbre**.
+- `.github/workflows/voice-qwen17-cpu.yml` queda **solo con lanzamiento manual** y condición `github.event.repository.private == false`, para no consumir recursos de GPU/CPU innecesariamente ni generar cobros por minutos de runners privados. No se modifica `render.yml`, no se activa publicación de YouTube ni facturación.
+- **Siguiente tarea:** comparación auditiva por propietario entre el archivo local 1,7B y 0,6B; posteriormente probar trozos más extensos del elegido y fijar un proveedor/flujo con derechos comprobados, coste cero y narración consistente.

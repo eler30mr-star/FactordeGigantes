@@ -213,3 +213,13 @@ El workflow `voice-qwen-cpu.yml` se deja solo manual y **no ejecuta cuando el re
 Feedback del propietario tras prueba local 0.6B: tono aceptable, **pero el timbre cambió un poco** frente a la muestra Qwen3 1.7B aprobada. La identidad debe ser coherente en toda la producción: no elevar 0.6B a narrador definitivo sin aprobación separada.
 
 Audición comparativa pendiente: `tools/qwen17_local_smoke.py` y workflow `voice-qwen17-cpu.yml` con modelo `Qwen/Qwen3-TTS-12Hz-1.7B-Base` CPU float32/SDPA, el mismo texto sobre ecosistemas y la misma muestra fija con checksum. Ejecutar de manera controlada en GitHub Actions **público**, límite 12 minutos, sin proveedores facturables. Evaluar simultáneamente memoria, duración, calidad, parecido de la voz y estabilidad de dicción. Conservación de la referencia original obligatoria; render en producción sin cambios.
+
+
+## Qwen Base 1,7B ejecutado localmente con CPU — benchmark real
+
+Run GitHub Actions **39512992392**, éxito: `Qwen/Qwen3-TTS-12Hz-1.7B-Base` en CPU, `float32`, SDPA, 4 hilos, voz de referencia aprobada (checksum intacto), sin GPU ni API facturable.
+
+- Audio experimental: `FactorDeGigantes_Qwen_17B_CPU_Voz.mp3`, 7,680 s, mono a 48 kHz, 154 125 bytes; checksum SHA-256 `29fdef191c8571f0d5a21adcd6e2202c1aed83c016385794f599320d0427255b`.
+- Carga: 20,44 s; tiempo total de ejecución de Python: 88,62 s; memoria pico: ~11,28 GiB. La comparación 0,6B utilizó el mismo texto, consumió ~6,07 GiB y produjo 8,424 s de audio.
+- `tools/qwen17_local_smoke.py` y workflow manual `.github/workflows/voice-qwen17-cpu.yml`. Los resultados locales **no avalan uso comercial ni equivalencia acústica automáticamente**. Pendiente evaluación auditiva y benchmarks de secuencias largas.
+- La muestra editorial aprobada del propietario permanece inmutable; `render.yml` no ha sido sustituido por Qwen.

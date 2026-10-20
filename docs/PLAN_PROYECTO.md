@@ -155,3 +155,10 @@ El usuario elige **como referencia de ESTILO**, no como persona a imitar, el nar
 - Qwen3 Base 0.6B ya ha sintetizado por primera vez localmente en CPU de GitHub Actions, sin API ni GPU pagada; rendimiento medido para solo 8,424 segundos de audio. La **aprobación audible de la muestra 0.6B no existe todavía**.
 - Para llegar a la meta final, falta: verificar calidad y consistencia de la voz en muchos fragmentos; medir coste temporal en documentales completos sin sobrepasar recursos gratuitos; comprobar derechos de uso comercial y eliminar la dependencia de demos con cuotas; integrar al motor/render y panel sólo después de esas verificaciones.
 - Nada de pagar, no incorporar automáticamente voces peores, ni publicar audiovisuales sin revisión.
+
+
+## Hito adicional — mismo modelo 1,7B funcionando en CPU (2026-10-20)
+
+Tras detectar una ligera diferencia de timbre en la audición Qwen 0,6B, se ejecutó la versión `Qwen3-TTS Base 1,7B` en CPU gratuita, con salida MP3 verificable, mismos datos de referencia y mismo guion. La prueba terminó con éxito: 7,680 s de audio, ~88,62 s de ejecución del proceso Python y ~11,28 GiB de RAM pico; workflow 39512992392.
+
+La variante local de mayor tamaño no reemplaza todavía la voz elegida ni supone autorización comercial. Faltan comparación auditiva humana, robustez en segmentos largos, cálculo real de throughput, licencias aplicables y conservación de la cadencia vocal. Las pruebas CPU pesadas son manuales y solo en repositorio público.
