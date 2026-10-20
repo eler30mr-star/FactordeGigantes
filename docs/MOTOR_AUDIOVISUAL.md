@@ -107,3 +107,12 @@ Priorizar motores locales gratuitos con derechos comerciales explícitos de peso
 **Descartados**: proveedores TTS que requieren suscripción para uso comercial (Azure Speech F0), modelos con pesos NC y cualquier clonación de Luis u otros narradores sin licencia/consentimiento.
 
 **Seguridad y control de gasto**: audiciones exclusivamente en CPU, con `timeout-minutes`, sin tarjeta ni claves API, sin acciones recurrentes de generación masiva; la existencia de un nivel gratis de GitHub no implica capacidad ilimitada. No declarar narrador aprobado hasta evaluación auditiva humana.
+
+
+## MeloTTS rechazado por timbre artificial; siguiente puerta de calidad
+
+Tras escuchar dos muestras reales, el propietario considera que **MeloTTS suena como TTS**. No declararlo narrador definitivo aunque su funcionamiento haya quedado probado.
+
+Siguiente ensayo: **Chatterbox Multilingual V3 LatAm**. Model card MIT: https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam . Demo pública alojada por el proveedor: https://huggingface.co/spaces/ResembleAI/Chatterbox-Multilingual-TTS-es-mx-latam . Es un finetune de español latinoamericano con entrenamiento regional y control de expresividad; puede ofrecer mayor naturalidad, no es garantía. El repositorio contiene checkpoint principal ~2,14 GB y decoder ~1,06 GB; no se ha demostrado eficiencia en la cuota gratis de GitHub Actions.
+
+**Regla de decisión:** primero audición real; después prueba de memoria, latencia, derechos y ejecución local; solo entonces cambio de narrador previa autorización. Si ningún sintetizador gratuito suena humano, considerar grabación de voz humana propia/con licencia. Prohibido usar voces ajenas clonadas sin permiso y probar una suscripción de pago.
