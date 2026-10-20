@@ -173,3 +173,11 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Se añadió `tools/audition_kokoro.py` y `.github/workflows/voice-kokoro.yml` para generar dos WAV originales y una tercera variante de tono ligeramente más grave (`em_alex_grave_sutil`), con idéntico texto de referencia sobre BlackBerry.
 - La variante de tono no es una voz nueva y está etiquetada claramente. No hay publicación, conexión a YouTube ni API TTS de pago.
 - **Pendiente de esta entrega:** confirmar en GitHub Actions que el job completó y guardó tres WAV válidos; escuchar muestras y decidir cuál se acerca a la identidad buscada.
+
+## 2026-10-20 · Nuevas voces Kokoro verificadas (3 muestras reales)
+- La audición GitHub Actions **39489493745** concluyó **success**: instalación de Kokoro 0.9.4 en CPU, generación y validación de audios, subida de artefacto `12295111773`. Enlace: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39489493745 .
+- ZIP de artefacto descargado y verificado con Python: contiene `em_alex.wav` (16,45 s), `em_santa.wav` (16,68 s), `em_alex_grave_sutil.wav` (16,43 s) y `comparacion.json`, todos WAV mono PCM 24 kHz, cada uno con más de 780 KB.
+- Los dos primeros son voces masculinas Kokoro en español. El tercero es una variante técnica de `em_alex` con pitch reducido ~6 % y tempo compensado: **no es otro locutor** y debe juzgarse por naturalidad.
+- Modelo Kokoro-82M de pesos con licencia declarada Apache-2.0 (source: https://huggingface.co/hexgrad/Kokoro-82M); revisar licencias y procedencia de cada voz antes de publicación con fines comerciales.
+- La búsqueda responde a la evaluación del propietario de que `es_ES-davefx-medium` se acerca pero suena demasiado fina.
+- No se cambió el narrador predeterminado de `render.yml`, ni se generó publicación YouTube. Próximo paso: escuchar y elegir candidata (o buscar una voz más grave todavía), después construir el selector fijo de narrador por canal.
