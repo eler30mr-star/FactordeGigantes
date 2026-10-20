@@ -58,3 +58,21 @@ Requisitos para elegir voz: adulto, profesional, profundidad real sin efecto rob
 El propietario rechazó las voces `em_alex`, `em_santa` y `em_alex_grave_sutil`: las percibe extrañas como narradores documentales. También había observado que Piper `es_ES-davefx-medium` suena demasiado fina. **No se ha escogido voz institucional definitiva**.
 
 La nueva pauta es no seguir afinando pitches de voces de poca naturalidad. Evaluar **Chatterbox Multilingual v3** (modelo MIT con español, paquete latinoamericano) como candidato aún **no integrado ni probado**. Estimar uso de CPU/RAM y minutos de GitHub Actions antes de ejecutar. Una voz de referencia deberá tener cesión explícita para clonación o ser una grabación propia. Ninguna opción puede declararse comercialmente apta solo por el permiso general del repositorio.
+
+## Referencia de narrador escogida: Microsoft Luis (Ecuador)
+
+El propietario identifica como orientación principal la voz **Luis** en la galería Microsoft Speech Studio, en español ecuatoriano, por su narración formal y fluida. El nombre de API oficial es `es-EC-LuisNeural`, disponible en Azure AI Speech estándar. La captura la describe como voz juvenil; se tomará su naturalidad y formalidad como criterio, no una edad artificialmente impuesta.
+
+Fuente de catálogo: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support?tabs=text-to-speech
+
+### Requisitos de integración (todavía no implementados)
+1. Recurso Speech de Azure con región y clave, protegida exclusivamente como secreto en GitHub Actions; nunca mostrarla ni subirla al repositorio.
+2. Proveedor de voz seleccionable, desacoplado del compositor FFmpeg: `piper` actual o `azure-speech` futuro con voz fija `es-EC-LuisNeural`.
+3. Validación de WAV/PCM y límites de tiempo/caracteres antes del render. Bloquear la síntesis antes de gastar si se supera presupuesto; no alternar voces silenciosamente.
+4. Evaluación comparativa con el mismo guion y aceptación del propietario; ninguna actualización automática de identidad vocal.
+5. Condición legal importante: los términos de Microsoft conceden el derecho de uso del audio TTS precompilado, incluso comercial, a los **clientes de nivel de pago**. El nivel gratuito F0 ofrece cuota de pruebas (500.000 caracteres/mes), pero no debe asumirse autorización comercial.
+   - Términos: https://www.microsoft.com/licensing/terms/en-US/productoffering/MicrosoftAzure/allprograms
+   - Cuotas: https://azure.microsoft.com/es-es/pricing/details/speech/
+   - Autenticación Azure Speech: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech
+
+No se ha configurado Azure ni se ha generado audio desde Azure en el proyecto.
