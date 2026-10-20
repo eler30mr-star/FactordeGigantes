@@ -200,3 +200,12 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Azure Speech F0 indica hasta **500.000 caracteres TTS neural/mes** para evaluación: https://azure.microsoft.com/es-es/pricing/details/speech/
 - **Restricción decisiva:** según los términos de Microsoft, los derechos de uso del audio generado por voces precompiladas, incluido el uso comercial, se conceden expresamente a **clientes del nivel de pago de TTS**, no al nivel F0: https://www.microsoft.com/licensing/terms/en-US/productoffering/MicrosoftAzure/allprograms . No usar F0 como voz final de vídeos potencialmente monetizados, salvo que Microsoft otorgue confirmación contractual explícita distinta.
 - Siguiente decisión: ¿priorizar la voz exacta `es-EC-LuisNeural` bajo nivel S0 medido por uso (con tope de gasto) o buscar una voz abierta/licenciada de carácter similar sin depender de Azure? Mantener la voz provisional en renders hasta resolverlo.
+
+## 2026-10-20 · Política irreversible hasta nueva decisión: cero pagos
+
+- El propietario rechazó expresamente la posibilidad de pagar por Azure o por la voz Microsoft Luis: «No, nada de pagos».
+- Se registra **cero servicios de pago o suscripciones** como requisito de producto. No se debe recomendar Azure S0 ni usar Audio TTS de prueba gratuita si sus condiciones impiden monetizar legalmente el resultado.
+- La voz `es-EC-LuisNeural` queda únicamente como **referencia acústica/editorial** (natural y profesional), no como motor habilitado.
+- Próxima búsqueda: voz local/open source gratuita con calidad natural comparable, derechos comerciales claros y recursos compatibles con las cuotas gratuitas; descartar o pausar lo que exija gasto.
+- El narrador en producción sigue siendo provisional (`es_MX-ald-medium` para renders técnicos): **ninguna voz definitiva seleccionada**.
+- Vigilar los límites de ejecución gratuitos de GitHub Actions/Cloudflare; evitar renderizaciones o procesos masivos automáticos.
