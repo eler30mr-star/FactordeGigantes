@@ -1,0 +1,49 @@
+name: Audición Qwen 1.7B CPU sin pagos
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/voice-qwen17-cpu.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cpu-trial:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      OMP_NUM_THREADS: '4'
+      OPENBLAS_NUM_THREADS: '2'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      HF_HOME: /tmp/qwen17-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validar que el narrador aprobado no ha cambiado
+        run: |
+          python -m tools.approved_voice --check
+          df -h . /tmp
+          free -h
+          test "$(df -Pk /tmp | tail -n1 | awk '{print $4}')" -gt 8500000
+      - name: Instalar PyTorch CPU sin CUDA
+        run: |
+          python -m pip install torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Instalar dependencias locales
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg sox
+          python -m pip install 'qwen-tts==0.1.1' --no-deps
+          python -m pip install 'transformers==4.57.3' 'accelerate==1.12.0' librosa soundfile sox onnxruntime einops
+      - name: Generar una muestra corta con Qwen 1.7B
+        run: |
+          /usr/bin/time -v timeout -k 10s 420s python -m tools.qwen17_local_smoke
+      - name: Compartir muestra y métricas solo si se completan
+        uses: actions/upload-artifact@v4
+        with:
+          name: comparacion-qwen17-cpu-narrador-aprobado
+          path: dist/qwen17-cpu/
+          retention-days: 3
+          if-no-files-found: error
