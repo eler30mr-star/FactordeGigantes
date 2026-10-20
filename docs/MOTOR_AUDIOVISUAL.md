@@ -116,3 +116,13 @@ Tras escuchar dos muestras reales, el propietario considera que **MeloTTS suena 
 Siguiente ensayo: **Chatterbox Multilingual V3 LatAm**. Model card MIT: https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam . Demo pública alojada por el proveedor: https://huggingface.co/spaces/ResembleAI/Chatterbox-Multilingual-TTS-es-mx-latam . Es un finetune de español latinoamericano con entrenamiento regional y control de expresividad; puede ofrecer mayor naturalidad, no es garantía. El repositorio contiene checkpoint principal ~2,14 GB y decoder ~1,06 GB; no se ha demostrado eficiencia en la cuota gratis de GitHub Actions.
 
 **Regla de decisión:** primero audición real; después prueba de memoria, latencia, derechos y ejecución local; solo entonces cambio de narrador previa autorización. Si ningún sintetizador gratuito suena humano, considerar grabación de voz humana propia/con licencia. Prohibido usar voces ajenas clonadas sin permiso y probar una suscripción de pago.
+
+## La demo femenina de Chatterbox no sirve como evaluación del narrador requerido
+El propietario indicó que la demo enlazada presenta una sola voz femenina y no le gusta. Debe descartarse esa demo como opción para aprobar una voz masculina. El motor general sí puede condicionar otra voz mediante `audio_prompt_path`, pero eso requiere una referencia legalmente utilizable y consentimiento; no utilizar una voz real ajena sin permiso.
+
+### Nueva prueba editorial recomendada: Qwen3-TTS Voice Design
+- Demo oficial activa: https://huggingface.co/spaces/Qwen/Qwen3-TTS (usar `Voice Design` y seleccionar idioma español).
+- Texto descriptivo del personaje: `A mature professional male narrator from Latin America, natural human voice, warm and full low-mid register, confident but not theatrical, calm documentary cadence, nuanced pauses, crisp Spanish articulation, no robotic texture.`
+- Modelo abierto: https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign (licencia Apache-2.0 declarada por proyecto); no requiere muestra humana en modo Voice Design.
+- Demostración gratuita sujeta a colas/cuotas del proveedor; ninguna garantía de funcionamiento indefinido ni de acento exacto. No intentar generación automática de videos ni establecer voz fija sin aprobación.
+- **Pendiente técnico:** medir RAM/CPU/tiempo del modelo 1.7B, licencias de dependencias/modelos, coste cero real y persistencia de identidad vocal en documentales largos.
