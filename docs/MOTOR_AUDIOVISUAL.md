@@ -76,3 +76,9 @@ Fuente de catálogo: https://learn.microsoft.com/en-us/azure/ai-services/speech-
    - Autenticación Azure Speech: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech
 
 No se ha configurado Azure ni se ha generado audio desde Azure en el proyecto.
+
+## Restricción económica absoluta: sin pagos
+
+La voz Microsoft `es-EC-LuisNeural` es solo una **referencia de calidad**. Tras comprobar que el uso comercial requiere condiciones del nivel de pago de Azure, el propietario ha descartado Azure y todos los servicios con coste. No se implementará integración comercial Microsoft Speech ni se pedirá configurar una cuenta facturable.
+
+Priorizar motores locales gratuitos con derechos comerciales explícitos de pesos y voces; comparar naturalidad sin efectos artificiales. Comprobar requisitos de CPU/memoria y respetar las cuotas gratuitas existentes de GitHub Actions y Cloudflare, deteniendo el trabajo si no se puede garantizar coste cero. No confundir gratuidad de inferencia con autorización de licencia o ejecución ilimitada.
