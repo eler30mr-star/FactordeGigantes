@@ -137,3 +137,12 @@ Decisión expresa del propietario: **no utilizar servicios de pago, suscripcione
 - **Gratis no significa ilimitado:** verificar cuotas de GitHub Actions/Cloudflare; establecer límites de duración, reintentos y frecuencia para mantener el proyecto dentro de las franquicias gratuitas. Ante agotamiento, detener/posponer en vez de generar cargos.
 - No reducir calidad con filtros artificiales de pitch; la identidad vocal final será una voz natural seleccionada mediante audición real y fijada para todos los videos.
 - Desarrollo y registro de avance directamente en `main`.
+
+## Dirección vocal de referencia: documentales de naturaleza (20-10-2026)
+
+El usuario elige **como referencia de ESTILO**, no como persona a imitar, el narrador masculino de documentales de animales de Discovery: cadencia más pausada, voz cálida, serena, inteligible y profesional, autoridad contenida y buen manejo de silencios. El canal continúa siendo sobre historia empresarial y decisiones influyentes.
+
+- El narrador preferido sigue siendo la **tercera muestra Qwen3 de dicción profesional**, con BlackBerry pronunciado aproximadamente «Blákberri» (rr fuerte).
+- La última versión de prueba se ralentizó con `atempo=0.94` (sin cambiar altura) y se añadieron tres pausas de 160 ms en silencios entre frases; los resultados se mantendrán sujetos a evaluación humana.
+- La corrección de la «a» prolongada en **«Durante años»** es un ajuste puntual, no una modificación global del ritmo ni una voz nueva.
+- Cero pagos, sin clonación de personas identificables, cambios solo en rama `main`; pendiente integración al render hasta que la voz y la arquitectura sean sostenibles.

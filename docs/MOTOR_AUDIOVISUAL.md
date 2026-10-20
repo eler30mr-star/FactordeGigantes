@@ -150,3 +150,13 @@ La voz Qwen3 Voice Design **v3 de dicción profesional** fue la primera consider
 - **Run de prueba** https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39505217153, completo y exitoso. Artefacto 12302578597, MP3 mono 48 kHz y 11.304 s.
 
 Advertencias: `Voice Clone` no garantiza coincidencia perfecta con el timbre original ni pronunciación correcta, requieren validación al oído. `voice_lexicon.py` aún no está conectado al `render.yml` productivo: solo forma parte del ensayo. Las demos públicas tienen colas, restricciones y no garantizan producción gratuita perpetua. No hay voz institucional irrevocablemente aprobada ni proveedor con facturación activada.
+
+## Cadencia documental aprobada provisionalmente y corrección de «años» (2026-10-20)
+
+Referente editorial de estilo: documentales de naturaleza narrados con calidez, serenidad y pausas deliberadas; **no clonación o imitación exacta de narradores identificables**. La voz Qwen3 v3, reproducida con referencia vocal, es la favorita del propietario, sujeto a corregir fallos concretos.
+
+`tools/documentary_pacing.py` implementa `ffmpeg atempo=0.94` y añade hasta tres pausas de 0,16 s insertando silencio sin modificar los samples de habla. Sólo funciona con FFmpeg/FFprobe locales. Es un ajuste de tempo, no un nuevo modelo vocal.
+
+Tras la aprobación expresada como «Excelente» en la versión pausada, el propietario detectó una vocal `a` demasiado larga en `años` al inicio. `tools/voice_fix_anos.py` acorta esa vocal unos 65 ms con crossfade de 16 ms. **Su algoritmo incorpora el SHA256 del MP3 de referencia** y no debe aplicarse a otro audio sin reidentificar la posición exacta de la vocal. Resultado MP3: ~12,0 s, mono 48kHz.
+
+No usar ediciones quirúrgicas temporales como solución general para nombres o dicción deficiente. Para nuevos documentales crear un banco reproducible de referencias vocales y léxico de pronunciación con control de calidad auditivo. La voz institucional aún no está conectada al render; ningún proveedor de pago está autorizado.

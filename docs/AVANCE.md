@@ -299,3 +299,14 @@ Se ha guardado en `main` la estructura inicial del motor:
 - Coste cero, rama main; no se modifica `render.yml` ni se publica en YouTube.
 
 - Resultado comprobado de la corrección con doble `rr`: GitHub Actions run **39506360433** terminó **success**, artefacto **12303606616** (`audicion-qwen-blackberry-rr-fuerte`). MP3 extraído y validado con `ffprobe`: 10,896 segundos, mono 48 kHz, 218.445 bytes. Enlace: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39506360433 . Se entregó al propietario para que compruebe auditivamente la vibrante fuerte; **la generación correcta del archivo no acredita por sí sola que el fonema haya sido pronunciado como pidió**.
+
+## 2026-10-20 · Estilo documental de naturaleza y ajuste localizado de «años»
+
+- El propietario indicó que la versión BlackBerry con rr fuerte ya parece correcta, pero que el ritmo estaba algo rápido. Pidió una cadencia **similar al estilo de los documentales sobre animales de Discovery**, sin pedir la imitación de un narrador individual.
+- Se preparó una audición basada **en el MP3 existente**, conservando voz e interpretación original: FFmpeg `atempo=0.94` y tres ampliaciones de pausa de 160 ms en silencios de final de frase. Resultado validado: `FactorDeGigantes_Documental_Naturaleza_Pausado.mp3`, MP3 de unos 12,07 s.
+- El propietario valoró esta versión «Excelente», con una observación localizada: en **«Durante años»** suena «aaños», con la vocal inicial demasiado alargada.
+- Se ajustó solamente la vocal inicial de ese término en el primer segundo, retirando **65 ms entre 0,5945 y 0,6595 s** y uniendo el audio con transición cruzada de 16 ms. **No se regeneró la voz**, no se alteraron los otros nombres ni el ritmo del resto de la locución.
+- Nuevo archivo `FactorDeGigantes_Documental_Anos_Corregido.mp3`: validación con FFprobe, duración **12,00 s**, mono 48 kHz, **240 524 bytes**. Escucha pendiente de confirmación por el propietario: el archivo técnicamente correcto **no garantiza** la naturalidad del fonema.
+- Scripts añadidos para reproducción en `main`: `tools/documentary_pacing.py` para controlar velocidad y pausas sin pagos; `tools/voice_fix_anos.py` para reparar exclusivamente la muestra aprobada, con comprobación de hash SHA-256 del audio fuente; y tests `tests/test_documentary_pacing.py`.
+- No se modifica la voz provisional en `render.yml`, no se publica nada en YouTube y no se activa facturación.
+- Siguiente tarea: evaluar auditivamente la vocal de «años», fijar referencia vocal persistente si queda aprobada, y comprobar capacidad y derechos de producción continuada sin coste.
