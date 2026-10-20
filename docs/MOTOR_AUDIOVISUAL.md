@@ -134,3 +134,9 @@ El propietario indicó que la demo enlazada presenta una sola voz femenina y no 
 - Audio real confirmado: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39502577947 . Resultado MP3 de 14,112 s / 24 kHz, artefacto 12302050983, generado con éxito mediante endpoint Voice Design del Space oficial.
 - El modelo abierto Qwen3-TTS Voice Design 1.7B está publicado bajo Apache-2.0; **los términos del proveedor del Space y sus cuotas pueden diferir**. Usarlo para una audición puntual no garantiza producción comercial automatizada gratuita, continua ni sin límites.
 - El propietario debe escuchar la muestra y decidir si encaja con la identidad; **no se ha cambiado la voz oficial ni el workflow de render**.
+
+## Qwen3 Voice Design: segunda muestra con mayor energía
+- Feedback: primera demo Qwen3 demasiado calmada para Factor de Gigantes.
+- Versión de audición revisada para pedir un narrador adulto entusiasta, con ritmo dinámico, tensión narrativa, énfasis y voz humana natural; no simplemente aumentar volumen o modificar artificialmente el pitch.
+- Prueba real: GitHub Actions 39503709220 completado, artefacto 12301563544. MP3 de 15,0 s (mono, 24 kHz) verificado por `ffprobe`.
+- Precaución: Voice Design genera un timbre nuevo en cada petición, así que la consistencia de una identidad vocal a lo largo de docenas de escenas requiere estudio. La voz oficial aún no ha sido aprobada; render del canal intacto.
