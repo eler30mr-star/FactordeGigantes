@@ -1,0 +1,40 @@
+name: Guardar voz aprobada permanentemente en main
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/preserve-approved-voice.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recuperar y verificar muestra original aprobada
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/fdg-reference
+          gh run download 39509095680 --repo "${{ github.repository }}" --name qwen-narrador-toma-natural-sin-cortes --dir /tmp/fdg-reference
+          test "$(stat -c %s /tmp/fdg-reference/FactorDeGigantes_Documental_TomaNatural.mp3)" = "247245"
+          echo '78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d  /tmp/fdg-reference/FactorDeGigantes_Documental_TomaNatural.mp3' | sha256sum -c -
+      - name: Colocar audio aprobado en assets versionados
+        run: |
+          set -euo pipefail
+          mkdir -p assets/voice/approved
+          cp /tmp/fdg-reference/FactorDeGigantes_Documental_TomaNatural.mp3 assets/voice/approved/narrador_documental_aprobado.mp3
+          python -m tools.approved_voice --check
+      - name: Commit exclusivamente del MP3 en rama principal
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/voice/approved/narrador_documental_aprobado.mp3
+          if git diff --cached --quiet; then echo "Muestra ya guardada."; exit 0; fi
+          git commit -m "assets: conservar exactamente narrador documental aprobado"
+          git push origin HEAD:main
