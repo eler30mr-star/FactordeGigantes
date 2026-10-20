@@ -35,3 +35,14 @@ python tools/render.py --manifest examples/documental.json --voice-engine piper 
 ## Ajuste de contraste verificado (2026-10-20)
 
 La primera ejecución producía subtítulos desmesurados y tapaba la escena debido a la escala ASS en vertical. Se redujeron `FontSize` y `MarginV`, se introdujo un fondo semitransparente y se limitó cada línea a 30 caracteres en Shorts. Se inspeccionó un fotograma real del nuevo archivo: texto inferior legible y título despejado. Run de QA: https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39477498852 .
+
+## Audición de narrador adulto y profesional — 20 de octubre de 2026
+
+Preferencia del propietario: tono más adulto, seguro y profesional que la voz actual percibida como de canal de descubrimientos. Se considera mantener una identidad vocal única para todo el canal, con alternativas para pruebas, pero ninguna nueva voz queda designada automáticamente.
+
+Workflow: .github/workflows/voice-audition.yml
+Herramienta: tools/audition.py (Piper TTS CPU, 3 voces, texto idéntico).
+Modelos: es_MX-ald-medium (referencia), es_MX-claude-high (alternativa en español mexicano, dataset declarado Apache-2.0), es_ES-davefx-medium (castellano, dataset declarado CC0 y ajuste desde otro modelo). Todos con SHA256 fijo.
+
+Validación: ejecución GitHub Actions 39487653479 terminó en success, con tres WAV y comparacion.json, artefacto 12293493424. La presencia de muestras no garantiza afinidad editorial: el propietario debe escuchar y elegir. Las licencias de entrenamiento y el uso comercial aún requieren verificación.
+
