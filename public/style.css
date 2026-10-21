@@ -1,1 +1,26 @@
 :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#101115;color:#f6f1e9;color-scheme:dark}*{box-sizing:border-box}body{margin:0}header{padding:18px clamp(18px,5vw,70px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #303138;background:#17181c}.brand{display:flex;align-items:center;gap:12px}.brand strong{display:block;letter-spacing:1.4px;font-size:14px}.brand small{display:block;color:#a8a6a1;margin-top:3px}.mark{display:grid;place-items:center;color:#17181c;background:linear-gradient(140deg,#ffda87,#b88126);width:43px;height:43px;border-radius:11px;font-family:Georgia,serif;font-size:28px;font-weight:bold}.pill{border:1px solid #66512e;border-radius:22px;padding:8px 12px;color:#ebc780;font-size:12px}main{max-width:1050px;margin:0 auto;padding:30px 18px 70px}.intro{padding:24px 0 18px}.eyebrow{color:#d9b56a;letter-spacing:2px;font-size:11px;font-weight:700}h1{font-size:clamp(30px,5vw,48px);margin:8px 0 12px;letter-spacing:-1.4px}.intro>p:last-child{color:#aaa9aa;line-height:1.55;max-width:680px}.card{border:1px solid #37383c;background:#191a1e;border-radius:16px;padding:23px;margin:20px 0;box-shadow:0 6px 24px #0002}.heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}.heading h2{font-size:18px;margin:0}.muted{color:#9b9b9d;font-size:13px}.micro{font-size:12px}.formrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.formrow label{width:100%}.formrow input{flex:1;min-width:210px}form{display:grid;gap:10px}label{color:#d6d1c5;font-size:13px;font-weight:600}input,textarea,select{width:100%;border:1px solid #42434a;border-radius:9px;padding:12px;background:#121318;color:#faf4ea;font:inherit}input:focus,textarea:focus,select:focus{outline:2px solid #e4b765}textarea{resize:vertical}button{border:0;border-radius:9px;padding:12px 15px;font:inherit;font-weight:650;background:#deb66c;color:#1b160d;cursor:pointer}button:hover{filter:brightness(1.09)}button.secondary{background:#303136;color:#f8ecdb}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:25px}.stat{background:#191a1e;border:1px solid #37383c;border-radius:14px;padding:19px}.stat span{display:block;color:#aba8a0;font-size:12px}.stat strong{display:block;font-size:31px;margin-top:6px}.jobs{display:grid;gap:12px}.job{padding:16px;border:1px solid #393a3f;border-radius:12px;background:#15161a}.jobtop{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.job strong{font-size:15px}.job small{display:block;color:#aaa8a3;margin:9px 0}.tag{border:1px solid #585045;color:#e3c27f;border-radius:20px;font-size:11px;padding:4px 8px}.actions{display:flex;flex-wrap:wrap;gap:8px}.actions button{font-size:12px;padding:8px 11px}.empty{color:#aaa9aa;text-align:center;padding:35px 0}#notice{position:sticky;bottom:12px;margin:20px auto 0;max-width:620px;background:#2b241a;border-radius:10px;color:#ffe2a2;padding:12px;display:none}#notice.active{display:block}@media(max-width:550px){header{padding:16px}.pill{display:none}.stats{gap:7px}.stat{padding:12px}.card{padding:17px}.brand strong{font-size:12px}}
+
+/* Expediente documental: lectura y edición cómoda en escritorio y teléfono. */
+.dossier-form{display:grid;gap:16px;margin:15px 0 24px}
+.editorial-group{border-top:1px solid #3e3b35;padding:15px 0 2px;display:grid;gap:13px}
+.editorial-group h3{margin:0;font-size:16px;color:#e9c886}
+.editorial-group>p{margin:0;line-height:1.6}
+.editorial-record{border:1px solid #46413a;background:#121318;border-radius:12px;padding:17px;display:grid;gap:12px;min-width:0}
+.editorial-record strong{font-size:14px;color:#f1d9a7}
+.editorial-record>p{margin:0;overflow-wrap:anywhere;line-height:1.6}
+.editorial-field{display:grid;gap:6px;min-width:0}
+.editorial-field span{font-size:12px;font-weight:650;color:#ddd3c0}
+.editorial-field input,.editorial-field select,.editorial-field textarea{min-width:0;width:100%}
+.editorial-field input:disabled,.editorial-field select:disabled,.editorial-field textarea:disabled{opacity:.7}
+.editorial-claim{display:grid;gap:10px;padding:14px;border-radius:10px;border:1px solid #343536;background:#1b1c20}
+.editorial-evidence{display:grid;gap:10px;padding:12px;border:1px solid #49443c;border-radius:9px;background:#202025}
+.editorial-group button{justify-self:start;font-size:12px;padding:9px 12px}
+.editorial-advanced{border-top:1px solid #3f403f;padding-top:17px}
+.editorial-advanced summary{cursor:pointer;color:#d7b26a;font-weight:650;margin-bottom:12px}
+.editorial-advanced textarea{margin:8px 0}
+@media(max-width:550px){
+  .editorial-record{padding:12px}
+  .editorial-claim{padding:10px}
+  .editorial-evidence{padding:10px}
+  .editorial-group button{max-width:100%;text-align:left}
+}
