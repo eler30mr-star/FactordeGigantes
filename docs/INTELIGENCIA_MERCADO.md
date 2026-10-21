@@ -69,3 +69,16 @@ Un **modelo de investigación** Gemini/Qwen propone enfoques y preguntas, pero n
 - La fuente genera artefactos con retención limitada; todavía falta persistir observaciones y decisiones en D1 para seguimiento longitudinal.
 
 **Estado actual:** descubrimiento autónomo de candidatas/medición de interés y programación diaria funcionando ✅; selección profesional del mejor tema para video, investigación completa, publicación y cierre analítico siguen sin completar.
+
+## Segundo avance real 2026-10-21 — cobertura e historial de mercado
+
+El sondeo aumentó su cobertura a **360 artículos populares** entre Wikipedia en español e inglés, con un máximo de 12 lotes Wikidata y 6 artículos enriquecidos con 14 días de interés. Resultado real [39652155079](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39652155079): **Theranos (Q16956307)** y **DuPont Corporation (Q221062)** detectadas, ambas con series completas.
+
+- Theranos, artículo inglés: 291.435 visitas entre el 14–20 de octubre y 55.952 entre el 7–13.
+- DuPont Corporation, artículo español: 3.512 visitas entre el 14–20 de octubre y 338 entre el 7–13.
+- Estas cantidades **no** son volumen de Google Search, reproducciones YouTube ni indicadores de retención o CTR. La empresa más popular en Wikipedia no se promociona automáticamente a episodio.
+- `migrations/0004_market_intelligence.sql` define tablas persistentes para ejecución, identidad de empresas, observaciones, interés y decisiones. `tools/market_persistence.py` almacena reportes idempotentemente; probó compatibilidad con migraciones anteriores usando SQLite local. CI general incluye `tests/test_market_persistence.py`.
+- [39652982369](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39652982369) `success`: el workflow diario generó y subió un snapshot local SQLite con dos entidades, dos observaciones y dos series. **No** significa que D1 remoto o el panel estén conectados; el snapshot se recrea por cada ejecución y tiene retención temporal.
+- Historial factual y enlaces precisos en `research/market/VALIDACION_RADAR_360_2026-10-21.md`.
+
+**Próximo hito:** persistencia real en D1 de los snapshots por día, señal de noticias actuales, conexión autenticada a YouTube Data API y cálculo de oportunidad relativa + selección de temas aptos. Nunca publicar ni generar un guion por ver solo un pico de Wikipedia.
