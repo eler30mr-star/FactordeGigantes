@@ -246,6 +246,41 @@ async function loadResearch(includeRuns=false) {
     ". Pulsa «Actualizar» para consultar las ejecuciones.");
 }
 // Visualizar exclusivamente observaciones D1 con su procedencia; sin declarar ganador.
+async function loadOpportunities() {
+  const data=await request("/api/market/opportunities?limit=25");
+  if(!Array.isArray(data.candidates)||!Array.isArray(data.runs))
+    throw Error("El evaluador no devolvió datos verificables");
+  const root=$("opportunities-results");
+  root.replaceChildren();
+  $("opportunities-status").textContent="Evaluaciones históricas: "+data.runs.length+
+    " · empresas evaluadas: "+data.candidates.length+
+    " · temas autorizados automáticamente: 0.";
+  if(!data.candidates.length){
+    root.append(tag("p","empty","Todavía no hay una evaluación guardada o las fuentes no produjeron empresas. No se creará un tema ficticio."));
+    return;
+  }
+  for(const c of data.candidates){
+    const row=tag("article","job","");
+    const head=tag("div","jobtop","");
+    head.append(tag("strong","",String(c.title||c.wikidata_id)),
+      tag("span","tag","Evidencia insuficiente"));
+    row.append(head);
+    row.append(tag("small","",
+       "ID Wikidata: "+String(c.wikidata_id)+
+       " · titulares vinculados: "+String(c.news_mention_count)+
+       " · ventanas Wikipedia: "+String(c.wiki_observation_count)+
+       " · mercados YouTube medidos: "+String(c.youtube_region_samples)));
+    try{
+      const reasons=JSON.parse(String(c.reasons_json||"[]"));
+      if(Array.isArray(reasons) && reasons.length)
+        row.append(tag("p","muted",reasons.filter(r=>typeof r==="string").join(" · ")));
+    }catch{row.append(tag("p","muted","Faltan fundamentos auditables para aprobar un documental."));}
+    root.append(row);
+  }
+}
+$("opportunities-refresh").addEventListener("click",()=>loadOpportunities().catch(e=>{
+  $("opportunities-status").textContent=e.message;
+}));
 async function loadMarket() {
   const data=await request("/api/market/radar?limit=30");
   const container=$("market-results");
@@ -434,6 +469,7 @@ $("connect").addEventListener("click",async () => {
     loadResearch().catch(e=>{$("research-status").textContent=e.message;});
     loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
+    loadOpportunities().catch(e=>{$("opportunities-status").textContent=e.message;});
     loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
     loadYoutubeMarket().catch(e=>{$("youtube-status").textContent=e.message;});
     loadCrossSignals().catch(e=>{$("cross-status").textContent=e.message;});
