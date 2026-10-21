@@ -1,0 +1,37 @@
+name: Factor de Gigantes - descubrimiento autónomo sin pagos
+on:
+  workflow_dispatch:
+  # Desencadenar UNA prueba controlada y luego retirar.
+  push:
+    branches: [main]
+    paths: ['.github/workflows/research-topic-smoke.yml']
+permissions:
+  contents: read
+jobs:
+  discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tema libre a investigación preliminar, sin expediente manual
+        run: |
+          python -m unittest discover -s tests -p test_research_engine.py -v
+          timeout -k 5s 100s python -m tools.research_engine --topic "BlackBerry" --max-requests 3 --out dist/tema-libre
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('dist/tema-libre/reporte_investigacion.json').read_text())
+          print('TEMA_LIBRE_OK:',d['topic'], 'fuentes secundarias',d['fetched_count'],'/',d['request_count'])
+          print('NINGUN_DATO_VERIFICADO:',d['facts_verified_automatically'])
+          PY
+      - name: Guardar evidencia de la búsqueda automática
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factor-gigantes-descubrimiento-tema-libre
+          path: dist/tema-libre/
+          retention-days: 3
+          if-no-files-found: warn
