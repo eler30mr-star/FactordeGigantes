@@ -945,3 +945,28 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 4. Realizar flujo YouTube OAuth → revisión/permiso editorial → upload/programación automática por sistema → analytics → siguiente ranking, sin activarlo antes de garantías y licencia.
 
 **Estado de esta etapa:** prioridad y arquitectura corregidas, ranking/colección de muestras y pruebas incorporadas al repositorio. **Estudio en vivo, selección autónoma de temas y autopublicación todavía pendientes.** Todo en `main`, con historial y sin gastos.
+
+## 2026-10-21 · Primer descubrimiento automático de una empresa REAL + serie de interés
+
+**Objetivo del propietario:** avanzar hacia una plataforma que elija los mejores temas en base a mercado, sin que ChatGPT proporcione manualmente empresas, guiones o material. Se trabajó solo en `main`.
+
+### Implementación nueva
+1. `tools/topic_discovery.py`: lee Wikimedia Pageviews Top (es/en), verifica identidad/clase empresa en Wikidata mediante P31 y conserva candidato, QID, idioma, fecha, enlace/ranking. Es un **descubridor desde señales**, no una lista de empresas hardcodeada. Filtra personas, títulos especiales y URLs inseguras. Controla hasta 180 artículos por wiki y 12 lotes Wikidata como topes de código; las pruebas reales usaron 120 artículos por idioma y 8 lotes.
+2. Se cambió en `tools/market_sources.py` el límite de respuesta JSON de 1 MB a 5 MB, aún acotado, con encabezado `User-Agent` identificable según política del proveedor. La primera prueba había demostrado que 1 MB no alcanzaba para el top diario.
+3. Enriquecimiento opcional `--enrich-interest`: consulta Wikimedia Pageviews para **14 días completos** de una página detectada, separando 7 días recientes de 7 previos, máximo seis empresas por ejecución. Si falla un proveedor no inventa cifras.
+4. `tests/test_topic_discovery.py`: siete casos unitarios para clasificación/ausencia de señal/fechas/idiomas/URLs/consulta real simulada de 14 días. Los tests fueron ejecutados por el CI general (Python unittest discover).
+5. `.github/workflows/topic-discovery-smoke.yml`: primera prueba disparada temporalmente por `push` y posteriormente convertida en **workflow diario programado a las 10:17 UTC + manual**, con límites de solicitudes y sin Qwen, Gemini ni YouTube.
+
+### Evidencia real de red (no simulada)
+- [Primera ejecución 39650638377](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39650638377): **failure** al superar el tamaño de lectura original de 1 MB. Se corrigió y repitió, no se ocultó el fallo.
+- [Ejecución 39650844704](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39650844704): **success**, 240 artículos en es/en, 8 lotes Wikidata, **1 empresa candidata Theranos** (Q16956307), con QID y enlace de Wikipedia. Ningún estudio completo ni tema seleccionado para video.
+- [Ejecución 39651368713](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39651368713): **success**, los mismos 240 artículos y 8 lotes, con **1 serie real de 14 días** completada. El ZIP de artefacto `12370101388` fue descargado y JSON leído: `Theranos`, 291.435 visualizaciones del artículo en la semana 14–20 de octubre y 55.952 en la semana 7–13 de octubre, fuente `en.wikipedia.org`; `observed_at=2026-10-21`. Son visitas al artículo, NO búsquedas Google, demanda garantizada de YouTube ni retención del canal.
+- Registro permanente editorial en `research/market/VALIDACION_RADAR_2026-10-21.md`. Informe operativo JSON permanece en artefacto GitHub de retención limitada y en ZIP de la conversación; falta almacenar series futuras en D1.
+
+### Próximos pasos
+1. Añadir otras fuentes de descubrimiento más inmediatas para no depender de Wikipedia con desfase de ~3 días y aumentar muestra a varias compañías.
+2. Conectar YouTube Data API y obtener estadísticas observadas, saturación, formatos y crecimiento real del propio canal al tener OAuth; **no simular interés** ni publicar sin autorización.
+3. Persistir candidatos/rankings en D1 y conectar el selector con Gemini/Qwen para que el sistema investigue, redacte, narre, monte y entregue un MP4 original de 8–14 minutos.
+4. Mantener derechos y revisión editorial como puertas obligatorias antes de una subida/programación de YouTube hecha por el mismo sistema.
+
+**Estado:** descubrió por sí mismo la primera empresa candidata y midió interés en Wikimedia ✅; estudio comparativo profesional de mercado, tema ganador, producción completa y autopublicación aún pendientes ❌. Todo en `main`, sin pagos ni publicación.
