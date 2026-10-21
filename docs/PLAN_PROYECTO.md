@@ -184,3 +184,16 @@ No se acepta automáticamente el 0,6B ni el 1,7B local como sustituto, aunque se
 - **Ambas muestras cortas aceptadas por el propietario; preferencia por la primera por mayor fidelidad.** Mantener íntegra la muestra oficial ya aprobada.
 - [ ] Siguiente hito: evaluar constancia vocal en varios párrafos y validar rendimiento sin pagos, licencias comerciales y QA editorial antes de conectar el motor Qwen al render.
 - [ ] Primera producción documental completa 8–14 minutos, con guion investigado y recursos audiovisuales con derechos comprobados. No abrir OAuth ni publicación sin aprobación.
+
+
+## Fase 2 — resultados técnicos incrementales de octubre (2026-10-20)
+
+- [x] Probar continuidad de **tres párrafos de una misma historia** con Qwen Base 1.7B CPU sin servicios de pago, audios separados, previsualización de 43,296 s, metadatos y referencia canónica intacta: [run 39518606909](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39518606909) `success`.
+- [x] Limitar nuevas pruebas intensivas al inicio manual; la activación excepcional por `push` fue retirada en `main` inmediatamente después de lanzar la ejecución.
+- [ ] **Audición humana nueva de los tres párrafos y su continuidad de 43,296 s**; preferencia anterior por `01_decision` no certifica estos audios.
+- [x] Introducir comprobación estructural de fuentes enlazadas a afirmaciones y de derechos de recursos (`tools/editorial_evidence.py` + tests). CI `success`, **aún no conectada** al Worker/D1 ni a un guion factual real.
+- [x] Documentar estado declarado Apache-2.0 del modelo y las lagunas de derechos de la voz en `docs/LICENCIAS_NARRACION.md`.
+- [ ] Validar términos del audio de referencia y todos los materiales con derechos de uso comercial, optimizar la generación larga con presupuesto gratuito y pruebas de estabilidad, preparar fuentes originales y un primer documental completo.
+- [ ] Integrar verificación editorial y licencias al panel, y la narración final al renderizador, **solo después** de aprobación técnica, humana y legal.
+
+**Fase 2 aún abierta**. Ningún ensayo experimental se considera publicado, monetizable o idéntico a la identidad aprobada solo por superar FFprobe o CI.
