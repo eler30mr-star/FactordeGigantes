@@ -24,7 +24,8 @@ def post_report(*,mode,base_url,token,report=None,opener=urlopen):
     if mode in ("entities","official","pdf"):
         expected={"entities":"wikidata_news_company_resolution_v1","official":"wikidata_p856_safe_official_fetch_v1","pdf":"official_pdf_evidence_v1"}[mode]
         if not isinstance(report,dict) or report.get("provider")!=expected or \
-            report.get("market_study_complete") is not False or report.get("ready_for_youtube") is not False:
+            ((report.get("research_ready") is not False or report.get("publication_authorized") is not False) if mode=="pdf" \
+             else (report.get("market_study_complete") is not False or report.get("ready_for_youtube") is not False)):
             raise ValueError("Evidencia sin procedencia")
         body=json.dumps(report,ensure_ascii=False,separators=(",",":")).encode("utf-8")
         if len(body)>250000:raise ValueError("Reporte fuera de límite")
