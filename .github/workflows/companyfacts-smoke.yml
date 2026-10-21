@@ -1,0 +1,53 @@
+name: Factor de Gigantes - prueba SEC XBRL sin Qwen
+on:
+  workflow_dispatch:
+  # Ejecución única inicial; se retira el evento push tras probar.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/companyfacts-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  sec-xbrl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verificar comparador y paquete editorial offline
+        run: |
+          python -m unittest discover -s tests -p test_financial_facts.py -v
+          python -m unittest discover -s tests -p test_editorial_package.py -v
+      - name: Comprobar fuente oficial Companyfacts con CIK de prueba conocido
+        run: |
+          mkdir -p dist/sec-xbrl-smoke
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          # El CIK es dato de prueba conocido, no obtenido en este workflow de Wikidata.
+          Path("dist/sec-xbrl-smoke/entrada.json").write_text(
+              json.dumps({"entities":[{"cik_candidate":"0000320193"}]}))
+          PY
+          timeout -k 5s 95s python -m tools.financial_probe \
+            --edgar-report dist/sec-xbrl-smoke/entrada.json \
+            --out dist/sec-xbrl-smoke
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          result=json.loads(Path("dist/sec-xbrl-smoke/METRICAS_SEC_CANDIDATAS_NO_VERIFICADAS.json").read_text())
+          print("SEC_XBRL_STATUS:",result["status"])
+          print("SEC_XBRL_ERROR:",result.get("error_type","ninguno"))
+          print("SEC_XBRL_OBSERVATIONS:",(result.get("analysis") or {}).get("observation_count",0))
+          print("HECHOS_VERIFICADOS:",result["facts_verified_automatically"])
+          PY
+      - name: Entregar evidencia de acceso sin redistribuir informe completo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factor-sec-xbrl-diagnostico
+          path: dist/sec-xbrl-smoke/
+          retention-days: 3
+          if-no-files-found: warn
