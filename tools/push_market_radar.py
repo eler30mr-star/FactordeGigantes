@@ -6,11 +6,38 @@ import argparse
 import json
 import os
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, quote
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
 HOST = "factor-de-gigantes.martin30-eler.workers.dev"
+AUDIENCE = "factor-de-gigantes-market-v1"
+
+
+def github_oidc_token(*, environ=os.environ, opener=urlopen) -> str:
+    endpoint = environ.get("ACTIONS_ID_TOKEN_REQUEST_URL", "")
+    bootstrap = environ.get("ACTIONS_ID_TOKEN_REQUEST_TOKEN", "")
+    u=urlsplit(endpoint)
+    if (u.scheme != "https" or not u.hostname or
+        not (u.hostname=="actions.githubusercontent.com" or
+             u.hostname.endswith(".actions.githubusercontent.com")) or
+        u.username or u.password or u.fragment or not u.query):
+        raise ValueError("Emisor OIDC de GitHub Actions no disponible")
+    if not bootstrap:
+        raise ValueError("La ejecución no tiene permiso id-token: write")
+    target=endpoint+("&" if u.query else "?")+"audience="+quote(AUDIENCE,safe="")
+    req=Request(target,headers={"Authorization":"Bearer "+bootstrap,
+                                "Accept":"application/json",
+                                "User-Agent":"FactorDeGigantes-MarketRadar/1.0"})
+    try:
+        with opener(req,timeout=20) as response:
+            body=json.load(response)
+    except (URLError,HTTPError,TimeoutError):
+        raise RuntimeError("GitHub no entregó una identidad OIDC temporal") from None
+    value=body.get("value") if isinstance(body,dict) else None
+    if not isinstance(value,str) or len(value)>12000 or value.count(".")!=2:
+        raise RuntimeError("GitHub devolvió una identidad OIDC no válida")
+    return value
 
 
 def upload(report: dict, *, base_url: str, token: str, opener=urlopen) -> dict:
@@ -20,7 +47,7 @@ def upload(report: dict, *, base_url: str, token: str, opener=urlopen) -> dict:
             url.query or url.fragment):
         raise ValueError("API_BASE_URL no apunta al Worker de Factor")
     if not isinstance(token, str) or len(token) < 24:
-        raise ValueError("MARKET_INGEST_TOKEN no configurado")
+        raise ValueError("Token OIDC no disponible")
     if not isinstance(report, dict) or report.get("market_study_complete") is not False or \
             report.get("ready_for_youtube") is not False:
         raise ValueError("Radar inválido: solo se admite descubrimiento preliminar")
@@ -53,7 +80,7 @@ def main():
     args=parser.parse_args()
     report=json.loads(args.input.read_text(encoding="utf-8"))
     result=upload(report,base_url=os.environ.get("API_BASE_URL", ""),
-      token=os.environ.get("MARKET_INGEST_TOKEN", ""))
+      token=github_oidc_token())
     print("D1_RADAR_CONFIRMED:",result["run_id"],"EMPRESAS:",result["entities_seen"],
           "SERIES:",result["windows_seen"],"ESTUDIO_COMPLETO:",result["market_study_complete"])
 
