@@ -1,11 +1,6 @@
 name: FDG - voz original BlackBerry escena 01 Qwen CPU
 on:
   workflow_dispatch:
-  # Un solo smoke de producción de audio; retirar push tras lanzarlo.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/blackberry-scene01-voice.yml'
 permissions:
   contents: read
 concurrency:
