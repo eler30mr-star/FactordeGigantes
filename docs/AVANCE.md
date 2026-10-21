@@ -917,3 +917,31 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 **Verificación de este lote:** CI [39644919482](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39644919482) `success` con adaptadores y tests; después se actualizó el preflight (commit `528a4d0588254aee772d77432a805d67becf13b0`), cuya comprobación [39644991576](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39644991576) estaba en ejecución al registrar este punto. No se afirma que Gemini haya investigado o que el ciclo autónomo end-to-end ya funcione.
 
 **Siguiente integración prioritaria:** añadir selección de investigador en workflow/panel y conectar los pasajes del propio motor al adaptador; configurar una clave Gemini solo a petición/mediante secretos y validación de cuota gratuita; realizar primera investigación automatizada de un tema *sin fuentes ni guion preparados por ChatGPT*, con una ruta Qwen viable para contingencias. Comparar calidad, evidencia, tiempos y límites antes de automatizar guion/producción.
+
+## 2026-10-21 · Cambio de requisito: radar autónomo de mercado, selección, fabricación y publicación
+
+**Instrucción expresa del propietario:** la IA responsable debe estudiar en tiempo cercano al real la demanda del mercado (con la frescura y cuotas que permiten las fuentes), descubrir temas sin esperar entrada manual, clasificarlos, investigar la mejor oportunidad, transferir resultados a los motores audiovisuales y, tras autorización, **subir/programar el episodio con el propio sistema en YouTube**. ChatGPT se limita al desarrollo de la plataforma, no escribe/procesa manualmente cada documental de manera permanente.
+
+### Código y decisiones ya guardados en `main`
+
+1. Se corrigió el principio de `docs/ARQUITECTURA_AUTONOMA.md` y la portada de `docs/PLAN_PROYECTO.md`: el disparador estándar es el radar, no un tema que escribe el propietario. El portal permite preferencias/nicho y un tema manual como excepción, no como requisito.
+2. Documento nuevo `docs/INTELIGENCIA_MERCADO.md`: mercado, fuentes, variables, criterios, límites, selección de emergentes/evergreen, ciclo D1, guardas, analítica posterior y carga YouTube controlada. No confundir señales de Wikipedia con volumen de búsqueda ni datos YouTube con éxito garantizado.
+3. `tools/market_radar.py`: primer selector determinista. Requiere, para cada candidato elegible, estadísticas de 3–30 videos públicos de YouTube de hasta 90 días, observadas hace menos de ocho días, una señal independiente de interés por Wikipedia con dos ventanas equivalentes de 7 días y al menos una URL de fuente original. Excluye duplicados publicados, datos fuera de fecha y ausencia de métricas. Puntaje heurístico documentado y desglosado; permite abstenerse de seleccionar.
+4. `tools/market_sources.py`: primer colector con clave de YouTube Data API (2 llamadas como máximo, 10 videos por candidato, limitación regional configurada y validación de estadísticas), y Wikimedia Pageviews de 14 días completos. Si la clave o muestra falta, el colector falla explícitamente: no inventa datos ni simula tráfico. **Todavía recibe entidades/temas del siguiente descubridor por desarrollar, no los extrae por sí mismo desde señales generales del mercado.**
+5. Pruebas `tests/test_market_radar.py` y `tests/test_market_sources.py` con datos totalmente **sintéticos como fixtures**. No se usaron claves de YouTube, Gemini, Google Trends ni datos de un mercado verdadero en estas pruebas. `tools/production_preflight.sh` añade ambas baterías como condición de compilación del proyecto.
+
+### Verificación y límites
+
+- CI [39648768592](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39648768592) `success` después de añadir los colectores y pruebas; otras comprobaciones intermedias también aprobadas.
+- Se añadieron los tests al preflight en el commit `6f12a0938d86e6213480b751a6fddc08887bb1c7`. **No** declarar confirmación de deploy remoto Cloudflare basándose solo en CI.
+- **Aún no existe** radar en vivo conectado a YouTube, Google Trends alfa, Analytics propio, feed de noticias, descubridor automático de empresas ni un ranking de mercado real. `market_radar.py` demuestra el contrato de selección pero **no que funcione end-to-end**.
+- **No se ha habilitado publicación a YouTube**. El producto debe terminar actuando como productor y también como operador de carga/agenda después de que se autorice el episodio, con OAuth y derechos comerciales acreditados.
+
+### Próximas tareas prioritarias
+
+1. Conectar credenciales de YouTube Data API mediante secretos, solo con permisos/consentimiento y cuotas verificadas. Descubrir temas desde señales **reales** del nicho sin requerir nombres propuestos por ChatGPT/propietario; extraer entidades y evitar duplicados.
+2. Validar primer ranking no simulado para varias empresas, con fuentes y puntuación guardada en D1 y canal de estado visible. Añadir API Trends exclusivamente si se aprueba acceso alfa.
+3. Elegir automáticamente el candidato suficiente, investigar con Gemini/Qwen, citar, verificar y redactar guion por el sistema. Después generar voz/escenas, montar y controlar MP4 de 8–14 minutos de manera autónoma.
+4. Realizar flujo YouTube OAuth → revisión/permiso editorial → upload/programación automática por sistema → analytics → siguiente ranking, sin activarlo antes de garantías y licencia.
+
+**Estado de esta etapa:** prioridad y arquitectura corregidas, ranking/colección de muestras y pruebas incorporadas al repositorio. **Estudio en vivo, selección autónoma de temas y autopublicación todavía pendientes.** Todo en `main`, con historial y sin gastos.
