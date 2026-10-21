@@ -867,3 +867,21 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - `.github/workflows/blackberry-scene01-voice.yml` volvió a modo `workflow_dispatch` **manual**, sin nueva generación pesada por push. El workflow de montaje quedará también solo manual después de comprobar la primera prueba.
 
 **Conclusión del audio:** por primera vez existe casi un minuto de narración nueva del texto real de BlackBerry con referencia al timbre canónico; falta aceptación auditiva humana y licencia comercial. No aprobar ni publicar automáticamente.
+
+### MP4 real de primer capítulo y programación de 12 escenas — 2026-10-21, 17:12 UTC
+
+- **Render audiovisual completado:** GitHub Actions [39641357257](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39641357257) `success`. Descargó los cuatro MP3 de la corrida 39639684819, comprobó hashes y correspondencia literal con las cuatro partes del guion, y generó `BLACKBERRY_ESCENA01_CON_VOZ_NUEVA_REVISAR.mp4`. El propio workflow constató audio AAC, H.264 1280×720 y duración **56,500 s**, 679 fotogramas escritos; [artefacto 12364518448](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39641357257/artifacts/12364518448).
+- **Inspección adicional realizada:** se descargó ZIP a conversación, se extrajo MP4 de **5.036.997 bytes**, FFprobe confirmó duración `56.500000`, H.264, 1280×720 y AAC. Se extrajeron cinco fotogramas en 2, 11, 23, 36 y 48 s, y se revisó una hoja de contacto: aparece movimiento y cambia de plano, pero **reutiliza escenas visuales abstractas**. No es todavía reconstrucción cinematográfica realista ni un producto apto para publicación.
+- **Enlaces directos compartidos con el propietario:** `/mnt/data/BlackBerry_Escena01_Audio/05_escena01_unida.mp3` y `/mnt/data/BlackBerry_Capitulo01/BLACKBERRY_ESCENA01_CON_VOZ_NUEVA_REVISAR.mp4`. Son copias en la conversación y **no deben confundirse con publicación a YouTube**.
+- Se retiró el disparador `workflow_run` temporal de `.github/workflows/blackberry-scene01-video.yml` y se había retirado el disparador `push` de voz. **Ambos siguen disponibles manualmente**, sin gasto automático de nueva IA.
+- El nuevo `tools/blackberry_voice_schedule.py` + `tests/test_blackberry_voice_schedule.py` extrae texto íntegro por escenas y lo reparte en fragmentos de 120–260 caracteres, permitiendo cortes en oraciones y comas, sin omitir ni resumir material. `research/blackberry/LOTE_AUDIO_VISUAL_12_ESCENAS.json` está comprometido en `main`: **12 escenas, 56 partes programadas**, solo las **4 tomas de la escena 01** constan generadas; quedan **52 partes sin generar**, 11 escenas sin montaje. Estado editorial y derechos permanecen pendientes.
+- La prueba del validador de video, de texto exacto y del planificador se ejecuta por `Comprobar base` en cada commit de `main`. No activar la síntesis masiva de 52 tomas sin comprobar primero calidad auditiva, cuotas CPU, legalidad y la correspondencia de las escenas.
+
+### Próxima prioridad realmente bloqueante
+
+1. Escuchar y valorar **los 56,52 segundos nuevos**: identidad de voz, dicción de BlackBerry, naturalidad y transiciones. La voz de referencia original de 12,336 s no se modificó, pero **ninguno de los cuatro clips nuevos tiene aprobación automática**.
+2. Mejorar la imagen (actualmente abstracta y repetida) con B-roll original y movimiento cinematográfico coherente con historia y fuentes. El MP4 de prueba demuestra continuidad AV, no calidad de documental terminado.
+3. Ejecutar escena 02 solo tras determinar si las nuevas tomas son aceptables; 11 escenas/52 tomas aún pendientes. Conservar plan y trazas auditivas y de derechos por cada escena.
+4. Validar fuentes/historia, derechos de voz y visuales, montaje completo de 8–14 min y **cero publicación YouTube automática**.
+
+**Estado actualizado y demostrado:** primera escena BLACKBERRY = audio real 56,52 s ✅, MP4 con ese audio 56,50 s ✅, render H.264/AAC QA verde ✅; guion de 12 escenas y plan 56 partes ✅; derechos, aprobación vocal y documental largo ❌.
