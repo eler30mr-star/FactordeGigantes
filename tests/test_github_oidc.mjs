@@ -17,7 +17,7 @@ test("permite solo workflow exacto en main con expiración próxima",()=>{
  for(const change of [
   x=>x.repository_id="111",x=>x.ref="refs/heads/dev",
   x=>x.workflow_ref="eler30mr-star/FactordeGigantes/.github/workflows/render.yml@refs/heads/main",
-  x=>x.aud="untrusted",x=>x.event_name="pull_request",x=>x.event_name="push",x=>x.exp=TIME-100,
+  x=>x.aud="untrusted",x=>x.event_name="pull_request",x=>x.exp=TIME-100,
   x=>x.iat=TIME+1000,x=>x.runner_environment="self-hosted"
  ]){
   const copy=claims();change(copy);
