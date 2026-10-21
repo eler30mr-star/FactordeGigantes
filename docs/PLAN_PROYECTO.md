@@ -202,3 +202,17 @@ No se acepta automáticamente el 0,6B ni el 1,7B local como sustituto, aunque se
 ### Hito de escucha aceptado (2026-10-20)
 
 El montaje breve de tres párrafos (43,296 s) obtuvo conformidad editorial del propietario. Se mantiene intacta la voz canónica; siguiente etapa: optimización de narración segmentada para mayor duración, límites de CPU gratuito y trazabilidad de investigación y licencias. No se habilita aún narración para publicación ni YouTube.
+
+## Fase 2 — integración editorial de fuentes y licencias (2026-10-20)
+
+**Hito de desarrollo verificado en GitHub `main`:**
+
+- [x] API Worker con expedientes de fuentes, afirmaciones y derechos vinculados a cada trabajo (`src/editorial.mjs` + rutas `/api/jobs/:id/dossier`).
+- [x] Esquema D1 versionado `0002_editorial_dossiers.sql`; preserva tablas iniciales y referencia del trabajo, registra revisión editorial y la invalida ante modificaciones.
+- [x] Panel administrativo con edición del expediente, estados y confirmación humana; el guardado por sí solo **no** permite renderear, y `approve`/`dispatch` se bloquean con HTTP 409 si no hay verificación acreditada.
+- [x] Pruebas de seguridad y contratos con Node, pruebas de migración local SQLite y CI de GitHub Actions [39521914410](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39521914410) **exitosa**; también se cubrió el caso de migración remota ausente con HTTP 503.
+- [ ] **Aplicar la migración 0002 a Cloudflare D1 real**. Las herramientas de Cloudflare de esta sesión no permitieron consultar/actualizar la base; no declarar aplicado el SQL remoto.
+- [ ] **Desplegar el nuevo Worker y panel y validar el recorrido completo en la instancia real**. No confundir tests en CI con despliegue.
+- [ ] Construir un expediente factual con fuentes originales comprobadas, revisión legal de voz y materiales, y primer documental investigado de 8–14 minutos. La narración de 43,296 s aprobada por el propietario permanece como ensayo, sin autorización comercial automática.
+
+**Orden obligatorio del próximo avance:** migración D1 y confirmación → despliegue Worker/assets → prueba de acceso, expediente, bloqueo/atestado y aprobación → materiales con licencias y guion de un documental original → nueva validación de narración y montaje. Cero proveedores de pago, `main` exclusiva y YouTube sin subida automática.
