@@ -41,6 +41,7 @@ jobs:
           python -m unittest discover -s tests -p test_local_research_ai.py -v
           python -m unittest discover -s tests -p test_editorial_audit.py -v
           python -m unittest discover -s tests -p test_edgar_discovery.py -v
+          python -m unittest discover -s tests -p test_financial_facts.py -v
       - name: Habilitar extracción de documentos PDF en CPU
         run: python -m pip install 'pypdf==5.9.0'
       - name: Investigar un tema libre o el piloto BlackBerry
@@ -99,6 +100,17 @@ jobs:
               print("Expedientes SEC por comprobar:",data["filing_candidates"])
               print("Hechos acreditados automáticamente:",data["automatic_fact_verification"])
           PY
+      - name: Obtener métricas XBRL SEC de un emisor candidato
+        if: inputs.topic != ''
+        continue-on-error: true
+        run: |
+          if [ -f dist/investigacion/sec_edgar_documentos_candidatos.json ]; then
+            timeout -k 5s 75s python -m tools.financial_probe \
+              --edgar-report dist/investigacion/sec_edgar_documentos_candidatos.json \
+              --out dist/investigacion
+          else
+            echo "Sin identificación SEC; no se inventan métricas"
+          fi
       - name: Instalar modelo abierto y PyTorch SOLO CPU
         run: |
           python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
