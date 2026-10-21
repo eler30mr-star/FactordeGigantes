@@ -6,12 +6,6 @@ on:
         description: "ID del workflow de voz exitoso que produjo los cuatro MP3"
         type: string
         required: true
-  # Durante el primer ensayo, renderizar inmediatamente si la voz termina bien.
-  # Retirar este disparador al verificar el primer montaje.
-  workflow_run:
-    workflows:
-      - "FDG - voz original BlackBerry escena 01 Qwen CPU"
-    types: [completed]
 permissions:
   actions: read
   contents: read
