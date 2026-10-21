@@ -1,4 +1,4 @@
-# Despliegue inicial del motor
+# Factor de Gigantes — estado de producción y despliegue
 
 > No ejecutar hasta haber configurado las cuentas propias. No pegar tokens ni claves dentro del repositorio o del chat.
 
@@ -12,48 +12,32 @@ La base real ya existe: `factor-de-gigantes-db`, UUID `ef699e75-b50a-4e28-a665-6
 
 **No crear otra base D1 ni ejecutar manualmente los CREATE TABLE ahora.** La migración SQL se aplicó fuera del mecanismo de historial de Wrangler; el script de migración es idempotente y Wrangler podría registrar su aplicación en un despliegue posterior.
 
-## 2B. Migración editorial 0002 — PENDIENTE EN D1 REMOTA
+## 2B. Estado de producción — 21 de octubre de 2026 (CONFIRMADO)
 
-La integración del nuevo expediente documental exige `migrations/0002_editorial_dossiers.sql`. El código y la migración se probaron en GitHub Actions **en base local**, pero **no hay confirmación de que esta tabla exista aún en la D1 remota**. Antes de desplegar el nuevo Worker desde `main`:
+- **Cuenta conectada:** `Factor` de Cloudflare, separada de `Primary`. Utilizar siempre esa conexión para este proyecto.
+- **Worker:** `factor-de-gigantes`; URL `https://factor-de-gigantes.martin30-eler.workers.dev`.
+- **D1 real:** `factor-de-gigantes-db` (`ef699e75-b50a-4e28-a665-69316d10cdaf`), enlazada como `DB` al Worker.
+- **Migraciones 0001, 0002, 0003:** tablas e índices de `jobs`, `events`, `editorial_dossiers` y `research_requests` presentes en D1 REMOTA. `0002` y `0003` aplicadas el 2026-10-21 mediante Cloudflare D1 SQL API, con los archivos originales del repo. No hace falta volver a crear estas tablas.
+- **Preservación de datos:** antes 1 trabajo + 8 eventos; después 1 trabajo + 8 eventos. Nuevas tablas vacías (0 expedientes, 0 solicitudes). La consulta de claves foráneas no encontró infracciones.
+- **Respaldo:** se generó una exportación SQL de `jobs`/`events` en Cloudflare antes de las migraciones, y se registró un bookmark de Time Travel antes de los cambios. **El enlace firmado de la exportación caduca**, y esta acción no constituye un respaldo externo permanente descargado. Confirmar vigencia de Time Travel y efectuar respaldos adicionales antes de migraciones futuras.
+- **Secretos existentes:** `ADMIN_TOKEN`, `RENDERER_TOKEN` y `GITHUB_DISPATCH_TOKEN` figuran como `secret_text`. Nunca se leyeron sus valores ni se duplicaron.
+- **Despliegue de código:** build de Cloudflare `720b0c1e-b0ac-4dda-92c3-4c7110f8f862` (`success`) desde commit de `main` `ad13c545ec0d61cbc10284987bb01d06a85d7ca7`, ejecutó **21 tests JS, cero fallos**, `npx wrangler deploy` y publicó versión `d6a44edd-1039-405f-ae87-51e64bfddb0e` con 100 % del tráfico. Asset binding, D1 y tres secretos permanecen intactos.
 
-1. Confirmar estar en la cuenta Cloudflare correcta (base `factor-de-gigantes-db` ya existente). No crear otra base ni copiar un ID diferente.
-2. Desde el repositorio actualizado a `main` y con sesión Wrangler autorizada, ejecutar:
+**Importante sobre el historial de migraciones:** 0001–0003 se aplicaron mediante la API SQL remota en lugar del mecanismo de seguimiento de Wrangler; no se creó la tabla `d1_migrations` en ese procedimiento. Los scripts originales usan `IF NOT EXISTS`. Si una migración futura se aplica con `wrangler d1 migrations apply --remote`, consultar su plan y confirmar que cualquier repetición de 0001–0003 sea idempotente. **No copiar de nuevo comandos de creación manual ni restaurar la base a un momento anterior por rutina.**
 
-```sh
-npm install
-npx wrangler d1 migrations apply factor-de-gigantes-db --remote
-npx wrangler d1 execute factor-de-gigantes-db --remote --command "SELECT name FROM sqlite_master WHERE type='table' AND name='editorial_dossiers';"
-```
+## 2C. Investigación desde el panel — estado operacional y límites
 
-El segundo comando debe devolver exactamente la tabla `editorial_dossiers`. La primera migración `0001_initial.sql` tiene instrucciones `IF NOT EXISTS`; como se aplicó en su momento fuera del historial de Wrangler, puede ser registrada de nuevo por la herramienta sin borrar los datos. Revisar el mensaje de Wrangler y hacer copia de respaldo antes de operar sobre datos reales.
+El Worker desplegado incluye `/api/research` y acceso al editor de expedientes; las tablas D1 necesarias existen. El formulario «Investigar con IA» crea solicitudes solo al recibir confirmación del administrador, usa Qwen local en GitHub Actions y **no** inicia videos, publicaciones ni compras.
 
-3. Solo tras verificar la tabla, ejecutar `npx wrangler deploy` o confirmar el build/deploy automático ya configurado.
-4. Acceder al panel y probar un expediente `draft → review → acreditación humana → approved` con datos de prueba **sin lanzar render de producción**. Comprobar en `events` los eventos `dossier_saved` y `dossier_attested`, y que las aprobaciones incompletas devuelvan HTTP 409.
-5. No crear secretos nuevos ni modificar `GITHUB_DISPATCH_TOKEN` si ya funcionan; nunca imprimir valores.
+El límite de 4 solicitudes por día UTC se aplica con **reserva atómica** en D1 desde la versión de `main` indicada arriba. `research_requests` tiene la restricción `UNIQUE(topic_key,day_utc)`, lo que evita repetir el mismo tema. Ante red incierta se marca `unknown`, sin reintentar automáticamente.
 
-Si se despliega código nuevo antes de migrar, las rutas editoriales responderán **HTTP 503** con una advertencia explícita, evitando aprobar expedientes sobre tablas ausentes. Esta comprobación no equivale a un despliegue exitoso.
+El panel permite ver ejecuciones vinculadas desde GitHub Actions mediante `request_id`; `sent` **no equivale a investigación finalizada**. Los textos del investigador son propuestas sin verificación humana, licencia ni autorización de render/publicación.
 
-## 2C. Investigación desde el panel — migración 0003 (PENDIENTE EN CLOUDFARE REMOTA)
+**Siguiente verificación real pendiente:** realizar una lectura/autenticación del panel desde el navegador del propietario con `ADMIN_TOKEN` y luego, únicamente con su decisión explícita de investigar un tema, comprobar un `workflow_dispatch` real y sus artefactos. No se ha enviado una investigación pagada o pesada de manera automática durante las migraciones ni pruebas.
 
-La nueva sección «Investigar con IA» utiliza la tabla research_requests de migrations/0003_research_requests.sql. Su propósito es limitar a cuatro solicitudes por día UTC, evitar el mismo tema repetido ese día y registrar envíos con resultado incierto. El motor IA corre en GitHub Actions con CPU y no usa la GPU de la laptop.
+## 3. Recuperación o recreación excepcional del Worker
 
-**Verificado únicamente en D1 local con Wrangler**: [GitHub Actions 39544778750](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39544778750) finalizó success aplicando 0001, 0002 y 0003 y probando el Worker real. No se modificó la D1 remota ni se disparó una investigación costosa durante la prueba.
-
-Antes de desplegar la interfaz nueva:
-
-1. Entrar a la cuenta Cloudflare correcta, confirmar la D1 existente factor-de-gigantes-db y preparar un respaldo antes de aplicar migraciones remotas.
-2. Desde main actualizado, ejecutar una sola vez `npx wrangler d1 migrations apply factor-de-gigantes-db --remote` revisando cuidadosamente el historial de migraciones y confirmando el plan. No crear otra D1.
-3. Verificar ambas tablas: `npx wrangler d1 execute factor-de-gigantes-db --remote --command "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('editorial_dossiers','research_requests');"`. Deben existir exactamente esas dos tablas de extensión, además de jobs/events.
-4. Desplegar el Worker + public/ de main, confirmar /health y probar la lectura de /api/research con ADMIN_TOKEN. Si falta la tabla, debe devolver HTTP 503; **no** intentar reenvíos ciegos.
-5. Antes de realizar una investigación real desde el panel, confirmar que GITHUB_DISPATCH_TOKEN de Cloudflare tiene permiso Actions: write sobre este repositorio. No exponer el secreto en el navegador. Lanzar un tema de prueba después de confirmar las cuotas disponibles.
-
-**Estados:** reserved es reserva local; sent significa que GitHub aceptó el workflow_dispatch, no que el resultado se completó. unknown señala una red fallida que podría haber entregado la solicitud: consultar Actions manualmente, sin reintentar a ciegas. rejected significa rechazo explícito de GitHub. Este MVP no consulta todavía de vuelta la finalización de Actions; revisar el workflow de investigación en GitHub y descargar el artefacto.
-
-El formulario solicita consentimiento explícito por cada tema, nunca investiga por sí solo ni publica videos. Los minutos gratuitos de Actions están sujetos a cuota y condiciones del plan; un modelo descargable no garantiza computación ilimitada gratuita.
-
-## 3. Crear/importar Worker desde GitHub
-
-1. Cloudflare → Workers & Pages → Create application → Import a repository.
+**Esta sección es solo para un escenario de recuperación. El Worker, la D1 y los secretos ya existen: NO crear otro Worker ni otra base.**\n\n1. Cloudflare → Workers & Pages → Create application → Import a repository.
 2. Vincular GitHub y seleccionar la cuenta `eler30mr-star`, repositorio `FactordeGigantes`.
 3. Proyecto **Worker** (no una página web estática independiente).
 4. Nombre exacto del Worker: `factor-de-gigantes` (debe coincidir con `wrangler.jsonc`).
@@ -66,8 +50,7 @@ Alternativamente, desde ordenador con Wrangler autenticado, `npm install && npx 
 
 ## 4. GitHub Actions
 
-
-Agregar en Settings → Secrets and variables → Actions:
+Los secretos de conexión fueron usados con éxito en la prueba del renderizador. No regenerar ni imprimir valores por rutina. Si se reconstruye el entorno, entonces agregar en Settings → Secrets and variables → Actions:
 - Secret `API_BASE_URL`: URL pública base del Worker (https://...workers.dev o dominio propio, sin barra final).
 - Secret `RENDERER_TOKEN`: mismo valor configurado en Cloudflare.
 
