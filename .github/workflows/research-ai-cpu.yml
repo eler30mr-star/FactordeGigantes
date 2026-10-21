@@ -39,16 +39,16 @@ jobs:
         run: |
           if [ -n "$RESEARCH_TOPIC" ]; then
             timeout -k 5s 140s python -m tools.research_engine \
-              --topic "$RESEARCH_TOPIC" --max-requests 3 --out dist/research-blackberry
+              --topic "$RESEARCH_TOPIC" --max-requests 3 --out dist/investigacion
           else
             timeout -k 5s 140s python -m tools.research_engine \
               --dossier research/blackberry/expediente_preliminar.json \
-              --max-requests 6 --out dist/research-blackberry
+              --max-requests 6 --out dist/investigacion
           fi
           python - <<'PY'
           import json
           from pathlib import Path
-          p = json.loads(Path("dist/research-blackberry/reporte_investigacion.json").read_text())
+          p = json.loads(Path("dist/investigacion/reporte_investigacion.json").read_text())
           print("Documentos obtenidos:",p["fetched_count"],"/",p["request_count"])
           print("Pasajes candidatos:",sum(len(c["candidate_passages"]) for c in p["candidate_claims"]))
           print("Comprobaciones humanas realizadas por la herramienta:",p["facts_verified_automatically"])
@@ -61,14 +61,14 @@ jobs:
       - name: IA local genera borrador solo con los pasajes extraídos
         run: |
           /usr/bin/time -v timeout -k 10s 540s python -m tools.local_research_ai \
-            --report dist/research-blackberry/reporte_investigacion.json \
-            --out dist/research-blackberry \
+            --report dist/investigacion/reporte_investigacion.json \
+            --out dist/investigacion \
             --model Qwen/Qwen3-0.6B --max-new-tokens 235
       - name: Entregar informe de fuentes y borrador no verificado
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: factor-investigador-ia-blackberry-cpu
-          path: dist/research-blackberry/
+          name: factor-investigacion-ia-cpu
+          path: dist/investigacion/
           retention-days: 3
           if-no-files-found: warn
