@@ -299,12 +299,22 @@ async function loadNewsRadar() {
     root.append(tag("p","empty","El radar todavía no ha registrado titulares recientes."));
     return;
   }
-  for(const article of result.leads) {
+  const screening=Array.isArray(result.preliminary_screening)?result.preliminary_screening:[];
+  const scoreById=new Map(screening.map(x=>[x.id,x]));
+  const display=[...result.leads].sort((a,b)=>
+    (scoreById.get(b.id)?.editorial_relevance_score??-1)-
+    (scoreById.get(a.id)?.editorial_relevance_score??-1));
+  for(const article of display) {
     const card=tag("article","job","");
     const head=tag("div","jobtop","");
     head.append(tag("strong","",String(article.headline||"Titular sin texto")),
       tag("span","tag",String(article.category||"noticia")));
     card.append(head);
+    const review=scoreById.get(article.id);
+    if(review) card.append(tag("small","",
+      "Relevancia documental exploratoria: "+review.editorial_relevance_score+
+      "/100 · motivos: "+(review.heuristic_reasons||[]).join(", ")+
+      " · sin datos competitivos YouTube"));
     card.append(tag("small","",String(article.source_label||"Medio atribuido")+" · "+
       String(article.published_at||"Fecha no disponible")));
     const url=String(article.aggregator_url||"");
