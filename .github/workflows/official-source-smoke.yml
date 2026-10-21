@@ -1,11 +1,6 @@
 name: Factor de Gigantes - descubrir sitio oficial real
 on:
   workflow_dispatch:
-  # Ejecutar una segunda comprobación acotada y desactivar el trigger.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/official-source-smoke.yml'
 permissions:
   contents: read
 jobs:
