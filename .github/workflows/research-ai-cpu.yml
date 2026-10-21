@@ -1,7 +1,13 @@
 name: Factor de Gigantes - investigador IA local CPU
+run-name: "FDG Investigación · ${{ inputs.request_id || 'manual' }}"
 on:
   workflow_dispatch:
     inputs:
+      request_id:
+        description: 'ID de solicitud generado por el panel; opcional si lanzas manualmente'
+        required: false
+        type: string
+        default: ''
       topic:
         description: 'Tema libre (vacío = piloto con fuentes primarias BlackBerry)'
         required: false
