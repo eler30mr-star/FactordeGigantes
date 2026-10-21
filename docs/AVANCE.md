@@ -1,6 +1,6 @@
 # Historial de avance — Factor de Gigantes
 
-> **Estado vigente 2026-10-21:** Cloudflare cuenta «Factor» restablecida; D1 remota 0002/0003 aplicadas, 1 trabajo y 8 eventos preservados; Worker y panel nuevos desplegados desde `main` con 25 pruebas Node verdes. El motor documental, verificación factual, validación de derechos y login final de interfaz siguen en progreso. El banco Qwen de voz 1.7B conserva su estado previo de audición/licencia pendiente.
+> **Estado vigente 2026-10-21 (última actualización):** D1 remota 0001–0004 aplicada, 1 trabajo y 8 eventos preservados. Radar automático Wikimedia → GitHub Actions → JWT GitHub OIDC → Worker → D1 **validado de extremo a extremo** (2 empresas y 2 ventanas de 14 días persistidas), autenticado sin credenciales adicionales. Panel de radar incorporado en `main`. **Estudio competitivo YouTube, elección del tema ganador, generación profesional completa y publicación siguen pendientes.**
 
 ## 2026-10-20 · Inicio del proyecto
 
@@ -1020,3 +1020,42 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 4. Añadir proveedor de noticias y señales YouTube reales para comparar múltiples temas antes de cualquier selección.
 5. Conectar selección fundamentada con investigación Gemini/Qwen, fact-check, guion, voz, visuales, QA y subida a YouTube solo tras aprobación.
 
+
+
+## 2026-10-21 · HITO NUEVO: radar persistente REAL con GitHub OIDC, D1 y panel
+
+### Auditoría previa y migración remota
+- Cuenta conectada: Cloudflare **Factor**, no `Primary`. DB exacta `factor-de-gigantes-db` UUID `ef699e75-b50a-4e28-a665-69316d10cdaf`.
+- Antes de alterar D1: se leyó `sqlite_master`, se verificaron tablas 0001–0003, se registró bookmark Time Travel y Cloudflare confirmó exportación SQL temporal. El punto de restauración no debe confundirse con copia externa permanente.
+- Se aplicó **`migrations/0004_market_intelligence.sql`** directamente a D1 remota con su SQL aditivo original; resultado OK y cinco tablas presentes: `market_runs`, `market_entities`, `market_pageview_observations`, `market_interest_windows`, `market_selection_decisions`.
+- Recuento conservado antes/después: `jobs=1`, `events=8`, `editorial_dossiers=0`, `research_requests=0`. Sin pérdida de registros previos.
+
+### Backend y seguridad implementados
+- `src/market-ingest.mjs`: validación de entidades QID, fechas, series completas, métricas enteras, dominio Wikimedia, presupuestos y estados no autorizados. Escribe con `DB.batch` transaccional e identificador derivado de SHA-256 canónico. Inserciones idempotentes para reportes repetidos; no activa render ni YouTube.
+- `src/github-oidc.mjs`: verificación de firma RS256 con claves públicas GitHub y claims de audiencia, `repository_id`, `workflow_ref`, rama, evento y tiempo. **No se utiliza un token de ingesta de larga duración**.
+- `src/worker.js`: ruta `POST /api/market/ingest` únicamente mediante OIDC y ruta `GET /api/market/radar` únicamente con `ADMIN_TOKEN`.
+- `tools/push_market_radar.py`: obtiene credencial efímera de GitHub Actions y reporta éxito solo cuando la API confirma escritura D1.
+- `.github/workflows/topic-discovery-smoke.yml`: descubrimiento diario + manual, `id-token: write`, envía reporte a Worker sin almacenar el JWT; después de prueba temporal de integración se **retiraron tanto `push` como la concesión OIDC para evento `push`**.
+- `tests/test_market_ingest.mjs`, `tests/test_github_oidc.mjs`, `tests/test_push_market_radar.py` y CI Node/Python añadidos y validados.
+
+### Evidencia de funcionamiento real
+- La primera ejecución de integración falló con 401 durante el despliegue/ajuste de credenciales efímeras. No se contó como éxito y se revisó.
+- **[GitHub Actions 39658991775](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39658991775): `success`**. Recopilación pública real, prueba SQLite, autenticación OIDC, HTTP 201 y persistencia D1 confirmadas.
+- Se leyó D1 remota *después* del éxito: `market_runs=1`; `market_entities=2`; `market_pageview_observations=2`; `market_interest_windows=2`; `market_selection_decisions=0`. Se comprobaron otra vez `jobs=1`, `events=8`.
+- No se introdujeron manualmente nombres de empresas ni valores de mercado; la ejecución obtuvo entidades y cifras desde las fuentes públicas.
+- Cloudflare API mostró versiones desplegadas del Worker que incluyen el verificador OIDC y la escritura D1; el build sigue sincronizándose desde `main`.
+
+### Panel y presentación del histórico
+- `public/index.html` incorpora sección «Radar de oportunidades» dentro del espacio autenticado.
+- `public/app.js` consulta `/api/market/radar?limit=30` y presenta candidatos, ventanas y procedencia como **visitas a artículos Wikimedia**, nunca como demanda de YouTube; se usa `textContent` para evitar inyección HTML.
+- Pendiente comprobación visual autenticada desde el navegador del propietario; el código y las comprobaciones CI no equivalen a navegación manual.
+
+### Qué falta para la meta final
+1. Añadir **descubrimiento oportuno de noticias y empresas** y guardar fuentes/time series en D1; ampliar variedad y continuidad de candidatos.
+2. Conectar YouTube Data API (con cuota/credencial permitida) para observar videos recientes de cada mercado hispanohablante y comparar competencia y relevancia. Sin ello **no existe ranking YouTube real**.
+3. Crear decisión explicable, auditada y basada en múltiples fuentes: motivo de elección, exclusión, conflictos y certeza, no elegir por popularidad de Wikipedia.
+4. Conectar mejor tema → dossier investigador Gemini/Qwen → fact-check y citas → guion 8–14 min → voz/escenas originales → QA audiovisual real.
+5. Añadir autorización editorial, derechos y OAuth oficial de YouTube; publicar solo con aprobación y sin contenido reutilizado.
+6. Validar experiencia completa del panel y plan de restauración/coste operativos.
+
+**Resultado inequívoco de esta sesión:** persiste autónomamente el radar en D1 con OIDC probado. **No** está concluida la investigación integral de mercado ni la producción/publicación automática. Historial y código en `main`.
