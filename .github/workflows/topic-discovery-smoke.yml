@@ -5,11 +5,6 @@ on:
     # Wikimedia publica rankings diarios con retraso; 1 chequeo al día
     # evita consumo redundante. No hay IA pagada ni subida a YouTube.
     - cron: '17 10 * * *'
-  # Ensayo de cobertura ampliada; retirar después de confirmar el resultado.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/topic-discovery-smoke.yml'
 permissions:
   contents: read
 concurrency:
