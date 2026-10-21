@@ -1,5 +1,8 @@
 # Plan maestro — Factor de Gigantes
 
+> **META FINAL INNEGOCIABLE — ACTUALIZACIÓN 2026-10-21:** Factor de Gigantes debe crear documentales completos de forma **autónoma desde un tema**, sin depender de que ChatGPT haga personalmente la investigación, el guion o el montaje de cada episodio. El propio sistema descubrirá y contrastará fuentes, redactará, narrará con voz autorizada, construirá escenas y exportará MP4 de 8–14 minutos. El propietario supervisa/aprueba. YouTube queda sujeto a autorización humana. **Prioridad inmediata: motor investigador independiente con proveedor intercambiable Gemini API gratuita o Qwen LLM local** (el Qwen-TTS de voz es otro componente). Arquitectura y aceptación en [`docs/ARQUITECTURA_AUTONOMA.md`](ARQUITECTURA_AUTONOMA.md). Este objetivo prevalece sobre seguir redactando BlackBerry a mano.
+
+
 **Fecha inicial:** 2026-10-20 · **Repositorio:** `eler30mr-star/FactordeGigantes` · **rama:** `main`
 
 ## 1. Propósito y meta final
@@ -414,3 +417,16 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Comprobar derechos comerciales de voz, música e imágenes, QA audiovisual final y publicar manualmente solo cuando se apruebe un documental completo de 8–14 minutos.
 
 **Medición concreta:** 12 escenas planificadas / 1 con MP4 real de 56,5 s; 56 tomas proyectadas / 4 generadas. Ninguna aprobación comercial ni publicación.
+
+## Reorientación prioritaria — 2026-10-21
+
+**Aclaración del propietario:** la meta final nunca fue que el asistente produzca cada episodio, sino que el **sistema Factor de Gigantes** realice todo el trabajo repetible. El prototipo BlackBerry debe ser una prueba y fixture de aceptación, no un proceso de producción artesanal ni dependencia permanente del chat.
+
+- [x] Especificar en `docs/ARQUITECTURA_AUTONOMA.md` contratos, etapas del orquestador, límites de fuentes, derechos, costes y criterio medible de independencia.
+- [x] Definir investigación como función de un **LLM de texto** intercambiable, distinta de Qwen3-TTS (solo narración).
+- [ ] Evaluar en la plataforma `gemini_free` (API, sin pago activado y con clave configurada por canal seguro) frente a `qwen_local` (LLM ejecutado en GitHub Actions/CPU), usando exactamente las mismas fuentes y criterios de evidencia; Gemini no está todavía conectado ni se ha probado en la infraestructura.
+- [ ] Implementar proveedor investigador/guionista y ejecución automática de **tema arbitrario sin que ChatGPT suministre documentos o prosa**, con auditoría de cada cita.
+- [ ] Construir orquestación persistente desde D1 de investigación→guion→voz→escenas→MP4, con reintentos seguros, presupuestos, guardas editoriales y estados operativos visibles en el panel.
+- [ ] Validar un episodio completo de 8–14 minutos generado por el propio sistema, no por redacción manual del asistente, y entregarlo para revisión. Publicación en YouTube por defecto deshabilitada.
+
+**Condiciones explícitas:** no contratar ni activar facturación para Gemini sin autorización; modalidad gratuita no es una capacidad ilimitada, y puede usar datos para mejora del proveedor; solo fuentes públicas. Mantener `main`, el historial y los controles de licencia y veracidad.
