@@ -505,3 +505,16 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Programación/subida oficial a YouTube **solo con autorización humana, derechos comprobados y OAuth**.
 
 **Aclaración del progreso:** está avanzado el código y la infraestructura REAL del radar; el producto final sigue condicionado a investigación, calidad audiovisual, licencias y automatización de publicación segura.
+
+
+### P0 · Entrega técnica 2026-10-21 — YouTube preparado y correlación real sin inventar mercado
+
+- [x] Colector reutilizable `YouTube Data API v3` integrado al workflow con dos candidatas descubiertas × dos regiones hispanohablantes, límite explícito de llamadas gratuitas y omisión sin clave/permiso; sin publicar automáticamente.
+- [x] Observaciones YouTube: migración D1 `0006`, API OIDC para escritura, lectura administrativa, panel, comprobaciones y tests CI. **0 registros reales YouTube aún**: no se declara estudio competitivo terminado.
+- [x] Unión conservadora de titulares RSS con compañías canónicas Wikidata, migración D1 `0007`, workflow de correlación, API y panel. **Prueba integral `39673977211` exitosa** con dos empresas, 100 noticias evaluadas y 0 coincidencias textuales. No se inventaron vínculos.
+- [x] Rollback del disparador `push` provisional usado en pruebas; `schedule`/manual y OIDC limitado, cero pagos y sin credenciales expuestas.
+- [ ] Ejecutar YouTube Data API con clave y presupuesto gratuito expresamente aprobados en proyecto **sin facturación** y registrar vídeos auténticos por región.
+- [ ] Corroborar identidad de empresa y fuentes originales de noticias y comunicados, evaluar varias oportunidades, persistir razones/descartes y seleccionar solo cuando exista evidencia suficiente.
+- [ ] Habilitar pipeline investigador/guionista Gemini gratuito o Qwen local, producción 8–14 minutos con voz canónica y permisos, QA y OAuth/publicación solo tras aprobaciones.
+
+**Criterio de aceptación pendiente:** la infraestructura YouTube y las coincidencias entre fuentes NO equivalen aún a un radar profesional que selecciona el mejor documental. Priorizar evidencias, comparación y decisión autónoma por delante de nuevas mejoras estéticas.
