@@ -1,6 +1,6 @@
 # Historial de avance — Factor de Gigantes
 
-> **Estado vigente 2026-10-21:** D1 remota 0001–0006 aplicada en Cloudflare Factor y datos previos conservados. Radar Wikimedia y RSS conectado a GitHub Actions OIDC y D1 (2 empresas, 2 series y 100 titulares reales). Comparador YouTube por empresa/región, persistencia D1 y panel privado implementados, probados con fixtures y desplegados; **aún 0 mediciones públicas YouTube en D1**. Requiere clave/API y habilitación expresa de cuota gratuita, sin pagos. Ranking competitivo real, fuentes primarias, elección fundamentada, investigación/guion/video y publicación autorizada siguen pendientes.
+> **Estado vigente 2026-10-21:** D1 remota 0001–0007 aplicada y datos históricos conservados. Radar Wikimedia + RSS → GitHub Actions OIDC → Worker → D1 integrado; observación real: 2 empresas, 106 titulares RSS acumulados y primer cruce empresa-noticia ejecutado con 0 coincidencias válidas. Colector/comparador YouTube por región, D1, API y panel implementados y desplegados, **0 muestras YouTube observadas** porque no se ha confirmado clave ni presupuesto gratuito habilitado. Investigación primaria, selección profesional de tema, documental 8–14 minutos y publicación YouTube autorizada todavía pendientes.
 
 ## 2026-10-20 · Inicio del proyecto
 
@@ -1115,3 +1115,31 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 4. Encadenar investigación Gemini gratuita o Qwen local, evidencias, guion, voz oficial aprobada y MP4 profesional de 8–14 min con QA; publicación en YouTube siempre condicionada a revisión y permisos.
 
 **No declarar completada fase P0:** el colector y su almacenamiento están implementados, pero falta primera ejecución con estadísticas YouTube auténticas y conexión de evidencia primaria para selección fundamentada.
+
+
+## 2026-10-21 · P0 — Continuación: cotejo automático de fuentes y prueba integral (migración 0007)
+
+### Código en main
+- `tools/market_news_join.py`: asocia empresas realmente descubiertas por Wikimedia con titulares realmente obtenidos por RSS, por coincidencia textual normalizada y límites de palabra, quitando sufijos societarios genéricos. No utiliza lista fija de compañías, LLM, datos inventados ni adivina identidades. Excluye nombres ambiguos/cortos, fechas dispares y dominios fuera del agregador. Conserva evidencia de ambos extremos.
+- `migrations/0007_entity_news_links.sql`: tablas aditivas `market_entity_news_runs` y `market_entity_news_links`. FK a `market_entities` y `market_news_leads`, estado `candidate_needs_entity_confirmation`, sin aprobación ni datos de YouTube.
+- `src/market-cross-signals.mjs`: valida procedencia, tamaño, fechas, IDs, titular que contiene la mención y estados editoriales pendientes; persistencia por lote D1 idempotente, sin alterar manualmente un enlace confirmado/rechazado. API administrativa de lectura `GET /api/market/cross` y entrada OIDC `POST /api/market/cross/ingest` integrada en el Worker.
+- `tools/push_market_cross.py`: transporte desde GitHub Actions a Cloudflare con JWT OIDC efímero, sin compartir ni imprimir tokens. `.github/workflows/topic-discovery-smoke.yml`: correlación + persistencia después de RSS y antes del sondeo YouTube condicional.
+- `public/index.html`, `public/app.js`: sección de coincidencias con noticia y empresa y estado explícito de no verificación; interfaz sin HTML inyectado a partir de titulares externos.
+- `tests/test_market_news_join.py` y `tests/test_market_cross_signals.mjs`: false positive tests, deduplicación, rechazo de aprobaciones falsas, datos de prueba marcados como fixtures, integración CI.
+
+### Despliegue y prueba real
+- Antes de alterar D1 se comprobó la base `factor-de-gigantes-db` en la cuenta Cloudflare Factor, obtuvo bookmark Time Travel y Cloudflare completó una exportación SQL temporal (no una copia externa permanente). Se verificó conservación inicial de registros.
+- **Migración 0007 aplicada directamente en D1 REMOTA**: dos tablas presentes; las anteriores conservadas.
+- Para lanzar una única prueba real se habilitó temporalmente `push` en el workflow y verificador OIDC, exclusivamente en `main`. El guardado del nuevo paso funcionó mediante el circuito Cloudflare autenticado.
+- **[GitHub Actions 39673977211](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39673977211): `success`.** Pasaron descubrimiento Wikimedia, SQLite local, ingesta D1, RSS real, correlación, ingesta del cruce y paso de YouTube bajo presupuesto.
+- Lectura independiente posterior a D1: `market_entity_news_runs=1`, `market_entity_news_links=0`; `market_entities=2`, `market_news_leads=106`, `jobs=1`, `events=8`. El sistema examinó 100 noticias en esa corrida, pero no halló ninguna mención textual confiable de las 2 empresas. **0 coincidencias es una observación real, no un fallo ni una licencia para inventar entidades.**
+- YouTube: `market_youtube_runs=0`, `market_youtube_queries=0`, `market_youtube_videos=0`. La fase está **implementada pero no validada contra la API pública con credenciales reales**. No se ha consumido cuota de Google ni activado facturación desde aquí.
+- **Cierre del modo prueba:** se eliminaron de nuevo tanto el evento `push` del workflow como su autorización en `src/github-oidc.mjs`. Las únicas entradas conservadas son `schedule` y `workflow_dispatch`. Se restauró el test que rechaza `push`.
+
+### Próxima prioridad P0
+1. Verificar que existe un proyecto YouTube Data API con cuota gratis **sin facturación**, y que están disponibles credencial `YOUTUBE_DATA_API_KEY` y permiso explícito `YOUTUBE_MARKET_BUDGET_ENABLED=1`; no pedir ni introducir clave en chat. Sin esos requisitos el módulo no llama a YouTube, informa el bloqueo sin inventar métricas.
+2. Incorporar más candidatos desde noticias actuales a entidades Wikidata, con precisión medible y verificación de fuentes primarias; ampliar la cobertura de temas sin aumentar pagos.
+3. Tras obtener muestras reales de competencia YouTube, comparar oportunidad de varios temas, justificar descartes, registrar `market_selection_decisions` en D1 y asignar `sin_datos_suficientes` cuando corresponda. Vincular sólo elegibles a investigador Gemini gratuito / Qwen local.
+4. Después guion con evidencias, voz canónica aprobada, visuales originales/licenciados, documental 8–14 min, QA, autorización editorial y subida a YouTube con OAuth permitido.
+
+**Conclusión técnica:** se han integrado y probado dos nuevos módulos en producción (ingesta informativa y cotejo), y se preparó YouTube condicionado a cuota. No confundir infraestructura lista con inteligencia de mercado competitiva completada.
