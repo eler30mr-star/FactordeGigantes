@@ -401,3 +401,16 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Completar aprobación histórica y fuentes, assets cinematográficos originales/licenciados, final de 8–14 min y validación audiovisual. **No** subir automáticamente a YouTube.
 
 **Situación:** infraestructura, guion largo y prueba de intro están verificados; la nueva escena narrada y el documental completo aún no lo están. Ver `docs/AVANCE.md` para estado de corridas.
+
+### Entrega audiovisual real — BlackBerry escena 01 — 2026-10-21
+
+- [x] **Audio nuevo del guion real:** Qwen3 Base 1.7B CPU generó 4 MP3 en [39639684819](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684819), todos con referencia canónica y sin sustituir la voz. Duraciones: 15,840 + 13,632 + 11,448 + 14,568 s; unión **56,520 s** con pausas. [Artefacto 12365895069](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684819/artifacts/12365895069). 0 APIs de pago. **Audición y licencia comercial pendientes.**
+- [x] **Video con esa misma narración:** [39641357257](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39641357257) `success`, [artefacto 12364518448](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39641357257/artifacts/12364518448). `BLACKBERRY_ESCENA01_CON_VOZ_NUEVA_REVISAR.mp4`: 56,500 s, 679 fotogramas animados, 1280×720, video H.264 y **audio AAC decodificable**. La duración fue medida y se inspeccionaron fotogramas de 2, 11, 23, 36 y 48 segundos. Sigue siendo previsual gráfica con planos que se reutilizan; no llamarlo montaje cinematográfico definitivo.
+- [x] Descargar y verificar MP3/MP4 en entorno de trabajo. Los enlaces temporales de conversación contienen el MP3 unido `05_escena01_unida.mp3` y el MP4 de 56,5 s; no depender de esos enlaces para almacenamiento a largo plazo. Los artefactos GH son temporales.
+- [x] **Programación completa 12 escenas:** `tools/blackberry_voice_schedule.py` y `research/blackberry/LOTE_AUDIO_VISUAL_12_ESCENAS.json` registran **56 fragmentos planificados** para 12 escenas, con reconstrucción textual exacta, ID y estado. Solo 4 de 56 tienen audio generado, **52 faltan**. El resto es planificación, no audios producidos.
+- [x] Retirar disparadores de prueba automática de voz y montaje después de la exportación; `blackberry-scene01-voice.yml` y `blackberry-scene01-video.yml` quedan **solo manuales**, sin ejecución Qwen por push ni publicación.
+- [ ] Evaluar auditivamente las cuatro tomas de la escena 01 contra la referencia y decidir correcciones antes de extender generación CPU a las demás. Los tests no certifican timbre, pronunciación ni legalidad.
+- [ ] Sustituir visuales gráficos repetidos por planos originales más diversos con coherencia narrativa; montar capítulos 02–12 con voz consistente y fuentes revisadas.
+- [ ] Comprobar derechos comerciales de voz, música e imágenes, QA audiovisual final y publicar manualmente solo cuando se apruebe un documental completo de 8–14 minutos.
+
+**Medición concreta:** 12 escenas planificadas / 1 con MP4 real de 56,5 s; 56 tomas proyectadas / 4 generadas. Ninguna aprobación comercial ni publicación.
