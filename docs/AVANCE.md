@@ -607,3 +607,23 @@ Continuar el motor de Factor de Gigantes mientras la laptop HP de 12 GB está de
 4. Confirmar derechos comerciales de voz y audiovisuales; retomar guion y montaje cinematográfico con identidad vocal aprobada, sin necesitar comprar equipo hasta conocer GPU de la laptop.
 
 **Estado:** código + pruebas CI + integración con D1 LOCAL confirmados en main; despliegue Cloudflare REMOTO, uso real del botón, investigación documental completa y publicación pendientes.
+
+## 2026-10-21 · Fase 2: seguimiento del investigador + descubrimiento de webs oficiales
+
+**Contexto del avance:** el propietario pidió continuar sin depender de la batería/GPU de su laptop. Se trabaja **exclusivamente en `main`** de `eler30mr-star/FactordeGigantes`. No se modificó la voz original ni `render.yml`, y no se publicaron videos.
+
+### Implementación comprobable
+
+1. **Seguimiento de investigaciones por ejecución real de Actions:** se añadió `request_id` opcional a `.github/workflows/research-ai-cpu.yml` y `run-name` específico. `src/research-control.mjs` despacha el UUID de cada investigación y permite consultar hasta 50 runs recientes por API GitHub autenticada; la correlación exige título, rama `main`, tipo de evento, ID numérico y URL oficial correctos. `GET /api/research?runs=1` devuelve el run y su estado/conclusión, o marca consulta no disponible. Un HTTP 204 de despacho no demuestra ejecución exitosa. El panel `public/app.js` diferencia cola, ejecución, éxito y fallo, con acceso a Actions; solo consulta el estado tras iniciar la investigación o pulsar «Actualizar».
+2. **Pruebas de protección y trazabilidad:** `tests/test_research_control.mjs` cubre URLs falsas, ramas distintas, respuestas 403, timeouts, runs ajenos y ausencia de estados confirmados. GitHub CI [39587493924](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39587493924): `success`. El resultado de este test usa respuestas simuladas de GitHub: falta verificación del botón con Worker/D1 remotos.
+3. **Descubrimiento independiente de posibles sitios corporativos:** `tools/primary_source_discovery.py` investiga páginas vinculadas al tema mediante la API MediaWiki y la propiedad `P856` de Wikidata. Rechaza hosts privados/no HTTPS mediante `tools/research_engine.py`, pone límites de documentos, solo guarda pasajes breves y jamás marca hechos o licencias verificados. `tests/test_primary_source_discovery.py` verifica descubrimiento, falta de enlaces, fallos de red y protección URL. Se integró al workflow de investigación en temas libres, con advertencias y ejecución no bloqueante.
+4. **Pruebas externas y corrección:** primera [39587995688](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39587995688), `success` pero **0 sitios** al inspeccionar dos resultados. Se amplió la búsqueda para examinar hasta cinco entidades y se repitió [39588198172](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39588198172), `success`: **1 candidato de cinco artículos**: `BlackBerry Limited`, `https://blackberry.com` desde Wikidata. **La página no se pudo leer** (`ValueError`); hay URL candidata, NO evidencia factual. No se afirmó haber verificado un hecho. Artefacto [12340022602](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39588198172/artifacts/12340022602) con `fuentes_oficiales_candidatas.json`.
+5. Los workflows usados para una prueba de fuente real fueron restaurados inmediatamente a `workflow_dispatch` manual: **sin nuevas ejecuciones continuas, proveedores de pago ni publicación automática**. `docs/MOTOR_INVESTIGACION.md` detalla contratos y limitaciones.
+
+### Bloqueos y siguiente tarea prioritaria
+
+- **Cloudflare remota sin acceso:** la herramienta de Cloudflare devolvió error interno otra vez. NO se ha aplicado D1 0002/0003 ni desplegado el panel nuevo, ni se ha comprobado correlación real entre solicitud y Actions desde el Worker publicado.
+- **Primarias:** obtener contenido original efectivo de sitios oficiales o documentos reguladores/financieros, con fecha y página; `P856` es solo una pista de la entidad. Contrastar datos de fuentes independientes y corregir el borrador Qwen anterior con error IPO.
+- **Investigación y guion:** generar narración completa de 8–14 minutos únicamente tras respaldar las afirmaciones, licencias de material visual y de voz. Mantener el flujo manual controlado de GitHub sin cobrar APIs y respetar `main`.
+
+**Estado preciso:** código implementado y CI verde; descubrimiento de un sitio oficial candidato comprobado externamente; enlace no descargado; funcionalidad remota y documental de producción aún **pendientes**.
