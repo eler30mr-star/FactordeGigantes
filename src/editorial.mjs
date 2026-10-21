@@ -19,7 +19,7 @@ export function sourceUrl(value) {
   let u;
   try { u = new URL(value); } catch { throw new Error("URL de fuente inválida"); }
   if (u.protocol !== "https:" || !u.hostname || u.username || u.password ||
-      /^(localhost|127\\.|10\\.|192\\.168\\.|169\\.254\\.|0\\.)/i.test(u.hostname) ||
+      /^(localhost|127\.|10\.|192\.168\.|169\.254\.|0\.)/i.test(u.hostname) ||
       u.hostname.endsWith(".local") || u.hostname.endsWith(".invalid"))
     throw new Error("La fuente requiere HTTPS público, sin credenciales");
   return u.href;
@@ -38,14 +38,14 @@ export function validateDossier(dossier, manifest) {
   for (const s of sources) {
     if (!s || typeof s !== "object") throw new Error("Fuente inválida");
     const sid = string(s.id, "ID de fuente", 3, 4);
-    if (!/^S\\d{2,3}$/.test(sid) || sourceIds.has(sid)) throw new Error("ID de fuente duplicado o incorrecto");
+    if (!/^S\d{2,3}$/.test(sid) || sourceIds.has(sid)) throw new Error("ID de fuente duplicado o incorrecto");
     sourceIds.add(sid);
     const url = sourceUrl(s.url);
     if (sourceUrls.has(url)) throw new Error("Fuente URL duplicada");
     sourceUrls.add(url);
     string(s.publisher, "Entidad publicadora", 3, 130);
     const date = string(s.accessed_on, "Fecha de acceso", 10, 10);
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) ||
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
         Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0,10) !== date)
       throw new Error("Fecha de consulta inválida");
     if (!validTypes.has(s.type)) throw new Error("Tipo de fuente inválido");
@@ -60,7 +60,7 @@ export function validateDossier(dossier, manifest) {
   for (const c of claims) {
     if (!c || typeof c !== "object") throw new Error("Afirmación inválida");
     const cid = string(c.id, "ID de afirmación", 3, 4);
-    if (!/^C\\d{2,3}$/.test(cid) || claimIds.has(cid)) throw new Error("ID de afirmación duplicado o inválido");
+    if (!/^C\d{2,3}$/.test(cid) || claimIds.has(cid)) throw new Error("ID de afirmación duplicado o inválido");
     claimIds.add(cid);
     string(c.text, "Texto de afirmación", 20, 900);
     const evidence = list(c.evidence, "Evidencia por afirmación", 1, 5);
