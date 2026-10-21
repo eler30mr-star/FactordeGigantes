@@ -33,6 +33,24 @@ El segundo comando debe devolver exactamente la tabla `editorial_dossiers`. La p
 
 Si se despliega código nuevo antes de migrar, las rutas editoriales responderán **HTTP 503** con una advertencia explícita, evitando aprobar expedientes sobre tablas ausentes. Esta comprobación no equivale a un despliegue exitoso.
 
+## 2C. Investigación desde el panel — migración 0003 (PENDIENTE EN CLOUDFARE REMOTA)
+
+La nueva sección «Investigar con IA» utiliza la tabla research_requests de migrations/0003_research_requests.sql. Su propósito es limitar a cuatro solicitudes por día UTC, evitar el mismo tema repetido ese día y registrar envíos con resultado incierto. El motor IA corre en GitHub Actions con CPU y no usa la GPU de la laptop.
+
+**Verificado únicamente en D1 local con Wrangler**: [GitHub Actions 39544778750](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39544778750) finalizó success aplicando 0001, 0002 y 0003 y probando el Worker real. No se modificó la D1 remota ni se disparó una investigación costosa durante la prueba.
+
+Antes de desplegar la interfaz nueva:
+
+1. Entrar a la cuenta Cloudflare correcta, confirmar la D1 existente factor-de-gigantes-db y preparar un respaldo antes de aplicar migraciones remotas.
+2. Desde main actualizado, ejecutar una sola vez `npx wrangler d1 migrations apply factor-de-gigantes-db --remote` revisando cuidadosamente el historial de migraciones y confirmando el plan. No crear otra D1.
+3. Verificar ambas tablas: `npx wrangler d1 execute factor-de-gigantes-db --remote --command "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('editorial_dossiers','research_requests');"`. Deben existir exactamente esas dos tablas de extensión, además de jobs/events.
+4. Desplegar el Worker + public/ de main, confirmar /health y probar la lectura de /api/research con ADMIN_TOKEN. Si falta la tabla, debe devolver HTTP 503; **no** intentar reenvíos ciegos.
+5. Antes de realizar una investigación real desde el panel, confirmar que GITHUB_DISPATCH_TOKEN de Cloudflare tiene permiso Actions: write sobre este repositorio. No exponer el secreto en el navegador. Lanzar un tema de prueba después de confirmar las cuotas disponibles.
+
+**Estados:** reserved es reserva local; sent significa que GitHub aceptó el workflow_dispatch, no que el resultado se completó. unknown señala una red fallida que podría haber entregado la solicitud: consultar Actions manualmente, sin reintentar a ciegas. rejected significa rechazo explícito de GitHub. Este MVP no consulta todavía de vuelta la finalización de Actions; revisar el workflow de investigación en GitHub y descargar el artefacto.
+
+El formulario solicita consentimiento explícito por cada tema, nunca investiga por sí solo ni publica videos. Los minutos gratuitos de Actions están sujetos a cuota y condiciones del plan; un modelo descargable no garantiza computación ilimitada gratuita.
+
 ## 3. Crear/importar Worker desde GitHub
 
 1. Cloudflare → Workers & Pages → Create application → Import a repository.
