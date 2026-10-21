@@ -808,3 +808,25 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - Todo commit sigue en `main`, y el despliegue/pipeline automático de YouTube sigue deshabilitado.
 
 **Resultado del turno:** GUION LARGO ✅ | FUENTES REGISTRADAS ✅ | QA + EDL ✅ | MP4 CORTO DE PRUEBA ✅ | AUDIO LICENCIADO ❌ | VIDEO DOCUMENTAL LARGO ❌ | PUBLICACIÓN YOUTUBE ❌.
+
+## 2026-10-21 · Corrección audiovisual por comentario del propietario: movimiento Y audio
+
+**Señalamiento recibido:** la previsual BlackBerry de 30 s solo mostraba textos y fondo casi fijo y carecía de audio. La crítica fue correcta: era una prueba de codificación, **no una muestra cinematográfica aceptable**.
+
+### Implementación y resultados reales
+
+1. **Identidad vocal recuperada sin sustituciones:** se leyó `assets/voice/approved/reference.json` y `tools/approved_voice.py`. La referencia exacta es `narrador_documental_aprobado.mp3` (12,336 segundos, SHA256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`). Su estatus es `approved_by_owner_for_editorial_reference`, **derechos comerciales pendientes**, no una nueva narración de 11 minutos. Se mantuvo sin tocar.
+2. **Nuevo motor corto:** `tools/render_blackberry_motion_intro.py` dibuja fotogramas independientes con Pillow para cuatro actos de la introducción: teléfono con movimiento de cámara, red dinámica de mensajes, circuitos de software y aparición de título final. Cada frame usa una variación temporal; ya no son solo imágenes repetidas con texto. Usa audio MP3 aprobado con `-map 1:a:0` y lo codifica como AAC, H.264 720p a 24 fps, 297 frames. El resultado está marcado como `documentary_complete=false` y `commercial_rights_verified=false`.
+3. **Pruebas:** `tests/test_blackberry_motion_intro.py` incluye cuatro casos de hash/duración de voz, diferencias reales entre fotogramas de una misma escena, identidad visual de los cuatro actos y rechazo de tiempos inválidos.
+4. **Error identificado y corregido de CI:** primeras ejecuciones de `Comprobar base` [39636899012](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39636899012) y [39636975047](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39636975047) fallaron al importar Pillow. Se corrigió `.github/workflows/check.yml` para instalar `Pillow==11.3.0` junto con `pypdf`. **No ocultar fallos previos**.
+5. **Prueba de generación auténtica:** GitHub Actions [39636975142](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39636975142) `success`; cuatro tests de movimiento y de voz aprobados, render MP4 `BLACKBERRY_INTRO_MOVIMIENTO_VOZ_REFERENCIA.mp4` de **12,33 segundos**, 1280×720, H.264 + **AAC**, 1 623 429 bytes. `PISTA_AUDIO_VERIFICADA=true`, `FOTOGRAMAS=297`, SHA de voz igual al canónico, `PUBLICACION_AUTORIZADA=false`. Descarga: [artefacto 12360694777](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39636975142/artifacts/12360694777).
+6. **Verificación en contenedor:** ZIP descargado; FFprobe confirmó audio AAC, video H.264, 1280×720 y 12,3333 s. Se extrajeron imágenes en 0,8 / 3,8 / 6,9 / 10,4 s, que muestran diferentes actos visuales. El workflow `.github/workflows/blackberry-motion-voice.yml` quedó únicamente manual después de la corrida exitosa, sin publicación YouTube.
+7. **Cuidado de interpretación:** esta muestra ahora **sí tiene movimiento y la voz original**, pero **sigue siendo animación gráfica conceptual**, no material cinematográfico realista ni el episodio narrado completo. El sonido es la muestra original de introducción de 12 s; todavía no existen once minutos de voz con aprobación ni pista de música comercial.
+
+### Próxima acción no resuelta
+
+- Desarrollar un lenguaje visual documental con planos originales de lugares/objetos reconstruidos o metraje licenciado y movimientos de cámara, no títulos flotantes como contenido principal.
+- Construir la narración larga a partir de la identidad vocal canónica con pruebas independientes y derechos comerciales validados. No usar una voz sintética distinta sin evaluación del propietario; no mezclar audio de referencia y texto no coincidente.
+- Sincronizar voz/visuales por escena con ritmo probado, revisar fuentes BlackBerry y exportar un primer montaje de 8–14 min; sin publicación automática ni pagos no aprobados.
+
+**Estado:** OBSERVACIÓN DEL USUARIO ATENDIDA EN INTRO CORTA ✅ | PRUEBA MP4 CON AUDIO ✅ | DOCUMENTAL LARGO CINEMATOGRÁFICO ❌. Todo persistido en `main`.
