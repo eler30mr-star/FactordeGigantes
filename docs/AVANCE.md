@@ -580,3 +580,30 @@ Se ha guardado en `main` la estructura inicial del motor:
 5. **Costos:** modelo ejecutado localmente en GH Actions, sin API de pago, pero vigilar minutos y cuotas de GitHub; workflows intensivos quedan solo manuales.
 
 **Estado correcto:** primer motor de investigación y propuesta por IA probado; calidad editorial insuficiente para publicar; investigación primaria universal, desarrollo completo de guiones, Cloudflare remoto y publicación siguen pendientes. Todo realizado en main y documentado.
+
+## 2026-10-20 · Investigación IA activable desde el panel (Fase 2, main)
+
+### Objetivo
+Continuar el motor de Factor de Gigantes mientras la laptop HP de 12 GB está descargada: la investigación se ejecuta en GitHub Actions con CPU, sin exigir una GPU local, sin servicios de pago por API y sin producción/publicación automática.
+
+### Desarrollo real en la rama principal
+- src/research-control.mjs: nuevo módulo de despacho seguro hacia research-ai-cpu.yml, únicamente ref main. Valida el tema, verifica el consentimiento, repo fijado, secreto exclusivo de Worker, máximo nominal de 4 solicitudes por día UTC y bloqueo de mismo tema/día con unicidad SQL. GitHub HTTP 204 equivale a solicitud aceptada, **no** a investigación terminada. Los rechazos y resultados de red inciertos se registran y no se reenvían automáticamente.
+- migrations/0003_research_requests.sql: tabla nueva de solicitudes; conserva migraciones y datos anteriores. Estado reserved, sent, unknown o rejected con timestamps; UNIQUE(topic_key, day_utc). La cuota se comprueba en D1 por fecha, y la deduplicación es atómica. No es un procesador de trabajos ni monitor de finalización.
+- src/worker.js: nuevas rutas privadas GET y POST /api/research bajo ADMIN_TOKEN, sin llamadas a render.yml o YouTube. HTTP 503 específico cuando falta la migración o token GitHub. La ruta del renderizador no puede utilizar este endpoint.
+- public/index.html, public/app.js: sección «Investigar con IA» con tema, confirmación del gasto de minutos GitHub Actions, historial, enlace a resultados y errores legibles. No guarda ADMIN_TOKEN en disco.
+- .github/workflows/research-ai-cpu.yml: usa la carpeta de resultados genérica dist/investigacion y artefacto factor-investigacion-ia-cpu. Sigue siendo manual y de CPU, sin nuevas generaciones automáticas.
+- tests/test_research_control.mjs, tests/test_editorial_migration.py: pruebas para autenticación, cuota, rechazo/no respuesta de GitHub, deduplicación, compatibilidad de las tres migraciones y protección de datos previos. .github/workflows/check.yml ejecuta las nuevas pruebas.
+
+### Verificaciones realizadas
+- [GitHub CI 39544634359](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39544634359) completó success con los nuevos tests de control y migración SQL.
+- [GitHub Actions D1 local E2E 39544778750](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39544778750) completó success: ejecutó migraciones 0001, 0002 y 0003 en D1 local Wrangler y levantó un Worker real; verificó API autenticada y denegación de envíos cuando el token GitHub no está configurado. El disparador temporal de push fue retirado inmediatamente; el workflow volvió a ejecución manual.
+- Se intentó consultar Cloudflare conectado pero su herramienta devolvió un error interno. Por tanto, NO se aplicaron tablas remotas, NO se ha verificado despliegue de la nueva interfaz, NO se ha enviado una investigación real desde el panel de producción.
+- En esta entrega NO se ejecutó Qwen pesado, NO se consumió ninguna API pagada y NO se cambió la voz canónica del canal.
+
+### Próximas tareas prioritarias
+1. Resolver conexión de Cloudflare; respaldar D1, aplicar migraciones 0002 y 0003 remotas, verificar las dos tablas, desplegar Worker/public de main y probar una investigación voluntaria mediante el nuevo botón. No confundir E2E local con producción.
+2. Conectar resultados reales de GitHub Actions al panel (estado de ejecución y enlaces directos comprobados) sin exponer secretos ni gastar minutos por reintentos.
+3. Avanzar búsqueda automática de fuentes PRIMARIAS, documentos PDF, contraste de datos y guion de 8–14 minutos; el borrador Qwen anterior tiene un error factual documentado, por eso no se publica ni se considera investigación terminada.
+4. Confirmar derechos comerciales de voz y audiovisuales; retomar guion y montaje cinematográfico con identidad vocal aprobada, sin necesitar comprar equipo hasta conocer GPU de la laptop.
+
+**Estado:** código + pruebas CI + integración con D1 LOCAL confirmados en main; despliegue Cloudflare REMOTO, uso real del botón, investigación documental completa y publicación pendientes.
