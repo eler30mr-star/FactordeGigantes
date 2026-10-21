@@ -76,7 +76,7 @@ export function validateYoutubeStudy(r,now=Date.now()){
    queries.push([q.wikidata_id,q.topic,q.region,q.observed_on,q.sample_size,
      q.uploads_sampled,q.median_daily_views,q.distinct_channels,q.evidence_state]);
  }
- if(topics.size!==r.candidate_count ||
+ if(topics.size<1 || topics.size>r.candidate_count ||
     r.complete_comparisons!==queries.filter(q=>q[8]==="observed_sample").length ||
     (r.state==="measured")!==(r.complete_comparisons===r.queries_attempted &&
         r.queries_attempted===r.candidate_count*2))
