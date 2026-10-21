@@ -1059,3 +1059,30 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 6. Validar experiencia completa del panel y plan de restauración/coste operativos.
 
 **Resultado inequívoco de esta sesión:** persiste autónomamente el radar en D1 con OIDC probado. **No** está concluida la investigación integral de mercado ni la producción/publicación automática. Historial y código en `main`.
+
+
+
+## 2026-10-21 · P0: noticias actuales, preselección temática y D1 remota
+
+### Nuevas funciones implementadas, no solo auditadas
+- `tools/news_discovery.py`: colector ejecutable de **Google Noticias RSS** en cuatro consultas generales de empresas, innovación, tecnología e industria (ES/EN, PE/MX/US). Las consultas NO contienen nombres de empresas preseleccionadas. Conserva titulares, fecha UTC, URL del agregador, medio atribuido y categoría, con límites de tamaño, 72 horas de frescura, deduplicación y fallos explícitos.
+- `migrations/0005_news_leads.sql`: nuevas tablas `market_news_runs` y `market_news_leads`; los registros nuevos quedan `unverified`, sin autorización editorial ni demanda YouTube calificada. Migración **aplicada y tablas verificadas en Cloudflare D1 REMOTA**, cuenta `Factor`. Se registró bookmark Time Travel antes de aplicarla.
+- `src/news-ingest.mjs`, `tools/push_news_radar.py` y `src/worker.js`: ingesta vía `POST /api/market/news/ingest` con **GitHub OIDC** y validación estricta del payload. Escrituras por lote de D1, IDs estables para deduplicar y bloqueo explícito de autorización de videos. `GET /api/market/news` lee las noticias con `ADMIN_TOKEN`.
+- `.github/workflows/topic-discovery-smoke.yml`: se amplió el radar diario para buscar noticias, preservar el reporte original y almacenarlo mediante identidad OIDC temporal en la misma base, sin APIs pagadas. **Se retiró el disparador temporal `push` al finalizar la prueba**; programación diaria 10:17 UTC y activación manual permanecen.
+- `src/news-triage.mjs`: preselección **heurística y explicable** de relevancia documental; puntúa señales del titular (innovación, cambio empresarial, disrupción, industria) y penaliza material promocional, guías para invertir y noticias de mera cotización. Puntuación ≠ demanda YouTube ni aprobación editorial.
+- `public/index.html` y `public/app.js`: sección privada «Noticias empresariales recientes» con medio atribuido, fecha, vínculo original del agregador y relevancia exploratoria. Uso de `textContent` para titulares ajenos.
+- `tests/test_news_discovery.py`, `tests/test_news_ingest.mjs`, `tests/test_news_triage.mjs`: comprobación de fuentes, no simulación de resultados, deduplicación, frescura, seguridad, clasificación y prohibición de calificar temas sin señales externas; integradas en CI.
+
+### Prueba integrada con fuentes y D1 verdaderas
+- **[GitHub Actions 39668778079](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39668778079) `success`**: Wikimedia siguió funcionando, el nuevo colector RSS consultó sus fuentes y el Worker persistió sus resultados con OIDC real.
+- Lectura de **Cloudflare D1 remota** posterior a ejecución: `market_news_runs=1` y `market_news_leads=100`, recortado al límite configurado. `market_runs=1`, `market_entities=2`, `jobs=1`, `events=8`: lo existente se preservó. Los titulares provenían de distintas fuentes atribuidas por el agregador, como Perú 21, AFR y Banca y Negocios. No se debe asumir que cada uno es editorialmente útil o verdadero.
+- La **primera** prueba integral de noticias falló por HTTP 401 mientras la nueva versión del verificador OIDC se desplegaba; se diagnosticó, y la repetición tras el despliegue terminó `success`. La caída inicial no se declara éxito.
+- Los permisos de `push` incorporados SOLO para la prueba se retiraron tanto del workflow como del validador OIDC, con CI posterior exitosa. No hay publicación YouTube.
+
+### Limitaciones y siguiente fase
+- Los 100 artículos almacenados son **titulares RSS de agregador**, no 100 temas verificados ni datos competitivos YouTube; puede haber noticias no pertinentes. No se han leído automáticamente los artículos originales.
+- La puntuación de relevancia del título es un **filtro preliminar**, no puntuación de oportunidad de mercado; no se promueve automáticamente una noticia a investigación ni a guion.
+- **Próximo P0**: obtener estadísticas observadas de YouTube Data API para temas/candidatos (con credenciales/cuotas permitidas), detectar y agrupar narrativas de varias noticias y contraste de fuentes primarias, computar competencia y crecimiento por región, y persistir una selección fundamentada. Solo después conectar Gemini/Qwen y el motor profesional de documental con revisión editorial.
+- El navegador privado del propietario sigue pendiente de prueba visual autenticada. La lectura de D1 y el despliegue de código no equivalen a login probado.
+
+**Estado final del bloque:** radar de empresas + radar de noticias con persistencia diaria D1 real ✅; preselección editorial sin IA y lectura desde panel implementadas ✅; estudio de mercado YouTube / mejor tema / documental integral / autopublicación autorizada pendientes ❌.
