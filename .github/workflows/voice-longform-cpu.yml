@@ -1,11 +1,6 @@
 name: Factor de Gigantes - continuidad tres parrafos CPU
 on:
   workflow_dispatch:
-  # Activación única del ensayo solicitada por el propietario; retirar después.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/voice-longform-cpu.yml'
 permissions:
   contents: read
 concurrency:
