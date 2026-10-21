@@ -31,6 +31,19 @@
      <button id="save" type="submit">Guardar borrador</button>
     </form>
    </section>
+   <section class="card" id="dossier-panel" hidden aria-label="Expediente documental">
+    <div class="heading"><h2>Fuentes, afirmaciones y derechos</h2><button class="secondary" id="dossier-close" type="button">Cerrar</button></div>
+    <p id="dossier-heading" class="muted"></p>
+    <p class="muted">Una fuente URL no verifica una afirmación por sí sola. Registra el documento, la página o sección, identifica a quien revisó cada afirmación y acredita derechos de imágenes, música y voz. No marques «verificada» sin revisar la evidencia real.</p>
+    <label for="dossier-json">Expediente editorial (JSON)</label>
+    <textarea id="dossier-json" rows="17" spellcheck="false" aria-describedby="dossier-note"></textarea>
+    <p id="dossier-note" class="muted micro">Los textos iniciales son un borrador de estructura, nunca datos contrastados. Guarda el expediente, envía el guion a revisión y solo entonces acredita la verificación.</p>
+    <p id="dossier-status" role="status" class="muted"></p>
+    <div class="actions">
+      <button id="dossier-save" type="button">Guardar expediente</button>
+      <button id="dossier-attest" class="secondary" type="button">Confirmar revisión de hechos y derechos</button>
+    </div>
+   </section>
    <section class="card"><div class="heading"><h2>Cola editorial</h2><button class="secondary" id="refresh">Actualizar</button></div><div id="jobs" class="jobs"></div></section>
   </div>
   <div id="notice" role="status" aria-live="polite"></div>
