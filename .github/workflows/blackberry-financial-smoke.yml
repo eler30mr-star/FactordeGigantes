@@ -1,0 +1,46 @@
+name: Factor de Gigantes - primer dossier financiero PDF real
+on:
+  workflow_dispatch:
+  # Solo ejecución inicial de prueba; se retira después.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/blackberry-financial-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  pilot-blackberry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Extractor PDF sin OCR
+        run: python -m pip install 'pypdf==5.9.0'
+      - name: Verificar contrato sin consultas externas
+        run: python -m unittest discover -s tests -p test_blackberry_sources_pilot.py -v
+      - name: Descargar dos comunicados financieros oficiales de BlackBerry
+        run: |
+          timeout -k 5s 145s python -m tools.blackberry_sources_pilot --out dist/blackberry-real
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("dist/blackberry-real/HECHOS_BLACKBERRY_2024_2025_CON_PAGINAS.json").read_text())
+          print("DOCUMENTOS_DESCARGADOS:",sum(d["download_status"]=="fetched" for d in report["documents"]))
+          print("HECHOS_CANDIDATOS_CON_PAGINA:",report["facts_located"])
+          for f in report["facts"]:
+              print("EVIDENCIA:",f["id"],f["value_millions_usd"],"USD millones","pagina",f["pdf_page"])
+          for d in report["documents"]:
+              print("FUENTE:",d["id"],d["download_status"],d.get("error_type","ninguno"))
+          print("APROBADOS:",report["automatic_facts_approved"],"LISTO_PARA_VIDEO:",report["ready_for_youtube"])
+          PY
+      - name: Publicar solo referencias numéricas, sin copiar PDF completo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factor-blackberry-fiscal-originales-2024-2025
+          path: dist/blackberry-real/
+          retention-days: 5
+          if-no-files-found: warn
