@@ -148,7 +148,8 @@ def discover_news_entities(report,*,fetch=get_json):
           "evidence_method":"wikidata_p31_and_exact_label_in_headline_v1",
           "identity_verified_in_article":False,"primary_source_verified":False,
           "youtube_market_verified":False,"editorial_authorized":False})
-    matches=matches[:16]  # Máximo almacenado por corrida; no consumir peticiones adicionales.\n    return {"provider":"wikidata_news_company_resolution_v1","collected_on":today.isoformat(),
+    matches=matches[:16]  # Máximo almacenado por corrida; no consumir peticiones adicionales.
+    return {"provider":"wikidata_news_company_resolution_v1","collected_on":today.isoformat(),
       "headlines_examined":len(chosen),"wikidata_searches":search_count,
       "wikidata_requests_max":MAX_SEARCHES+1,"lookup_errors":errors,
       "candidate_count":len(matches),"candidates":matches,
