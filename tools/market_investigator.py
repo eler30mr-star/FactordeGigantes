@@ -13,7 +13,7 @@ MAX_EVIDENCE=10
 QID=re.compile(r"^Q[1-9][0-9]*$")
 SHA=re.compile(r"^[0-9a-f]{64}$")
 
-def prepare_evidence(pdf_report):
+def prepare_evidence(pdf_report, official_report=None):
     if not isinstance(pdf_report,dict) or pdf_report.get("provider")!="official_pdf_evidence_v1" or \
       pdf_report.get("verified_claim_count")!=0 or pdf_report.get("publication_authorized") is not False:
         raise ValueError("Únicamente PDFs de radar sin autorización editorial")
@@ -40,11 +40,31 @@ def prepare_evidence(pdf_report):
               "wikidata_id":doc["wikidata_id"],"company":doc["company"]})
             if len(items)>=MAX_EVIDENCE:break
         if len(items)>=MAX_EVIDENCE:break
+    if official_report is not None:
+        if not isinstance(official_report,dict) or official_report.get("provider")!="wikidata_p856_safe_official_fetch_v1" or \
+           official_report.get("primary_facts_verified")!=0 or official_report.get("ready_for_youtube") is not False:
+            raise ValueError("Fuentes web no corroboradas del radar requeridas")
+        for doc in official_report.get("evidence",[])[:3]:
+            if len(items)>=MAX_EVIDENCE:break
+            if doc.get("status")!="candidate_page_readable":continue
+            sha=doc.get("content_sha256")
+            url=doc.get("resolved_url")
+            excerpt=doc.get("short_excerpt")
+            qid=doc.get("wikidata_id")
+            if not SHA.fullmatch(str(sha or "")) or not QID.fullmatch(str(qid or "")) or \
+               not isinstance(url,str) or not url.startswith("https://") or \
+               not isinstance(excerpt,str) or len(excerpt.strip())<90:continue
+            items.append({"id":f"E{len(items)+1:03d}",
+               "source_id":qid+"-corporate-homepage",
+               "claim_id":"documentary_candidate","url":url,"page":None,
+               "excerpt":excerpt[:300],"document_sha256":sha,
+               "wikidata_id":qid,"company":doc.get("company",""),
+               "source_class":"potential_official_primary"})
     return items
 
-def run_investigation(pdf_report,*,free_confirmed=False,api_key=None,model="gemini-2.5-flash-lite",
+def run_investigation(pdf_report,*,official_report=None,free_confirmed=False,api_key=None,model="gemini-2.5-flash-lite",
                       runner=run_gemini_free):
-    evidence=prepare_evidence(pdf_report)
+    evidence=prepare_evidence(pdf_report,official_report=official_report)
     if not evidence:
         return {"status":"skipped_no_documentary_evidence","provider":None,
           "evidence_count":0,"candidate_claims":[],
@@ -70,13 +90,15 @@ def run_investigation(pdf_report,*,free_confirmed=False,api_key=None,model="gemi
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--pdf-report",required=True,type=Path)
+    p.add_argument("--official-report",type=Path)
     p.add_argument("--out",required=True,type=Path)
     a=p.parse_args()
     input_data=json.loads(a.pdf_report.read_text(encoding="utf-8"))
+    official_data=json.loads(a.official_report.read_text(encoding="utf-8")) if a.official_report else None
     authorized=os.getenv("GEMINI_RESEARCH_FREE_CONFIRMED")=="1"
     key=os.getenv("GEMINI_API_KEY")
     try:
-        out=run_investigation(input_data,free_confirmed=authorized,api_key=key)
+        out=run_investigation(input_data,official_report=official_data,free_confirmed=authorized,api_key=key)
     except (OSError,ValueError,RuntimeError,KeyError,TypeError) as exc:
         # Nunca registrar cuerpo remoto, token de cabecera o prompt sin consentimiento.
         out={"status":"research_provider_failure","error_type":type(exc).__name__,
