@@ -1,4 +1,6 @@
 import {verifyMarketOIDC} from "./github-oidc.mjs";
+import {storeNewsEntities} from "./news-entity-ingest.mjs";
+import {assessMarketFromD1,readMarketAssessments} from "./market-assessment.mjs";
 import {persistYoutubeStudy,readYoutubeMarket} from "./youtube-market.mjs";
 import {storeEntityNewsJoin,readEntityNewsJoin} from "./market-cross-signals.mjs";
 import {storeNewsReport,readNewsLeads} from "./news-ingest.mjs";
@@ -117,8 +119,10 @@ async function handle(request,env) {
   const ingestNews=parts[1] === "market" && parts[2] === "news" && parts[3] === "ingest" && parts.length===4;
   const ingestYoutube=parts[1] === "market" && parts[2] === "youtube" && parts[3] === "ingest" && parts.length===4;
   const ingestCross=parts[1] === "market" && parts[2] === "cross" && parts[3] === "ingest" && parts.length===4;
+  const ingestNewsEntities=parts[1]==="market" && parts[2]==="entities" && parts[3]==="ingest" && parts.length===4;
+  const runAssessment=parts[1]==="market" && parts[2]==="assess" && parts[3]==="run" && parts.length===4;
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
-  if (ingest || ingestNews || ingestYoutube || ingestCross) {
+  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
   } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
     return err("Acceso no autorizado",401);
@@ -173,6 +177,30 @@ async function handle(request,env) {
     if(method!=="GET")return err("Método no admitido",405);
     const out=await readEntityNewsJoin(env.DB,url);
     return out.error?err(out.error,out.status):json(out);
+  }
+  if (ingestNewsEntities) {
+    if(method!=="POST")return err("Método no admitido",405);
+    try{return json(await storeNewsEntities(env.DB,await parseBody(request)),201);}
+    catch(e){
+      if(e instanceof RangeError)return err("Candidatas Wikidata rechazadas: "+e.message,400);
+      if(/no such table:\s*market_news_entity_/i.test(String(e?.message||"")))
+        return err("D1 necesita migración 0008_news_entities_assessments.sql",503);
+      throw e;
+    }
+  }
+  if(runAssessment){
+    if(method!=="POST")return err("Método no admitido",405);
+    try{return json(await assessMarketFromD1(env.DB),201);}
+    catch(e){
+      if(/no such table:\s*market_assessments?|no such table:\s*market_news_entity_/i.test(String(e?.message||"")))
+        return err("D1 necesita migración 0008_news_entities_assessments.sql",503);
+      throw e;
+    }
+  }
+  if(!renderer && url.pathname==="/api/market/opportunities"){
+    if(method!=="GET")return err("Método no admitido",405);
+    const view=await readMarketAssessments(env.DB,url);
+    return view.error?err(view.error,view.status):json(view);
   }
   if (!renderer && url.pathname === "/api/market/news") {
     if(method !== "GET") return err("Método no admitido",405);
