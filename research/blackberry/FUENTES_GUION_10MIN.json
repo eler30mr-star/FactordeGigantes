@@ -1,0 +1,64 @@
+{
+  "title": "Factor de Gigantes: BlackBerry — registro de fuentes para guion completo",
+  "reviewed_date": "2026-10-21",
+  "citations": [
+    {
+      "id": "H99",
+      "title": "Smithsonian — BlackBerry 957, primera etapa",
+      "url": "https://americanhistory.si.edu/collections/object/nmah_1191300",
+      "supports": "Dispositivo 1999 tipo pager y BlackBerry 957 de 2000; no usar fotografía sin revisar licencia",
+      "kind": "museum"
+    },
+    {
+      "id": "D16",
+      "title": "BlackBerry — anuncio de estrategia de hardware en 2016",
+      "url": "https://www.globenewswire.com/news-release/2016/09/28/1297220/0/en/blackberry-reports-89-year-over-year-growth-in-gaap-software-and-services-revenue-for-q2-fiscal-2017-company-announces-new-strategic-direction-for-mobility-solutions.html",
+      "supports": "Fin de desarrollo interno de hardware y externalización a socios; declaración de dirección",
+      "kind": "company_release"
+    },
+    {
+      "id": "R16",
+      "title": "BlackBerry — documento SEC de noviembre de 2016",
+      "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023516000178/bbry-20161130x6k.htm",
+      "supports": "Explicación formal de movilidad, software y cambios en hardware",
+      "kind": "company_regulatory"
+    },
+    {
+      "id": "F24",
+      "title": "BlackBerry — resultados FY2024, 3 abril 2024",
+      "url": "https://irp.cdn-website.com/586e2b1b/files/uploaded/Q4-FY24-Earnings-Press-Release.pdf",
+      "supports": "FY2024 ingresos 853 millones USD y 218 millones de cartera de patentes, PDF p. 2",
+      "kind": "company_pdf",
+      "pdf_page": 2
+    },
+    {
+      "id": "F25",
+      "title": "BlackBerry — resultados FY2025, 2 abril 2025",
+      "url": "https://irp.cdn-website.com/586e2b1b/files/uploaded/Q4_FY25_Earnings_Press_Release_-_FINAL-7064fd77.pdf",
+      "supports": "FY2025 534,9 millones; QNX 236; Secure Communications 272,6; Licensing 26,3; FY2024 reformulado 759,1; PDF pp. 2 y 16",
+      "kind": "company_pdf",
+      "pdf_pages": [
+        2,
+        16
+      ]
+    },
+    {
+      "id": "K25",
+      "title": "BlackBerry — Form 10-K FY2025 (documento SEC)",
+      "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023525000068/bbry-20250228.htm",
+      "supports": "Fundación 1984; QNX y Secure Communications; venta de Cylance febrero 2025; presentación de operaciones discontinuadas y comparativos reformulados",
+      "kind": "regulatory_annual"
+    },
+    {
+      "id": "P25",
+      "title": "BlackBerry — Circular de representación FY2025",
+      "url": "https://www.sec.gov/Archives/edgar/data/1070235/000107023525000109/bbry-20250512.htm",
+      "supports": "Separación de unidades de seguridad/IoT; organización posterior QNX y Secure Communications",
+      "kind": "regulatory_proxy"
+    }
+  ],
+  "editorial_status": "pending_human",
+  "rights_verified": false,
+  "automatic_publication": false,
+  "notes": "Las URLs enlazan documentos originales o archivo museístico; las imágenes se licencian por separado. El tratamiento de FY2024 853m vs FY2024 759,1m no es comparable sin reconciliación contable."
+}
