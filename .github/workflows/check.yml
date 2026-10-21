@@ -18,6 +18,7 @@ jobs:
           node --check src/market-ingest.mjs
           node --check src/github-oidc.mjs
           node --check src/news-ingest.mjs
+          node --check src/news-triage.mjs
           node --check src/research-control.mjs
           node --check src/system-readiness.mjs
           node --check public/app.js
@@ -27,7 +28,7 @@ jobs:
       - name: Pruebas de contratos del renderizador
         run: python -m unittest discover -s tests -v
       - name: Verificar seguridad editorial en API Worker y contrato D1
-        run: node --test tests/test_editorial_gate.mjs tests/test_dossier_editor.mjs tests/test_research_control.mjs tests/test_system_readiness.mjs tests/test_market_radar_api.mjs tests/test_market_ingest.mjs tests/test_github_oidc.mjs tests/test_news_ingest.mjs
+        run: node --test tests/test_editorial_gate.mjs tests/test_dossier_editor.mjs tests/test_research_control.mjs tests/test_system_readiness.mjs tests/test_market_radar_api.mjs tests/test_market_ingest.mjs tests/test_github_oidc.mjs tests/test_news_ingest.mjs tests/test_news_triage.mjs
       - name: Validar manifest de ejemplo
         run: python tools/render.py --manifest examples/documental.json --validate-only
 
