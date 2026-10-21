@@ -26,6 +26,13 @@ jobs:
       - name: Validar manifest de ejemplo
         run: python tools/render.py --manifest examples/documental.json --validate-only
 
+      - name: Comprobar Worker y panel de produccion sin credenciales
+        # No bloqueante: un commit de codigo puede preceder al despliegue.
+        continue-on-error: true
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: python -m tools.production_smoke
+
       - name: Diagnosticar conexion HTTP a Cloudflare
         # Chequeo no bloqueante: distinguir secreto API_BASE_URL incorrecto de HTTP 403 externo.
         continue-on-error: true
