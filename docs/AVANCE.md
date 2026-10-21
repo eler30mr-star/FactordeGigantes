@@ -830,3 +830,23 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - Sincronizar voz/visuales por escena con ritmo probado, revisar fuentes BlackBerry y exportar un primer montaje de 8–14 min; sin publicación automática ni pagos no aprobados.
 
 **Estado:** OBSERVACIÓN DEL USUARIO ATENDIDA EN INTRO CORTA ✅ | PRUEBA MP4 CON AUDIO ✅ | DOCUMENTAL LARGO CINEMATOGRÁFICO ❌. Todo persistido en `main`.
+
+## 2026-10-21 · Primera escena REAL del guion BlackBerry: voces nuevas y montaje sincronizado (main)
+
+**Objetivo concreto del propietario:** continuar hacia el documental completo después de aprobar la introducción animada de 12,33 s con sonido. La introducción y el SHA de la voz canónica `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d` se preservan sin edición ni sustitución.
+
+### Avances guardados en `main`
+- `tools/qwen_blackberry_scene01.py`: extrae **literalmente el texto narrado de la Escena 01** del manuscrito BlackBerry de 12 escenas; valida que los cuatro segmentos tengan de 150 a 260 caracteres y reconstruyan todas las palabras en el mismo orden. Qwen3-TTS Base 1.7B CPU recibe únicamente la referencia vocal aprobada; semilla fija; exporta 4 MP3, muestra combinada con silencios entre fragmentos, copia intacta de la referencia, checksums y reporte `ESTADO_ESCENA01_VOZ.json`. No cambia el guion o el MP3 canónico, no usa servicio TTS pagado.
+- `tests/test_qwen_blackberry_scene01.py`: exactitud de los cuatro segmentos del guion, rechazo de cambios sin revisión, flags de aprobación falsa. GitHub CI [39639684664](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684664) `success`.
+- `.github/workflows/blackberry-scene01-voice.yml`: ejecución única de investigación de voz desde `main`, Qwen 1.7B CPU en GitHub Actions. [Ejecución 39639684819](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684819) iniciada. El resultado queda **PENDIENTE DE FINALIZACIÓN Y AUDICIÓN** al escribir este asiento. Si falla, registrar error exacto y no afirmar que existen MP3 nuevos.
+- `tools/render_blackberry_scene01.py`: compositor de montaje original H264/AAC. Comprueba el SHA de cada uno de los cuatro MP3 y que los textos coincidan literalmente con el guion. Mide el audio y crea planos originales en movimiento con cambios de toma cada cinco segundos y transiciones; produce MP4 del primer capítulo con exactamente la duración real del audio. El render continúa marcado como `new_voice_approved=false`, `rights_commercially_verified=false` y `youtube_publication_allowed=false`.
+- `tests/test_render_blackberry_scene01.py`: cambios reales de fotogramas dentro de una toma, cambio de planos, límites de tiempo, texto original. CI [39640085857](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39640085857) `success`.
+- `.github/workflows/blackberry-scene01-video.yml`: job de solo lectura del repositorio que, si el workflow de voz termina correctamente, recoge su artefacto `fdg-blackberry-escena01-voz-para-audicion`, verifica los cuatro archivos y crea MP4 H264/AAC con informe de fotogramas, duración y audio; no publica a YouTube ni toca Cloudflare o D1. Disparador de primera prueba `workflow_run` será retirado tras validar el primer render. También admite uso manual con ID de corrida.
+- **No atribuir tiempos ni archivo de salida antes de ver los artefactos reales.** La síntesis Qwen de otros párrafos consumió minutos de CPU y casi 12 GiB RAM de runner en ensayos anteriores, por lo que esta ejecución está acotada a una sola escena y cuatro fragmentos, sin iniciar los otros once capítulos a ciegas.
+
+### Pendientes
+1. Revisar que finalice [39639684819](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684819) con cuatro MP3 reales y que `blackberry-scene01-video.yml` exporte un MP4 con audio decodificable, duración medida y cambios de planos; si falla, corregir en `main` y repetir solo el paso fallido.
+2. Escuchar cada toma nueva y contrastar la identidad del narrador; **no confundir la voz original aprobada de 12 s con aprobación de estos nuevos minutos**.
+3. Completar auditoría editorial y licencias; ampliar paso a paso a las 12 escenas sin sobrepasar cuotas CPU, generar audio/visual original y MP4 final de 8–14 min. No hay publicación automática ni derecho comercial confirmado.
+
+**Estado de esta entrega:** nueva generación de voz y nuevo compositor implementados; CI de contratos verde; render del primer capítulo y aceptación vocal todavía en ejecución/pendientes. Todo en `main`.
