@@ -1,0 +1,177 @@
+{
+  "title": "BlackBerry: el gigante que tuvo que cambiar de negocio",
+  "thesis": "Investigar cómo BlackBerry pasó del teléfono profesional a una oferta de software seguro, sin inventar causalidad ni motivaciones internas.",
+  "publication_authorized": false,
+  "sources": [
+    {
+      "id": "S01",
+      "url": "https://investors.blackberry.com/faq",
+      "publisher": "BlackBerry Investor Relations",
+      "accessed_on": "2026-10-20",
+      "type": "primaria"
+    },
+    {
+      "id": "S02",
+      "url": "https://www.apple.com/la/newsroom/2007/01/09Apple-Reinvents-the-Phone-with-iPhone/",
+      "publisher": "Apple Newsroom",
+      "accessed_on": "2026-10-20",
+      "type": "primaria"
+    },
+    {
+      "id": "S03",
+      "url": "https://www.apple.com/la/newsroom/2008/07/10iPhone-3G-on-Sale-Tomorrow/",
+      "publisher": "Apple Newsroom",
+      "accessed_on": "2026-10-20",
+      "type": "primaria"
+    },
+    {
+      "id": "S04",
+      "url": "https://www.blackberry.com/en/secure-communications/support/end-of-life",
+      "publisher": "BlackBerry Support",
+      "accessed_on": "2026-10-20",
+      "type": "primaria"
+    },
+    {
+      "id": "S05",
+      "url": "https://www.blackberry.com/es-la/overview",
+      "publisher": "BlackBerry",
+      "accessed_on": "2026-10-20",
+      "type": "primaria"
+    },
+    {
+      "id": "S06",
+      "url": "https://www.blackberry.com/en/secure-communications/support/smartphones-tablets-operating-systems",
+      "publisher": "BlackBerry Support",
+      "accessed_on": "2026-10-20",
+      "type": "primaria"
+    }
+  ],
+  "claims": [
+    {
+      "id": "C01",
+      "segment_index": 1,
+      "text": "Research In Motion, posteriormente llamada BlackBerry, fue fundada en 1984 por Mike Lazaridis y Douglas Fregin.",
+      "evidence": [
+        {
+          "source_id": "S01",
+          "locator": "FAQ, When was BlackBerry founded?",
+          "status": "pendiente"
+        }
+      ],
+      "reviewed_by": ""
+    },
+    {
+      "id": "C02",
+      "segment_index": 2,
+      "text": "Research In Motion anunció su cambio de nombre a BlackBerry el 30 de enero de 2013.",
+      "evidence": [
+        {
+          "source_id": "S01",
+          "locator": "FAQ, When was BlackBerry founded?",
+          "status": "pendiente"
+        }
+      ],
+      "reviewed_by": ""
+    },
+    {
+      "id": "C03",
+      "segment_index": 3,
+      "text": "Apple presentó el iPhone el 9 de enero de 2007 destacando interfaz multitáctil, navegador y correo.",
+      "evidence": [
+        {
+          "source_id": "S02",
+          "locator": "Comunicado, 9 enero 2007, introducción",
+          "status": "pendiente"
+        }
+      ],
+      "reviewed_by": ""
+    },
+    {
+      "id": "C04",
+      "segment_index": 4,
+      "text": "Apple comunicó que la App Store del iPhone 3G dispondría de más de 500 aplicaciones nativas en julio de 2008.",
+      "evidence": [
+        {
+          "source_id": "S03",
+          "locator": "Comunicado, 10 julio 2008, primer párrafo",
+          "status": "pendiente"
+        }
+      ],
+      "reviewed_by": ""
+    },
+    {
+      "id": "C05",
+      "segment_index": 5,
+      "text": "En 2016, BlackBerry anunció que se había completado su transición hacia una empresa de software.",
+      "evidence": [
+        {
+          "source_id": "S04",
+          "locator": "FAQ, originalmente publicada 9 septiembre 2020",
+          "status": "pendiente"
+        }
+      ],
+      "reviewed_by": ""
+    },
+    {
+      "id": "C06",
+      "segment_index": 6,
+      "text": "BlackBerry señaló el 4 de enero de 2022 como fecha de finalización de sus servicios heredados BBOS y BlackBerry 10.",
+      "evidence": [
+        {
+          "source_id": "S04",
+          "locator": "Aviso actualizado 22 diciembre 2021",
+          "status": "pendiente"
+        }
+      ],
+      "reviewed_by": ""
+    },
+    {
+      "id": "C07",
+      "segment_index": 7,
+      "text": "BlackBerry publica fechas de fin de desarrollo y fin de vida para varias versiones del sistema BlackBerry 10.",
+      "evidence": [
+        {
+          "source_id": "S06",
+          "locator": "Tabla Smartphones and Tablets, BlackBerry 10",
+          "status": "pendiente"
+        }
+      ],
+      "reviewed_by": ""
+    },
+    {
+      "id": "C08",
+      "segment_index": 8,
+      "text": "Actualmente BlackBerry presenta software seguro para comunicaciones y sistemas críticos, incluidos productos de automoción.",
+      "evidence": [
+        {
+          "source_id": "S05",
+          "locator": "Descripción corporativa y sectores de actividad",
+          "status": "pendiente"
+        }
+      ],
+      "reviewed_by": ""
+    }
+  ],
+  "assets": [
+    {
+      "kind": "voz",
+      "description": "Narrador canónico de Factor de Gigantes; derechos comerciales de procedencia pendientes",
+      "rights_status": "pendiente"
+    },
+    {
+      "kind": "grafico",
+      "description": "Línea temporal original basada en documentos primarios; gráficos finales pendientes",
+      "rights_status": "pendiente"
+    },
+    {
+      "kind": "imagen",
+      "description": "Material visual histórico de marcas y teléfonos aún sin licencia para publicación",
+      "rights_status": "pendiente"
+    },
+    {
+      "kind": "musica",
+      "description": "Banda sonora documental original o con licencia comercial verificable aún por seleccionar",
+      "rights_status": "pendiente"
+    }
+  ]
+}
