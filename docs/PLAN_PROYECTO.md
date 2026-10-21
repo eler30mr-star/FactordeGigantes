@@ -247,3 +247,16 @@ El montaje breve de tres párrafos (43,296 s) obtuvo conformidad editorial del p
 - [ ] Validar derechos de voz canónica, música e imágenes, QA de narración y visuales, antes de render y publicación.
 
 La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecutado de verdad**, no un sistema de investigación autónomo completo ni una fábrica de videos finalizada. Mantener todas las tareas en main, sin gasto facturable ni publicación automática.
+
+## Fase 2 — botón «Investigar con IA» en el panel (2026-10-20)
+
+- [x] Crear formulario de investigación por tema en la interfaz administrativa, sin requerir potencia gráfica ni batería de la laptop (ejecución del motor IA local en GitHub Actions CPU). Requiere confirmación explícita.
+- [x] API autenticada por ADMIN_TOKEN para despachar ÚNICAMENTE research-ai-cpu.yml a main, dejando el token GitHub en el Worker; no usa render.yml ni subida a YouTube.
+- [x] Registro D1 versionado 0003_research_requests.sql, cuota nominal 4 solicitudes/día UTC, unicidad de tema/día, bloqueo de duplicados e incertidumbres de red, sin reintentos ni tareas automáticas.
+- [x] Pruebas unitarias Node + integridad SQL; [CI 39544634359](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39544634359) success.
+- [x] Ejecución real de integración con Worker/D1 aislada: [GitHub Actions 39544778750](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39544778750) success. Se aplicaron localmente las migraciones 0001–0003; no hubo llamadas a GitHub dispatch ni consumo de Qwen en esta prueba.
+- [ ] Aplicar las migraciones 0002 y 0003 en la D1 **remota** Cloudflare, desplegar panel/Worker actualizado desde main y comprobar solicitudes reales, estado y cuota en producción. Conector Cloudflare indisponible desde la sesión: esto sigue PENDIENTE.
+- [ ] Comprobar que las solicitudes aceptadas se vinculen automáticamente con un run_id real y un estado de finalización, sin suponer que un HTTP 204 implica resultado correcto.
+- [ ] Ampliar investigación autónoma a fuentes primarias, contraste factual y guion de 8–14 min; el motor actual genera borradores no verificados. Material audiovisual y derechos de narrador aún bloquean producción comercial.
+
+**Importante:** sin nuevas GPU o compras. La laptop HP con 12 GB RAM no participa en la inferencia de la fase 2, que se hace en GitHub Actions bajo ejecución manual y cuotas del servicio. ComfyUI/otros motores de video local quedan condicionados a identificar GPU/VRAM y derechos de uso, sin instalación automática.
