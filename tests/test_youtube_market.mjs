@@ -13,7 +13,7 @@ function report(){
   median_daily_views:500,distinct_channels:3,evidence_state:"observed_sample",
   videos:structuredClone(videos)});
  return {provider:"youtube_data_api_v3",collected_on:today(),candidate_count:1,
-  region_count:2,queries_attempted:2,quota_units_max:202,state:"measured",
+  region_count:2,queries_attempted:2,quota_units_max:4,state:"measured",
   queries:[q("MX"),q("ES")],complete_comparisons:2,market_study_complete:false,
   research_automatic:false,ready_for_script:false,ready_for_youtube:false,
   automatic_publication_allowed:false};
