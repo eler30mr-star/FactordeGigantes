@@ -446,3 +446,16 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Aprender de Analytics del propio canal y retroalimentar selección; no atribuir CTR/retención ajenos ni prometer viralidad.
 
 **Estado real:** documentos, clasificador y colectores de señales implementados/probados con mocks; todavía no hay campaña de mercado real, descubrimiento continuo activado, selección autónoma operativa ni publicación YouTube. El piloto BlackBerry sigue siendo prueba del motor audiovisual, no una tarea que ChatGPT deba repetir cada semana.
+
+### Avance P0 — Radar público diario funcionando (21 octubre 2026)
+
+- [x] Primer descubridor `tools/topic_discovery.py`: recibe **rankings públicos completos de Wikimedia**, extrae entidades de Wikidata por P31 de empresa sin nombres aportados por el propietario ni por ChatGPT, con tope por consulta, idioma, fecha y respuesta, sin ejecutar guion o render.
+- [x] Medición independiente en 14 días del artículo candidato, obtenida en una segunda consulta Wikimedia; eventos y mediciones provenientes de un proveedor real, no de fixtures.
+- [x] Primera validación de red y datos auténticos: [39650844704](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39650844704) detectó Theranos en 240 artículos y 8 consultas Wikidata; [39651368713](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39651368713) agregó 291.435/55.952 visitas del artículo de Wikipedia en dos ventanas consecutivas de 7 días. Ver `research/market/VALIDACION_RADAR_2026-10-21.md`. Estas visitas **no son estadísticas de YouTube**.
+- [x] Programar la fase de descubrimiento público con `.github/workflows/topic-discovery-smoke.yml` **una vez diaria** (10:17 UTC aproximados), sin consumo de modelos de pago ni publicación. Se conservó opción manual y se retiraron eventos por `push`.
+- [ ] Incorporar fuente más inmediata de noticias empresariales y otras observaciones para descubrir varias oportunidades de tecnología/negocios (no solo compañías que estén en los 120 artículos más leídos por wiki).
+- [ ] Obtener cuota/credencial autorizada para YouTube Data API y análisis de competencia/mercado hispanohablante, y conectar esas señales al selector. Si la clave no está configurada, bloquear decisiones basadas en una muestra inexistente.
+- [ ] Persistir el radar en D1 con historial multi-día y completar la primera selección verificable de **mejor tema según estudio de mercado**, no solo una empresa candidata.
+- [ ] Conectar Gemini/Qwen investigador para producir desde esa selección un dossier, guion, voz, visuales, MP4 y ciclo de YouTube **solo tras aprobar derechos/editorial**.
+
+**No declarar completo el sistema de producción por la existencia de una ejecución de radar.** El dato es real; la clasificación empresarial solo abre una puerta a investigación; el ranking de mercado completo sigue bloqueado hasta YouTube/competencia y fuentes originales.
