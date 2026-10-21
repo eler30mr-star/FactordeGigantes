@@ -10,7 +10,7 @@ from urllib.error import HTTPError,URLError
 from urllib.parse import urlsplit
 from tools.push_market_radar import HOST,github_oidc_token
 
-PATHS={"entities":"/api/market/entities/ingest","official":"/api/market/official/ingest","assess":"/api/market/assess/run"}
+PATHS={"entities":"/api/market/entities/ingest","official":"/api/market/official/ingest","pdf":"/api/market/pdf/ingest","assess":"/api/market/assess/run"}
 
 def post_report(*,mode,base_url,token,report=None,opener=urlopen):
     if mode not in PATHS:raise ValueError("Operación no permitida")
@@ -21,8 +21,8 @@ def post_report(*,mode,base_url,token,report=None,opener=urlopen):
         raise ValueError("Solo Worker Factor permitido")
     if not isinstance(token,str) or len(token)<40 or token.count(".")!=2:
         raise ValueError("GitHub OIDC ausente")
-    if mode in ("entities","official"):
-        expected="wikidata_news_company_resolution_v1" if mode=="entities" else "wikidata_p856_safe_official_fetch_v1"
+    if mode in ("entities","official","pdf"):
+        expected={"entities":"wikidata_news_company_resolution_v1","official":"wikidata_p856_safe_official_fetch_v1","pdf":"official_pdf_evidence_v1"}[mode]
         if not isinstance(report,dict) or report.get("provider")!=expected or \
             report.get("market_study_complete") is not False or report.get("ready_for_youtube") is not False:
             raise ValueError("Evidencia sin procedencia")
@@ -55,14 +55,18 @@ def main():
     p.add_argument("--mode",choices=list(PATHS),required=True)
     p.add_argument("--input",type=Path)
     a=p.parse_args()
-    if a.mode in ("entities","official") and not a.input:p.error("Se requiere --input")
-    data=json.loads(a.input.read_text(encoding="utf-8")) if a.mode in ("entities","official") else None
+    if a.mode in ("entities","official","pdf") and not a.input:p.error("Se requiere --input")
+    data=json.loads(a.input.read_text(encoding="utf-8")) if a.mode in ("entities","official","pdf") else None
     result=post_report(mode=a.mode,report=data,
       base_url=os.getenv("API_BASE_URL",""),token=github_oidc_token())
     if a.mode=="assess":
         print("EVALUACIONES_D1:",result["candidates_evaluated"],
           "SELECCION_AUTOMATICA:",result["selected_wikidata_id"],
           "DOCUMENTALES_AUTORIZADOS:",result["automatic_publication_allowed"])
+    elif a.mode=="pdf":
+        print("PDF_PERSISTIDOS_D1:",result["documents"],
+          "CITAS_LOCALIZADAS:",result["fragments"],
+          "HECHOS_VERIFICADOS:",result["verified_claim_count"])
     elif a.mode=="official":
         print("SITIOS_CANDIDATOS_D1:",result["pages_attempted"],
           "SITIOS_LEIBLES:",result["pages_readable"],
