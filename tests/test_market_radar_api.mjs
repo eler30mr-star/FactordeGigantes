@@ -2,8 +2,25 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {readMarketRadar} from "../src/market-radar.mjs";
 function db(queries, fail=false) {
-  return {DB:{prepare(sql){queries.push(sql);return {bind(n){return {all:async()=>{if(fail)throw Error("D1_ERROR: no such table: market_runs");return {results:[{limit:n}]};}}};}}}}};
+  return {
+    DB: {
+      prepare(sql) {
+        queries.push(sql);
+        return {
+          bind(limit) {
+            return {
+              async all() {
+                if (fail) throw Error("D1_ERROR: no such table: market_runs");
+                return {results:[{limit}]};
+              }
+            };
+          }
+        };
+      }
+    }
+  };
 }
+
 test("radar administrativo solo consulta y nunca autoriza publicación",async()=>{
  const queries=[];
  const result=await readMarketRadar(db(queries),new URL("https://factor.example/api/market/radar?limit=9"));
