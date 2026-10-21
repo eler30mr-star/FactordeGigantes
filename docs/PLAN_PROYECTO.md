@@ -343,3 +343,20 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Obtener fuentes independientes para la historia de dispositivos y decisiones, completar voz narrativa de 8–14 minutos, revisión editorial, licencias comerciales y un MP4 verificable.
 - [ ] Demostrar desde panel un flujo autenticado en producción con una ejecución IA aprobada y artefactos vinculados. No consumir minutos Qwen sin tema/decisión del propietario.
 - [ ] Conservar acciones de prueba en modo manual y cualquier despliegue en `main` con CI verde, sin publicación YouTube ni datos especulativos.
+
+## Hito editorial 2026-10-21 — primer guion documental largo y plan de montaje, solo `main`
+
+**Objetivo:** sustituir los borradores de pocos párrafos por un texto narrativo verdaderamente desarrollado, respaldado por documentos concretos, sin mentir sobre licencias o resultados de audio/video.
+
+- [x] Redactar `research/blackberry/GUION_DOCUMENTAL_11MIN_NO_APROBADO.md`, **12 escenas y 1.691 palabras** de narración original; escaleta temporal continua de **11:50 (710 segundos)**. Los tiempos y ritmo de voz son objetivos técnicos, no prueba de audio real. A ~145 palabras/minuto el texto ocupa aproximadamente 11,7 min sin pausas, por tanto el cronometraje debe afinarse con el narrador real.
+- [x] Registrar `research/blackberry/FUENTES_GUION_10MIN.json` con siete referencias rastreables: museística Smithsonian, declaración BlackBerry 2016 sobre externalización de hardware, registro corporativo 2016, comunicados FY2024/FY2025, 10-K FY2025 y circular corporativa FY2025. Las fuentes históricas y contables citadas siguen sujetas a **revisión humana afirmación por afirmación**.
+- [x] Estructurar una narración desde los primeros dispositivos hasta el cambio de estrategia en 2016, QNX, Cylance y la composición financiera FY2025. Evitar inferir fracaso/éxito, fraude o rentabilidad mediante comparaciones inadecuadas.
+- [x] Mantener explícita la **incomparabilidad directa** entre los ingresos FY2024 comunicados originalmente en 2024 (US$853m) y la cifra FY2024 reformulada en 2025 (US$759,1m), hasta una conciliación por operaciones discontinuadas.
+- [x] Añadir `tools/blackberry_script_quality.py` + pruebas `tests/test_blackberry_script_quality.py`: continuidad de escenas, fuentes referenciadas, ritmo proyectado, duración, advertencias editoriales y ausencia de permisos de render/publicación.
+- [x] Añadir `tools/blackberry_edl.py` + pruebas `tests/test_blackberry_edl.py`: produce `EDL_PREVIA_12_ESCENAS.json` con intervalos, duración, visual propuesto y estado de derechos NO resueltos. No crea un video y no usa imágenes de terceros. Ambas comprobaciones están incluidas en `tools/production_preflight.sh` de Cloudflare.
+- [ ] Completar auditoría factual humana del manuscrito largo: verificar contexto, comparabilidad y atribución de todas las frases; respaldar datos históricos con más de una fuente cuando proceda.
+- [ ] Medir la voz real por escena contra el guion; ajustar duración y ritmo a **8–14 minutos**. No aprobar automáticamente una muestra de voz sin licencia comercial.
+- [ ] Crear ilustraciones y visuales originales, garantizar derechos de música/narrador e implementar montaje reproducible; obtener **primer MP4 real verificable**, sin subida automática.
+- [ ] Realizar prueba de aceptación del guion/archivos y del panel conectado con el propietario. Los tests solo demuestran estructura y código, no que esté listo para publicación.
+
+**Estado:** guion narrativo largo y cronograma de edición redactados e integrados en `main`; hechos/editorial/licencias/audio/MP4 siguen pendientes. `docs/AVANCE.md` debe conservar evidencias de las ejecuciones para la próxima sesión.
