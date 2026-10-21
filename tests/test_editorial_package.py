@@ -44,6 +44,33 @@ class PackageTests(unittest.TestCase):
         self.assertIn("No hay evidencia documental vinculada.",text)
         self.assertIn("No enviar a render",text)
 
+    def test_real_pdf_financial_candidates_appear_with_pages_and_warning(self):
+        research,audit,edgar,finance=fixtures()
+        originals={
+            "facts":[
+                {"id":"BB24_REV_ORIGINAL","metric":"total_company_revenue",
+                 "source_url":"https://irp.cdn-website.com/2024.pdf","pdf_page":2,
+                 "value_millions_usd":"853","period_end":"2024-02-29",
+                 "accounting_scope":"old_basis",
+                 "machine_matched_original_pdf":True,"human_verified":False},
+                {"id":"BB24_REV_RECAST","metric":"total_company_revenue",
+                 "source_url":"https://irp.cdn-website.com/2025.pdf","pdf_page":16,
+                 "value_millions_usd":"759.1","period_end":"2024-02-29",
+                 "accounting_scope":"recast_after_cylance",
+                 "machine_matched_original_pdf":True,"human_verified":False}
+            ],
+            "comparability_warning":"Different reporting scopes: compare only after checking restatements."
+        }
+        summary=pack.summarize(research,audit,edgar,finance,originals)
+        self.assertEqual(len(summary["corporate_pdf_facts_located"]),2)
+        self.assertEqual(summary["corporate_pdf_facts_human_verified"],0)
+        self.assertFalse(summary["ready_for_render"])
+        self.assertFalse(summary["ready_for_youtube"])
+        self.assertEqual(summary["corporate_pdf_facts_located"][1]["pdf_page"],16)
+        markdown=pack.to_markdown(summary)
+        self.assertIn("BB24_REV_RECAST",markdown)
+        self.assertIn("ADVERTENCIA DE COMPARABILIDAD",markdown)
+
     def test_no_sec_or_no_xbrl_never_claim_readiness(self):
         r,a,_,_=fixtures()
         res=pack.summarize(r,a)
