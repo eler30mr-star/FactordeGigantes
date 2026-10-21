@@ -1,0 +1,46 @@
+name: Factor de Gigantes - prueba PDF original por paginas
+on:
+  workflow_dispatch:
+  # Disparador temporal único para ensayo de documento externo.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/research-pdf-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  pdf-original:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar extractor textual pequeño
+        run: python -m pip install 'pypdf==5.9.0'
+      - name: Verificar PDF por páginas sin internet
+        run: python -m unittest discover -s tests -p test_pdf_sources.py -v
+      - name: Obtener un artículo original de investigación desde arXiv
+        run: |
+          timeout -k 10s 105s python -m tools.pdf_probe \
+            --url https://arxiv.org/pdf/1706.03762 \
+            --query "We propose a new simple network architecture the Transformer based solely on attention mechanisms dispensing with recurrence and convolutions entirely" \
+            --out dist/pdf-original
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("dist/pdf-original/reporte_pdf_citado.json").read_text())
+          print("DOCUMENTO_PDF:", report["pages"], "paginas,",
+                report["readable_blocks"], "fragmentos,",
+                len(report["candidate_passages"]), "candidatos")
+          print("NINGUNA AFIRMACION VERIFICADA:",report["facts_verified"])
+          PY
+      - name: Entregar localizadores y hash, sin redistribuir PDF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factor-gigantes-pdf-original-citas
+          path: dist/pdf-original/
+          retention-days: 3
+          if-no-files-found: warn
