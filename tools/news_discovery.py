@@ -99,7 +99,7 @@ def parse_news_rss(data, category, *, now):
 def discover_news(*,now=None,fetch=fetch_rss):
     now=now or datetime.now(timezone.utc)
     if now.tzinfo is None: raise ValueError("Momento UTC requerido")
-    now=now.astimezone(timezone.utc)
+    now=now.astimezone(timezone.utc).replace(microsecond=0)
     rows={}
     sources=[]
     failures=[]
