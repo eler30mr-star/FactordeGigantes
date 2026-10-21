@@ -1,0 +1,81 @@
+name: FDG - montar BlackBerry escena 01 con voz de prueba
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "ID del workflow de voz exitoso que produjo los cuatro MP3"
+        type: string
+        required: true
+  # Durante el primer ensayo, renderizar inmediatamente si la voz termina bien.
+  # Retirar este disparador al verificar el primer montaje.
+  workflow_run:
+    workflows:
+      - "FDG - voz original BlackBerry escena 01 Qwen CPU"
+    types: [completed]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  render-escena01:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: ${{ inputs.source_run_id || github.event.workflow_run.id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probar animación sin video ajeno ni pistas no aprobadas
+        run: |
+          python -m pip install 'Pillow==11.3.0'
+          python -m unittest discover -s tests -p test_qwen_blackberry_scene01.py -v
+          python -m unittest discover -s tests -p test_render_blackberry_scene01.py -v
+          python -m tools.approved_voice --check
+      - name: Recuperar cuatro tomas nuevas exactas de la prueba Qwen
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]
+          mkdir -p dist/blackberry-escena01-voz
+          gh run download "$SOURCE_RUN_ID" --repo "${{ github.repository }}" \
+            --name fdg-blackberry-escena01-voz-para-audicion \
+            --dir dist/blackberry-escena01-voz
+          test -f dist/blackberry-escena01-voz/ESTADO_ESCENA01_VOZ.json
+          test -f dist/blackberry-escena01-voz/05_escena01_unida.mp3
+      - name: Preparar codificador local FFmpeg sin APIs externas
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version | head -n 1
+      - name: Construir primer tramo BlackBerry narrado con planos en movimiento
+        run: |
+          timeout -k 10s 390s python -m tools.render_blackberry_scene01 \
+            --audio-dir dist/blackberry-escena01-voz \
+            --out dist/blackberry-escena01-video/BLACKBERRY_ESCENA01_CON_VOZ_NUEVA_REVISAR.mp4
+          ffprobe -v error -show_entries format=duration,size:stream=codec_name,codec_type,width,height \
+            -of json dist/blackberry-escena01-video/BLACKBERRY_ESCENA01_CON_VOZ_NUEVA_REVISAR.mp4 \
+            > dist/blackberry-escena01-video/VIDEO_INSPECCION.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('dist/blackberry-escena01-video')
+          state=json.loads((root/'ESTADO_ESCENA01_VIDEO.json').read_text())
+          media=json.loads((root/'VIDEO_INSPECCION.json').read_text())
+          streams=media['streams']
+          assert any(s.get('codec_type')=='audio' and s.get('codec_name')=='aac' for s in streams)
+          assert any(s.get('codec_type')=='video' and s.get('width')==1280 and s.get('height')==720 for s in streams)
+          assert not state['new_voice_approved'] and not state['youtube_publication_allowed']
+          assert abs(float(media['format']['duration'])-state['video_seconds'])<.25
+          print('VIDEO_ESCENA01_S:',media['format']['duration'])
+          print('PISTA_AUDIO_PRESENTE: TRUE; PUBLICACION_AUTORIZADA: FALSE')
+          PY
+      - name: Subir MP4 con audio de prueba y reporte de revisión
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdg-blackberry-capitulo01-mp4-narrado-no-aprobado
+          path: dist/blackberry-escena01-video/
+          retention-days: 5
+          if-no-files-found: warn
