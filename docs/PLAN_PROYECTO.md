@@ -331,3 +331,15 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Verificar en el panel publicado el login privado y una solicitud manual real, sin exponer ADMIN_TOKEN ni activar publicación.
 - [x] Desplegar y comprobar la versión del motor alternativo en Cloudflare. Build `18d882b5-39f5-4524-aa13-1db876e3ebdb` (`success`), commit `cb54813a158c957e4f3b57651c211fb57e53a572` de `main`, 25 pruebas JS + 34 Python aprobadas, versión Worker `1489175a-38ca-403a-9477-a2a466f39b4c` al 100 %. La D1 conserva 1 trabajo y 8 eventos; tablas editoriales e investigación siguen vacías.
 - [ ] Conservar publicación YouTube deshabilitada, códigos en `main` y el historial en `docs/AVANCE.md`.
+
+## Hito editorial 2026-10-21 — de simulaciones a evidencias reales de BlackBerry
+
+- [x] Identificar desde el portal oficial de inversores de BlackBerry **dos PDF** de resultados FY2024 (16 páginas) y FY2025 (19 páginas), aptos para el presupuesto de procesamiento CPU.
+- [x] Descargar y analizar ambos documentos en un GitHub Actions real: [39630703040](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39630703040), **success**, 2 fuentes leídas, 5 cifras/páginas ubicadas y hashes SHA-256 registrados. No hay hechos aprobados automáticamente; [artefacto JSON](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39630703040/artifacts/12359810175).
+- [x] Diferenciar explícitamente los 853 millones FY2024 reportados en 2024 y los 759,1 millones FY2024 comparativos presentados en 2025; no deducir una variación sin revisar operaciones discontinuadas. Registrar también 218 millones por patentes, ingresos FY2025 534,9 millones y QNX 236,0 millones, con página de origen.
+- [x] Integrar estos datos originales al expediente editorial del investigador en modo BlackBerry; la tabla original no se redistribuye, la IA sigue sin facultad de verificar/publicar. Mantener separada la investigación general por tema.
+- [x] Crear primer bloque de narración interna con escenas, voz en off original y citas documentales, `research/blackberry/PRIMER_BLOQUE_NARRATIVO_FUENTES_REALES.md` (~3–4 minutos), **sin etiquetarlo como documental completo**.
+- [ ] Ampliar la comprobación de la reformulación contable utilizando 10-K completo y otros documentos originales, incluyendo cifras con comparabilidad homogénea.
+- [ ] Obtener fuentes independientes para la historia de dispositivos y decisiones, completar voz narrativa de 8–14 minutos, revisión editorial, licencias comerciales y un MP4 verificable.
+- [ ] Demostrar desde panel un flujo autenticado en producción con una ejecución IA aprobada y artefactos vinculados. No consumir minutos Qwen sin tema/decisión del propietario.
+- [ ] Conservar acciones de prueba en modo manual y cualquier despliegue en `main` con CI verde, sin publicación YouTube ni datos especulativos.
