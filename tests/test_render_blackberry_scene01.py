@@ -49,11 +49,12 @@ class ChapterOneMotionTests(unittest.TestCase):
             with patch.object(chapter,"probe_mp3",return_value=78.0):
                 _,seconds,_=chapter.source_validation(out)
                 self.assertEqual(seconds,78.0)
+                original_sha=clips[1]["sha256"]
                 report["clips"][1]["sha256"]="f"*64
                 manifest.write_text(json.dumps(report),encoding="utf-8")
                 with self.assertRaises(RuntimeError):
                     chapter.source_validation(out)
-                report["clips"][1]["sha256"]=clips[1]["sha256"]
+                report["clips"][1]["sha256"]=original_sha
                 report["owner_approved_new_takes"]=True
                 manifest.write_text(json.dumps(report),encoding="utf-8")
                 with self.assertRaises(RuntimeError):
