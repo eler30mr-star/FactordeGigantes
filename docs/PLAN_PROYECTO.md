@@ -1,13 +1,13 @@
 # Plan maestro — Factor de Gigantes
 
-> **META FINAL INNEGOCIABLE — ACTUALIZACIÓN 2026-10-21:** Factor de Gigantes debe crear documentales completos de forma **autónoma desde un tema**, sin depender de que ChatGPT haga personalmente la investigación, el guion o el montaje de cada episodio. El propio sistema descubrirá y contrastará fuentes, redactará, narrará con voz autorizada, construirá escenas y exportará MP4 de 8–14 minutos. El propietario supervisa/aprueba. YouTube queda sujeto a autorización humana. **Prioridad inmediata: motor investigador independiente con proveedor intercambiable Gemini API gratuita o Qwen LLM local** (el Qwen-TTS de voz es otro componente). Arquitectura y aceptación en [`docs/ARQUITECTURA_AUTONOMA.md`](ARQUITECTURA_AUTONOMA.md). Este objetivo prevalece sobre seguir redactando BlackBerry a mano.
+> **META FINAL INNEGOCIABLE — ACTUALIZACIÓN 2026-10-21:** Factor de Gigantes debe **estudiar el mercado, descubrir y clasificar autónomamente los mejores temas**, y convertir el seleccionado en un documental profesional, sin depender de que ChatGPT ni el propietario investiguen, escojan manualmente el tema, escriban el guion o monten cada episodio. El propio sistema descubrirá y contrastará fuentes, redactará, narrará con voz autorizada, construirá escenas y exportará MP4 de 8–14 minutos. El propietario supervisa/aprueba. YouTube queda sujeto a autorización humana. **Prioridad inmediata: radar de mercado con estadísticas observadas y selección propia, seguido de un investigador independiente con Gemini API gratuita o Qwen LLM local** (el Qwen-TTS de voz es otro componente). Arquitectura y aceptación en [`docs/ARQUITECTURA_AUTONOMA.md`](ARQUITECTURA_AUTONOMA.md). Este objetivo prevalece sobre seguir redactando BlackBerry a mano.
 
 
 **Fecha inicial:** 2026-10-20 · **Repositorio:** `eler30mr-star/FactordeGigantes` · **rama:** `main`
 
 ## 1. Propósito y meta final
 
-Crear y operar una productora documental semiautomatizada y propia para el canal **Factor de Gigantes** (`@FactordeGigantes`), enfocada en grandes compañías, inventos, tecnología, modelos de negocio, decisiones decisivas y sus consecuencias. El objetivo de negocio es construir una audiencia sostenida y eventualmente solicitar monetización, **sin prometer resultados ni ingresos**.
+Crear y operar una productora documental autónoma con supervisión editorial y propia para el canal **Factor de Gigantes** (`@FactordeGigantes`), enfocada en grandes compañías, inventos, tecnología, modelos de negocio, decisiones decisivas y sus consecuencias. El objetivo de negocio es construir una audiencia sostenida y eventualmente solicitar monetización, **sin prometer resultados ni ingresos**.
 
 El sistema debe permitir gestionar varios proyectos editoriales y, en un futuro, varios canales, con controles por cuenta y trazabilidad. Primero validar un canal y su calidad.
 
@@ -430,3 +430,19 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Validar un episodio completo de 8–14 minutos generado por el propio sistema, no por redacción manual del asistente, y entregarlo para revisión. Publicación en YouTube por defecto deshabilitada.
 
 **Condiciones explícitas:** no contratar ni activar facturación para Gemini sin autorización; modalidad gratuita no es una capacidad ilimitada, y puede usar datos para mejora del proveedor; solo fuentes públicas. Mantener `main`, el historial y los controles de licencia y veracidad.
+
+## Prioridad P0 superior: detectar oportunidades y elegir automáticamente el siguiente episodio (2026-10-21)
+
+**Nueva definición inequívoca del propietario:** la IA debe vigilar el mercado, descubrir y clasificar oportunidades de empresas e innovación, **elegir los mejores temas según un estudio real de mercado**, investigar exhaustivamente el elegido y pasar el resultado por los motores de voz, video y publicación YouTube. El propietario no introducirá un tema por cada episodio. ChatGPT construye y corrige el sistema, **NO actúa como productor manual recurrente**.
+
+- [x] Adaptar `docs/ARQUITECTURA_AUTONOMA.md`: iniciar ciclo en radar, no en tema introducido manualmente; definir decisión, evidencias, feedback YouTube y subida automatizada **tras autorización editorial/OAuth**.
+- [x] Crear `docs/INTELIGENCIA_MERCADO.md`, que fija fuentes, frecuencia configurable, señales, limitaciones, categorías, algoritmo inicial, etapas y condiciones de publicación.
+- [x] Implementar `tools/market_radar.py`: valida muestras reales fechadas YouTube/Wikipedia, documentación primaria y antecedentes del canal; clasifica por demanda, movimiento, competencia relativa, fuentes y novedad. Devuelve **sin candidato** si los datos son insuficientes o caducados. La puntuación es heurística, no una promesa de rendimiento.
+- [x] Implementar `tools/market_sources.py`: dos consultas limitadas a YouTube Data API por consulta de candidato, únicamente si existe clave en secreto, y ventana de 14 días mediante Wikimedia Pageviews; no hay estadísticas ni noticias inventadas. Pruebas en `tests/test_market_radar.py` y `tests/test_market_sources.py` con fixtures artificiales, sin pedir APIs. Preflight verifica ambas.
+- [ ] Conectar un **descubridor autónomo** de nombres de empresas, acontecimientos y ángulos surgidos de señales recientes del nicho, sin catálogo fijo ni entrada manual. Enlazar YouTube Data API con cuota autorizada y Wikipedia verificando entidad/idioma; Google Trends solo si se concede acceso alfa.
+- [ ] Ejecutar el **primer estudio de mercado en vivo**, con registros auditables de al menos tres candidatos, ranking, fuentes, fechas y motivos de descarte; ningún test simulado equivale a ese hito.
+- [ ] Orquestar en D1 revisión y ejecución por estados desde selección automática, evidencia/guion Gemini o Qwen, voz, escenas originales y MP4, con reintentos y costos controlados.
+- [ ] Completar OAuth de canal, metadatos, subtítulos y programador YouTube. **El sistema hará también la subida y publicación** de cada episodio aprobado; queda bloqueada la publicación sin autorización editorial/comercial y derechos válidos.
+- [ ] Aprender de Analytics del propio canal y retroalimentar selección; no atribuir CTR/retención ajenos ni prometer viralidad.
+
+**Estado real:** documentos, clasificador y colectores de señales implementados/probados con mocks; todavía no hay campaña de mercado real, descubrimiento continuo activado, selección autónoma operativa ni publicación YouTube. El piloto BlackBerry sigue siendo prueba del motor audiovisual, no una tarea que ChatGPT deba repetir cada semana.
