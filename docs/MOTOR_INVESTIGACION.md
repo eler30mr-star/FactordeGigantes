@@ -73,3 +73,19 @@ El workflow es SOLO MANUAL para limitar minutos gratuitos. La integración al pa
 - No se supone que una página de Wikipedia pruebe qué web pertenece a una empresa, ni que un enlace P856 esté actualizado. Aún falta contraste de entidad, examen del contenido original y fuentes financieras independientes.
 
 **Pendiente inmediato:** conseguir acceso fiable al sitio corporativo usando URL final HTTPS permitida o fuentes originales alternativas, enlazar páginas/archivos a afirmaciones concretas, y evaluar coincidencias y contradicciones sin otorgar permisos de publicación.
+
+
+## Documentos PDF con evidencia por página — 2026-10-21
+
+**Implementado en `main` y validado realmente.** La extracción de PDF se integró en el modo `--dossier` del investigador, no se limita a una utilidad aislada:
+
+- `tools/pdf_sources.py` descarga documentos públicos HTTPS con los mismos controles DNS y redirecciones del motor original. Solo acepta HTML, texto, JSON o `application/pdf`; comprueba cabecera `%PDF-`, `Content-Length`, tamaño máximo **4 MB** para PDF, **35 páginas** por documento y presupuestos de texto/bloques. Usa `pypdf==5.9.0` en CPU, sin OCR, sin extraer imágenes ni redistribuir páginas completas. PDFs cifrados o demasiado grandes se rechazan.
+- `tools/research_engine.py` usa el analizador conjunto de HTML/PDF. Cada fragmento candidato en PDF lleva `page` y `locator: PDF página N` junto con el SHA-256 del PDF, URL final e identificación del documento; esas ubicaciones aparecen también en `evidencia_para_ia.txt` para el borrador local Qwen y en `LECTURA_PRELIMINAR.md`. Las búsquedas en HTML conservan localizador de bloque web, no página inventada.
+- `tools/pdf_probe.py`: `python -m tools.pdf_probe --url https://arxiv.org/pdf/1706.03762 --query "We propose a new simple network architecture the Transformer based solely on attention mechanisms dispensing with recurrence and convolutions entirely" --out dist/documento-pdf`. Genera `reporte_pdf_citado.json`, no descarga permanente del PDF.
+- `tests/test_pdf_sources.py`: PDF simulado con **dos páginas** y texto diferente, verificando el localizador de página 2, compatibilidad con HTML, límites/errores y estados sin aprobación. CI general instala pypdf antes de la batería; el workflow de IA también lo instala antes de investigar.
+- **Prueba real:** [Actions 39592681746](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39592681746), `success`. Descargó artículo original `Attention Is All You Need` de arXiv, extrajo **15 páginas, 328 bloques textuales y 2 fragmentos candidatos**, localizados en las **páginas 1 y 2** para la pregunta de prueba sobre Transformer/attention. Cero hechos marcados verificados. GitHub conserva temporalmente un artefacto de reporte, sin redistribuir el documento. [Referencia original](https://arxiv.org/abs/1706.03762).
+- Prueba CI completa con el parser y sus contratos [39592490158](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39592490158): `success`. El workflow de ensayo externo volvió a **`workflow_dispatch` solamente** tras una corrida.
+
+**Límites:** informes financieros de cientos de páginas, tablas complejas, PDFs escaneados o cifrados **NO** están resueltos. La versión actual detiene o limita ese contenido: no usar citas incompletas para aseverar cifras. Ni una coincidencia literal ni un SHA prueban verdad contextual, autoría o derechos comerciales. Cada afirmación aún requiere contraste independiente y revisión editorial.
+
+**Siguiente mejora:** detección/descubrimiento autónomo de PDFs de organismos e inversores desde el tema, procesamiento acotado de grandes informes mediante selección de secciones y citas de tablas verificables, y comparación entre documentos primarios y secundarios. Sin APIs facturables.
