@@ -1,7 +1,7 @@
 name: FDG - descubrir empresas por señales Wikimedia
 on:
   workflow_dispatch:
-  # Ejecución inicial única para probar fuente pública; retirar trigger al completar.
+  # Repetición acotada después de ampliar el límite de respuesta Wikimedia; retirar trigger al completar.
   push:
     branches: [main]
     paths:
