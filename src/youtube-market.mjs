@@ -25,7 +25,7 @@ export function validateYoutubeStudy(r,now=Date.now()){
  const collected=dateStamp(r.collected_on);
  if(collected>now+86400000 || collected<now-7*86400000)throw new RangeError("Reporte caduco");
  if(!number(r.candidate_count,1,2)||r.region_count!==2||
-    !number(r.queries_attempted,1,4)||r.quota_units_max!==101*r.queries_attempted||
+    !number(r.queries_attempted,1,4)||r.quota_units_max!==2*r.queries_attempted||
     !Array.isArray(r.queries)||r.queries.length!==r.queries_attempted)
     throw new RangeError("Presupuesto API inconsistente");
  const pairs=new Set(),topics=new Map(),queries=[],videos=[];
