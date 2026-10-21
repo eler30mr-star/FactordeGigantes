@@ -114,6 +114,18 @@ jobs:
         run: |
           python -m tools.push_news_entity_assess --mode official \
             --input dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json
+      - name: Extraer evidencia paginada de informes PDF corporativos
+        run: |
+          python -m unittest discover -s tests -p test_market_pdf_evidence.py -v
+          timeout -k 5s 65s python -m tools.market_pdf_evidence \
+            --official dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
+            --out dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json
+      - name: Guardar páginas y citas textuales de informes en D1 vía OIDC
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m tools.push_news_entity_assess --mode pdf \
+            --input dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json
       - name: Relacionar empresas y titulares como hipótesis verificables
         run: |
           python -m unittest discover -s tests -p test_market_news_join.py -v
