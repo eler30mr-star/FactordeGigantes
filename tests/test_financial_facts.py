@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from tools import financial_facts as f
+from tools import financial_probe as probe
 
 CIK="0000320193"
 URL=f"https://data.sec.gov/api/xbrl/companyfacts/CIK{CIK}.json"
@@ -116,6 +117,26 @@ class FinancialFactsTests(unittest.TestCase):
             filepath=Path(temp)/"fixture.json"
             filepath.write_bytes(raw)
             self.assertEqual(report["observations"][0]["source_url"],URL)
+
+    def test_automatic_candidate_probe_stays_unapproved_even_when_readable(self):
+        data=json.dumps(document()).encode()
+        report={"entities":[{"cik_candidate":CIK,"status":"sec_filings_listed"}]}
+        result=probe.probe_candidates(report,fetcher=lambda url:(data,url,"application/json"))
+        self.assertEqual(result["status"],"retrieved_structured_candidates")
+        self.assertEqual(result["analysis"]["observation_count"],7)
+        self.assertEqual(result["analysis"]["comparison"]["same_period_differences"],1)
+        self.assertFalse(result["identity_verified"])
+        self.assertFalse(result["publication_authorized"])
+
+    def test_companyfacts_blocked_and_no_cik_do_not_invent_data(self):
+        report={"entities":[{"cik_candidate":CIK}]}
+        result=probe.probe_candidates(report,fetcher=lambda _: (_ for _ in ()).throw(OSError("SEC blocked")))
+        self.assertEqual(result["status"],"sec_unavailable_or_unreadable")
+        self.assertIsNone(result["analysis"])
+        self.assertEqual(result["error_type"],"OSError")
+        missing=probe.probe_candidates({"entities":[{"cik_candidate":None}]})
+        self.assertEqual(missing["status"],"no_identifier")
+        self.assertEqual(missing["facts_verified_automatically"],0)
 
 if __name__=="__main__":
     unittest.main()
