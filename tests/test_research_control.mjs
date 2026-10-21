@@ -13,6 +13,8 @@ class ResearchDB {
       args:[],
       bind(...values){this.args=values;return this},
       async first(){
+        if(sql.startsWith("SELECT id FROM research_requests WHERE topic_key=?"))
+          return db.requests.find(x=>x.topic_key===this.args[0] && x.day_utc===this.args[1]) || null;
         if(sql.includes("COUNT(*)"))return {total:db.requests.filter(x=>x.day_utc===this.args[0]).length};
         throw Error("Unexpected SQL first: "+sql);
       },
@@ -25,8 +27,11 @@ class ResearchDB {
       },
       async run(){
         if(sql.startsWith("INSERT OR IGNORE")) {
-          const [id,topic,topic_key,day_utc]=this.args;
-          if(db.requests.some(x=>x.topic_key===topic_key && x.day_utc===day_utc))
+          assert.match(sql,/SELECT COUNT\(\*\) FROM research_requests WHERE day_utc=\?/);
+          const [id,topic,topic_key,day_utc,quota_day,limit]=this.args;
+          assert.equal(quota_day,day_utc);
+          if(db.requests.some(x=>x.topic_key===topic_key && x.day_utc===day_utc)
+             || db.requests.filter(x=>x.day_utc===day_utc).length>=limit)
             return {meta:{changes:0}};
           db.requests.push({id,topic,topic_key,day_utc,state:"reserved"});
           return {meta:{changes:1}};
@@ -91,6 +96,24 @@ test("límite 4 solicitudes/día UTC; no despachar más trabajo pesado",async()=
     async()=>{calls++;return {status:204}},now);
   assert.equal(fifth.status,429);
   assert.equal(calls,4);
+});
+
+test("dos solicitudes concurrentes tras tres reservas no exceden cuatro despachos",async()=>{
+  const e=env(); let calls=0;
+  for(let i=1;i<=3;i++){
+    const one=await launchResearch(e,{topic:"Empresa tecnológica "+i,confirmed:true},
+      async()=>{calls++;return {status:204}},now);
+    assert.equal(one.status,202);
+  }
+  const simultaneously=await Promise.all([
+    launchResearch(e,{topic:"Historia corporativa Apple",confirmed:true},
+      async()=>{calls++;return {status:204}},now),
+    launchResearch(e,{topic:"Historia corporativa Microsoft",confirmed:true},
+      async()=>{calls++;return {status:204}},now)
+  ]);
+  assert.deepEqual(simultaneously.map(x=>x.status).sort(),[202,429]);
+  assert.equal(calls,4);
+  assert.equal(e.DB.requests.filter(x=>x.day_utc==="2026-10-20").length,4);
 });
 
 test("fallo de red no hace doble lanzamiento; rechazo explícito permanece trazado",async()=>{
