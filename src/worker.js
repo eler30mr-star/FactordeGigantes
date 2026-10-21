@@ -1,3 +1,4 @@
+import {validateDossier} from "./editorial.mjs";
 // Factor de Gigantes — backend de aprobación y orquestación.
 // Tokens secretos configurados con 'wrangler secret put'; no hay publicación directa.
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -51,6 +52,22 @@ async function record(env, id, action, note = "") {
 async function find(env,id) {
   return env.DB.prepare("SELECT * FROM jobs WHERE id=?").bind(id).first();
 }
+async function getDossier(env,id) {
+  return env.DB.prepare("SELECT dossier_json, editor_attested, editor_name, attested_at, updated_at FROM editorial_dossiers WHERE job_id=?").bind(id).first();
+}
+async function editorialGate(env,id,manifest) {
+  const stored = await getDossier(env,id);
+  if (!stored || stored.editor_attested !== 1 || !stored.editor_name)
+    return {ok:false, reason:"Falta expediente editorial revisado y confirmado por el editor"};
+  try {
+    const summary = validateDossier(JSON.parse(stored.dossier_json),manifest);
+    if (!summary.structurally_complete)
+      return {ok:false, reason:"Existen afirmaciones sin verificar o recursos sin derechos acreditados"};
+    return {ok:true, summary};
+  } catch {
+    return {ok:false, reason:"Expediente no corresponde al guion o contiene datos incompletos"};
+  }
+}
 const dto = row => ({id:row.id, title:row.title, format:row.format, status:row.status,
    manifest:JSON.parse(row.manifest_json), review_note:row.review_note, last_error:row.last_error,
    created_at:row.created_at, updated_at:row.updated_at});
@@ -103,6 +120,51 @@ async function handle(request,env) {
   if (parts[1] !== "jobs" || !parts[2]) return err("Ruta no encontrada",404);
   const id=parts[2], row=await find(env,id);
   if (!row) return err("Trabajo inexistente",404);
+  if (parts.length === 4 && parts[3] === "dossier") {
+    if (method === "GET") {
+      const stored=await getDossier(env,id);
+      if (!stored) return json({dossier:null, summary:null, attested:false});
+      const dossier=JSON.parse(stored.dossier_json);
+      return json({dossier, summary:validateDossier(dossier,JSON.parse(row.manifest_json)),
+        attested:stored.editor_attested === 1, editor_name:stored.editor_name, attested_at:stored.attested_at});
+    }
+    if (method === "PUT") {
+      if (!["draft","review"].includes(row.status))
+        return err("El expediente solo se edita en borrador o revisión",409);
+      const dossier=await parseBody(request);
+      let summary;
+      try { summary=validateDossier(dossier,JSON.parse(row.manifest_json)); }
+      catch(e) { return err("Expediente inválido: "+String(e.message).slice(0,160)); }
+      await env.DB.prepare(
+        "INSERT INTO editorial_dossiers(job_id,dossier_json) VALUES (?,?) "+
+        "ON CONFLICT(job_id) DO UPDATE SET dossier_json=excluded.dossier_json, "+
+        "editor_attested=0, editor_name='', attested_at=NULL, updated_at=datetime('now')"
+      ).bind(id,JSON.stringify(dossier)).run();
+      await record(env,id,"dossier_saved","Fuentes: "+summary.source_count+"; afirmaciones: "+summary.claim_count);
+      return json({ok:true, summary, attested:false});
+    }
+    return err("Método no admitido",405);
+  }
+  if (parts.length === 5 && parts[3] === "dossier" && parts[4] === "attest" && method === "POST") {
+    if (row.status !== "review") return err("Solo se acredita en estado de revisión",409);
+    const body=await parseBody(request);
+    if (body.confirmed !== true) return err("Se necesita confirmación editorial explícita");
+    const reviewer=typeof body.reviewer === "string" ? body.reviewer.trim() : "";
+    if (reviewer.length < 3 || reviewer.length > 100) return err("Identifica al revisor (3-100 caracteres)");
+    const stored=await getDossier(env,id);
+    if (!stored) return err("Primero guarda el expediente documental",409);
+    let summary;
+    try { summary=validateDossier(JSON.parse(stored.dossier_json),JSON.parse(row.manifest_json)); }
+    catch(e) { return err("Expediente inválido: "+String(e.message).slice(0,160),409); }
+    if (!summary.structurally_complete)
+      return err("Faltan afirmaciones verificadas por editor o licencias de recursos",409);
+    await env.DB.prepare(
+      "UPDATE editorial_dossiers SET editor_attested=1, editor_name=?, "+
+      "attested_at=datetime('now'), updated_at=datetime('now') WHERE job_id=?"
+    ).bind(reviewer,id).run();
+    await record(env,id,"dossier_attested","Revisión humana confirmada: "+reviewer);
+    return json({ok:true,attested:true,summary});
+  }
   if (parts.length === 3 && method === "GET") {
     const e=await env.DB.prepare("SELECT action,note,created_at FROM events WHERE job_id=? ORDER BY id DESC LIMIT 40").bind(id).all();
     return json({job:dto(row),events:e.results});
@@ -112,6 +174,7 @@ async function handle(request,env) {
     const manifest=validateManifest(await parseBody(request));
     await env.DB.prepare("UPDATE jobs SET title=?,format=?,manifest_json=?,review_note='',updated_at=datetime('now') WHERE id=?")
       .bind(manifest.title,manifest.format,JSON.stringify(manifest),id).run();
+    await env.DB.prepare("UPDATE editorial_dossiers SET editor_attested=0, editor_name='', attested_at=NULL WHERE job_id=?").bind(id).run();
     await record(env,id,"edited");
     return json({job:dto(await find(env,id))});
   }
@@ -123,16 +186,21 @@ async function handle(request,env) {
   if (action === "approve" && row.status === "review") {
     const data=await parseBody(request);
     if (data.confirmed !== true) return err("Se requiere aprobación humana explícita");
-    validateManifest(JSON.parse(row.manifest_json));
+    const manifest=validateManifest(JSON.parse(row.manifest_json));
+    const gate=await editorialGate(env,id,manifest);
+    if (!gate.ok) return err(gate.reason,409);
     await setStatus(env,id,"approved","approved_by_editor"); return json({ok:true});
   }
   if (action === "request-changes" && ["review","approved","failed"].includes(row.status)) {
     const data=await parseBody(request);
     const note=String(data.note || "").trim();
     if (note.length < 8 || note.length > 500) return err("Indica una razón de 8 a 500 caracteres");
+    await env.DB.prepare("UPDATE editorial_dossiers SET editor_attested=0, editor_name='', attested_at=NULL WHERE job_id=?").bind(id).run();
     await setStatus(env,id,"draft","changes_requested",{review_note:note}); return json({ok:true});
   }
   if (action === "dispatch" && row.status === "approved") {
+    const gate=await editorialGate(env,id,validateManifest(JSON.parse(row.manifest_json)));
+    if (!gate.ok) return err(gate.reason,409);
     if (!env.GITHUB_DISPATCH_TOKEN || !env.GITHUB_REPO) return err("Acceso GitHub sin configurar",503);
     const repo=env.GITHUB_REPO;
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return err("Repositorio GitHub inválido",503);
