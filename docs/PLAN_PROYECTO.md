@@ -190,10 +190,15 @@ No se acepta automáticamente el 0,6B ni el 1,7B local como sustituto, aunque se
 
 - [x] Probar continuidad de **tres párrafos de una misma historia** con Qwen Base 1.7B CPU sin servicios de pago, audios separados, previsualización de 43,296 s, metadatos y referencia canónica intacta: [run 39518606909](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39518606909) `success`.
 - [x] Limitar nuevas pruebas intensivas al inicio manual; la activación excepcional por `push` fue retirada en `main` inmediatamente después de lanzar la ejecución.
-- [ ] **Audición humana nueva de los tres párrafos y su continuidad de 43,296 s**; preferencia anterior por `01_decision` no certifica estos audios.
+- [x] **Audición humana de la previsualización continua de 43,296 s:** el propietario respondió «Está bien». Aceptación editorial limitada al montaje escuchado; no supone aprobación universal de nuevos fragmentos ni derechos de uso comercial.
 - [x] Introducir comprobación estructural de fuentes enlazadas a afirmaciones y de derechos de recursos (`tools/editorial_evidence.py` + tests). CI `success`, **aún no conectada** al Worker/D1 ni a un guion factual real.
 - [x] Documentar estado declarado Apache-2.0 del modelo y las lagunas de derechos de la voz en `docs/LICENCIAS_NARRACION.md`.
 - [ ] Validar términos del audio de referencia y todos los materiales con derechos de uso comercial, optimizar la generación larga con presupuesto gratuito y pruebas de estabilidad, preparar fuentes originales y un primer documental completo.
 - [ ] Integrar verificación editorial y licencias al panel, y la narración final al renderizador, **solo después** de aprobación técnica, humana y legal.
 
 **Fase 2 aún abierta**. Ningún ensayo experimental se considera publicado, monetizable o idéntico a la identidad aprobada solo por superar FFprobe o CI.
+
+
+### Hito de escucha aceptado (2026-10-20)
+
+El montaje breve de tres párrafos (43,296 s) obtuvo conformidad editorial del propietario. Se mantiene intacta la voz canónica; siguiente etapa: optimización de narración segmentada para mayor duración, límites de CPU gratuito y trazabilidad de investigación y licencias. No se habilita aún narración para publicación ni YouTube.
