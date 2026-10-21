@@ -37,6 +37,22 @@ def github_oidc_token(*, environ=os.environ, opener=urlopen) -> str:
     value=body.get("value") if isinstance(body,dict) else None
     if not isinstance(value,str) or len(value)>12000 or value.count(".")!=2:
         raise RuntimeError("GitHub devolvió una identidad OIDC no válida")
+    if environ.get("FDG_OIDC_DIAGNOSTIC") == "1":
+        import base64
+        encoded=value.split(".")[1]
+        data=json.loads(base64.urlsafe_b64decode(encoded+"="*((4-len(encoded)%4)%4)))
+        checks={
+          "issuer": data.get("iss") == "https://token.actions.githubusercontent.com",
+          "audience": data.get("aud") == AUDIENCE,
+          "repository": data.get("repository") == "eler30mr-star/FactordeGigantes",
+          "repository_id": str(data.get("repository_id")) == "1426522491",
+          "ref": data.get("ref") == "refs/heads/main",
+          "workflow_ref": data.get("workflow_ref") == "eler30mr-star/FactordeGigantes/.github/workflows/topic-discovery-smoke.yml@refs/heads/main",
+          "event": data.get("event_name") in ("push","schedule","workflow_dispatch"),
+          "runner": data.get("runner_environment") == "github-hosted",
+          "time_fields": all(isinstance(data.get(n),int) for n in ("nbf","iat","exp")),
+        }
+        print("OIDC_DIAGNOSTICO_SOLO_BOOLEANOS:",checks)
     return value
 
 
