@@ -14,7 +14,7 @@ concurrency:
 jobs:
   topic-discovery:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -89,6 +89,19 @@ jobs:
           fi
           python -m tools.push_news_radar \
             --input dist/radar/NOTICIAS_NO_VERIFICADAS.json
+      - name: Relacionar empresas y titulares como hipótesis verificables
+        run: |
+          python -m unittest discover -s tests -p test_market_news_join.py -v
+          python -m tools.market_news_join \
+            --companies dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
+            --news dist/radar/NOTICIAS_NO_VERIFICADAS.json \
+            --out dist/radar/COINCIDENCIAS_EMPRESA_NOTICIA_SIN_VERIFICAR.json
+      - name: Persistir coincidencias informativas con identidad OIDC
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m tools.push_market_cross \
+            --input dist/radar/COINCIDENCIAS_EMPRESA_NOTICIA_SIN_VERIFICAR.json
       - name: Medir competencia YouTube con presupuesto explícito y limitado
         env:
           YOUTUBE_DATA_API_KEY: ${{ secrets.YOUTUBE_DATA_API_KEY }}
