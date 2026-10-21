@@ -11,7 +11,7 @@ from datetime import date, timedelta
 import json
 from pathlib import Path
 import re
-from urllib.parse import urlencode, urlsplit, quote
+from urllib.parse import urlencode, urlsplit, quote, unquote
 
 from tools.market_sources import get_json
 
@@ -121,7 +121,8 @@ def official_site_candidate(entity):
     return None
 
 
-def discover(*, today=None,languages=LANGUAGES,limit=120,max_requests=8,fetch=get_json):
+def discover(*, today=None,languages=LANGUAGES,limit=120,max_requests=8,fetch=get_json,
+             enrich_interest=False,interest_collector=None):
     """A Wikimedia le damos 3 días de retraso para evitar páginas incompletas.
 
     El máximo de consultas es estricto; no se ejecutan búsquedas de YouTube ni
@@ -196,6 +197,24 @@ def discover(*, today=None,languages=LANGUAGES,limit=120,max_requests=8,fetch=ge
                    key=lambda x:(-len(x["discovery_signals"]),
                                  -sum(v["views"] for v in x["discovery_signals"]),
                                  x["topic"].casefold()))[:MAX_ENTRIES]
+    if enrich_interest:
+        if interest_collector is None:
+            from tools.market_sources import collect_wikipedia
+            interest_collector=collect_wikipedia
+        for item in ordered[:6]:
+            signal=item["discovery_signals"][0]
+            lang=signal["project"].split(".")[0]
+            article=unquote(signal["url"].split("/wiki/",1)[1]).replace("_"," ")
+            try:
+                interest=interest_collector(article,language=lang,now=today)
+                # Sin 14 días completos NO hay serie de interés validada.
+                if not isinstance(interest,dict) or "views_last_7d" not in interest or "views_previous_7d" not in interest:
+                    raise ValueError("Señal sin ventana completa")
+                item["wikipedia_interest"]=interest
+                item["interest_14d_status"]="measured"
+            except (ValueError,RuntimeError,OSError,TimeoutError,KeyError) as exc:
+                item["interest_14d_status"]="unavailable"
+                item["interest_error_type"]=type(exc).__name__
     return {
         "product":"Factor de Gigantes",
         "method":"wikimedia_wikidata_company_discovery_v1",
@@ -206,6 +225,7 @@ def discover(*, today=None,languages=LANGUAGES,limit=120,max_requests=8,fetch=ge
         "sources":sources,
         "candidates":ordered,
         "company_candidates_count":len(ordered),
+        "wikipedia_interest_measured_count":sum(x.get("interest_14d_status")=="measured" for x in ordered),
         "market_study_complete":False,
         "youtube_market_verified":False,
         "selected_automatically_for_research":None,
@@ -221,14 +241,18 @@ def main():
     p.add_argument("--limit",type=int,default=120)
     p.add_argument("--max-requests",type=int,default=8)
     p.add_argument("--today",type=str)
+    p.add_argument("--enrich-interest",action="store_true",
+                   help="Medir 14 días de visitas por artículo, máximo seis candidatos")
     args=p.parse_args()
-    result=discover(today=args.today,limit=args.limit,max_requests=args.max_requests)
+    result=discover(today=args.today,limit=args.limit,max_requests=args.max_requests,
+                    enrich_interest=args.enrich_interest)
     args.out.parent.mkdir(parents=True,exist_ok=True)
     args.out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("EMPRESAS_DETECTADAS:",result["company_candidates_count"])
     print("ENTIDADES_OBSERVADAS:",result["articles_considered"],"WIKIDATA_REQUESTS:",result["wikidata_requests"])
     for record in result["candidates"][:8]:
         print("CANDIDATA:",record["wikidata_id"],record["topic"],"fuentes:",len(record["discovery_signals"]))
+    print("SERIES_14_DIAS_REALES:",result["wikipedia_interest_measured_count"])
     print("ESTUDIO_DE_MERCADO_COMPLETO:",result["market_study_complete"])
     print("YOUTUBE_HABILITADO:",result["ready_for_youtube"])
 
