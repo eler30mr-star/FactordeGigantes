@@ -1,5 +1,6 @@
 import {validateDossier} from "./editorial.mjs";
 import {launchResearch,listResearchRequests} from "./research-control.mjs";
+import {systemReadiness} from "./system-readiness.mjs";
 // Factor de Gigantes — backend de aprobación y orquestación.
 // Tokens secretos configurados con 'wrangler secret put'; no hay publicación directa.
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -108,6 +109,11 @@ async function handle(request,env) {
   const renderer=parts[1] === "renderer";
   if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) return err("Acceso no autorizado",401);
   if (!env.DB) return err("D1 no configurado",503);
+  // Diagnóstico de solo lectura; disponible exclusivamente para ADMIN_TOKEN.
+  if (!renderer && url.pathname === "/api/system/status") {
+    if (method !== "GET") return err("Método no admitido",405);
+    return json(await systemReadiness(env));
+  }
   // El investigador usa un workflow distinto de render.yml; requiere confirmación humana.
   // Se ejecuta tras ADMIN_TOKEN, nunca por el token del renderizador.
   if (!renderer && url.pathname === "/api/research") {
