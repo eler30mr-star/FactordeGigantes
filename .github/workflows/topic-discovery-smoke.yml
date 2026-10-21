@@ -1,4 +1,4 @@
-name: FDG - descubrir empresas por señales Wikimedia
+name: FDG - radar diario empresas y noticias
 on:
   workflow_dispatch:
   schedule:
@@ -9,7 +9,7 @@ permissions:
   contents: read
   id-token: write
 concurrency:
-  group: fdg-topic-discovery-wikimedia
+  group: fdg-topic-discovery-market
   cancel-in-progress: false
 jobs:
   topic-discovery:
@@ -65,6 +65,30 @@ jobs:
           fi
           python -m tools.push_market_radar \
             --input dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json
+      - name: Descubrir titulares recientes de empresas e innovación
+        run: |
+          python -m unittest discover -s tests -p test_news_discovery.py -v
+          timeout -k 5s 110s python -m tools.news_discovery \
+            --out dist/radar/NOTICIAS_NO_VERIFICADAS.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("dist/radar/NOTICIAS_NO_VERIFICADAS.json").read_text(encoding="utf-8"))
+          print("TITULARES_REALES_RECOPILADOS:",d["lead_count"])
+          print("FUENTES_RSS_EXITOSAS:",d["feeds_succeeded"],"DE:",d["feeds_attempted"])
+          print("HECHOS_YOUTUBE_VERIFICADOS:",d["youtube_market_verified"])
+          assert not d["market_study_complete"] and not d["ready_for_youtube"]
+          PY
+      - name: Persistir titulares RSS no verificados en D1
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          if [ -z "$API_BASE_URL" ]; then
+            echo "::error::Falta API_BASE_URL; no se puede guardar radar de noticias"
+            exit 1
+          fi
+          python -m tools.push_news_radar \
+            --input dist/radar/NOTICIAS_NO_VERIFICADAS.json
       - name: Conservar únicamente informe de candidatos y procedencia
         if: always()
         uses: actions/upload-artifact@v4
