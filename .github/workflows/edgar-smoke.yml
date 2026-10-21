@@ -1,0 +1,46 @@
+name: Factor de Gigantes - localizar registros SEC reales
+on:
+  workflow_dispatch:
+  # Una prueba acotada en main para validar integracion real; retirar tras ejecutarse.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/edgar-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  edgar-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contratos sin solicitudes externas
+        run: |
+          python -m unittest discover -s tests -p test_edgar_discovery.py -v
+          python -m unittest discover -s tests -p test_editorial_audit.py -v
+      - name: Buscar documentos SEC por tema real sin iniciar Qwen
+        run: |
+          timeout -k 5s 115s python -m tools.edgar_discovery --topic "Apple Inc." --max-entities 3 --out dist/edgar-smoke
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("dist/edgar-smoke/sec_edgar_documentos_candidatos.json").read_text(encoding="utf-8"))
+          print("CIK_CANDIDATOS:",report["candidate_ciks"])
+          print("REGISTROS_SEC:",report["filing_candidates"])
+          for item in report["entities"]:
+              print("ENTIDAD:",item["title"],"ESTADO:",item["status"],
+                    "DOCUMENTOS:",len(item["filing_candidates"]),
+                    "ERROR:",item.get("fetch_error_type","ninguno"))
+          print("HECHOS_VERIFICADOS:",report["automatic_fact_verification"])
+          PY
+      - name: Guardar identificadores y enlaces, no descargar documentos completos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factor-sec-documentos-candidatos
+          path: dist/edgar-smoke/
+          retention-days: 3
+          if-no-files-found: warn
