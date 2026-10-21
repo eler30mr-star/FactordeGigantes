@@ -35,6 +35,14 @@ El panel permite ver ejecuciones vinculadas desde GitHub Actions mediante `reque
 
 **Siguiente verificación real pendiente:** realizar una lectura/autenticación del panel desde el navegador del propietario con `ADMIN_TOKEN` y luego, únicamente con su decisión explícita de investigar un tema, comprobar un `workflow_dispatch` real y sus artefactos. No se ha enviado una investigación pagada o pesada de manera automática durante las migraciones ni pruebas.
 
+## 2D. Diagnóstico privado de producción — disponible
+
+La versión Cloudflare `a7695b06-938e-402e-a4ba-809fc2f2ec02`, correspondiente al commit `7ccc9d4e6cf224bbc22333722e0127c1f932b4e6` de `main`, se desplegó mediante build `17eaaf34-42eb-4427-859b-0f0b8d92b262` (`success`). La compilación ejecutó **25 pruebas Node, 0 fallos**, y subió 2 assets actualizados del panel. Se verificó por API que el código desplegado incluye `/api/system/status` y la reserva de cuota atómica de `/api/research`.
+
+Una vez conectado el panel con `ADMIN_TOKEN`, la nueva sección «Estado del sistema» permite consultar mediante `GET /api/system/status` si existen `jobs`, `events`, `editorial_dossiers`, `research_requests` y si se reconoce la configuración del repositorio/token para investigación. El diagnóstico está protegido y solo devuelve **banderas**: no expone valores de secretos, ni llama a GitHub, ni prueba permisos Actions, ni verifica derechos de uso.
+
+**Verificación pendiente con navegador:** probar el acceso autenticado de una sesión real y comprobar que el nuevo panel muestra la información. Las comprobaciones de Cloudflare/API del código y D1 son positivas; no se afirma haber hecho login en nombre del propietario ni haber lanzado IA.
+
 ## 3. Recuperación o recreación excepcional del Worker
 
 **Esta sección es solo para un escenario de recuperación. El Worker, la D1 y los secretos ya existen: NO crear otro Worker ni otra base.**\n\n1. Cloudflare → Workers & Pages → Create application → Import a repository.
