@@ -1,0 +1,41 @@
+name: Factor de Gigantes - descubrir sitio oficial real
+on:
+  workflow_dispatch:
+  # Ejecutar una sola prueba de descubrimiento y luego regresar a modo manual.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/official-source-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  official-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pruebas unitarias de sitio oficial
+        run: python -m unittest discover -s tests -p test_primary_source_discovery.py -v
+      - name: Buscar candidato primario desde BlackBerry sin API paga
+        run: |
+          timeout -k 5s 95s python -m tools.primary_source_discovery --topic "BlackBerry" --max-entities 2 --out dist/official-smoke
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("dist/official-smoke/fuentes_oficiales_candidatas.json").read_text())
+          print("SITIOS_OFICIALES_CANDIDATOS:", p["official_candidates"])
+          for s in p["sources"]:
+              print("ENTIDAD:", s["title"], "|", s["status"], "|",s["site_url"])
+          print("HECHOS_VERIFICADOS:", p["automatic_fact_verification"])
+          PY
+      - name: Entregar resultado verificable
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factor-gigantes-sitios-oficiales-candidatos
+          path: dist/official-smoke/
+          retention-days: 3
+          if-no-files-found: warn
