@@ -885,3 +885,22 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 4. Validar fuentes/historia, derechos de voz y visuales, montaje completo de 8–14 min y **cero publicación YouTube automática**.
 
 **Estado actualizado y demostrado:** primera escena BLACKBERRY = audio real 56,52 s ✅, MP4 con ese audio 56,50 s ✅, render H.264/AAC QA verde ✅; guion de 12 escenas y plan 56 partes ✅; derechos, aprobación vocal y documental largo ❌.
+
+## 2026-10-21 · Decisión arquitectónica definitiva: el sistema hace TODO, ChatGPT no fabrica cada episodio
+
+**Corrección expresa del propietario:** «la meta final es que todo el trabajo lo haga el sistema, no tú», y mencionó **Qwen o Gemini para realizar las investigaciones**. Esto cambia la prioridad de desarrollo: el objetivo no es acumular escenas que el asistente elabora manualmente, sino terminar una plataforma automática reutilizable desde cualquier tema.
+
+### Cambios realizados en este turno (solo `main`)
+
+1. Documento nuevo `docs/ARQUITECTURA_AUTONOMA.md`: fija el criterio de aceptación `tema → descubrimiento y extracción de fuentes → investigador IA → contraste factual → guion original → planificación audiovisual → narración autorizada → montaje MP4 de 8–14 min → QA → revisión del propietario`, sin que ChatGPT escriba personalmente el próximo documental. YouTube queda deshabilitado por defecto y sujeto a autorización.
+2. `docs/PLAN_PROYECTO.md`: prioridad **P0** añadida al principio y sección de reorientación al final. Se documenta que BlackBerry es solo una prueba, no la forma definitiva de producir cada episodio.
+3. Investigador pluggable propuesto: **Gemini API gratuita** (modelos gratuitos disponibles dependiendo de cuenta/cuota y política de datos) y **Qwen3 LLM local** (investigación textual CPU). El actual Qwen3-TTS solo genera voz; no confundirlo con el investigador. La integración real de Gemini, clave, prueba de red, calidad y cuotas **NO se ha ejecutado ni configurado**. Qwen3-0.6B ya tuvo experimentos pero no avala una investigación autónoma robusta.
+4. Reglas obligatorias: evidencia primaria con URL, SHA, periodo/unidad/citas; comparaciones automáticas no dan hechos humanos verificados; ninguna contratación/API pagada, secreto en GitHub/Cloudflare únicamente, fuentes públicas en modalidades gratuitas y ningún contenido comercial sin derechos.
+
+### Estado y siguiente hito verificable
+
+**Hecho:** documentos de arquitectura y plan actualizados en el repositorio, sin cambio de proveedor en producción. No se ha hecho investigación Gemini ni generado contenido nuevo; no afirmar lo contrario.
+
+**P0.1 siguiente:** implementar un contrato de proveedores `gemini_free`/`qwen_local`, pruebas sin clave ni gasto, y hacer un **ensayo real de investigación completa de un tema nuevo** por la plataforma tras configurar Gemini de forma segura (si se selecciona) o usar un Qwen LLM viable. Registrar exactamente fuentes, respuestas, latencia, límites de coste y errores. Luego conectar las etapas hasta MP4. El propietario debe supervisar/aprobar resultados, no realizar tareas técnicas.
+
+**Recordatorio:** mantener exclusivamente `main` y documentar cada implementación, CI y despliegue por separado. La dirección se considera acordada; no regresar a producción manual permanente del chat.
