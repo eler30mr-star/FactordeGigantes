@@ -1,7 +1,7 @@
 """Cruce autónomo de candidatas Wikimedia con YouTube Data API v3.
 
 Usa únicamente empresas detectadas en el propio radar. Máximo 2 empresas x
-2 regiones, una search.list y una videos.list por pareja (techo 404 unidades).
+2 regiones, una search.list y una videos.list por pareja (techo 4 búsquedas + 4 lecturas = 8 unidades en dos depósitos de cuota).
 Jamás obtiene métricas privadas, autoriza documental ni invoca API sin permiso.
 """
 from __future__ import annotations
@@ -18,7 +18,7 @@ QID=re.compile(r"Q[1-9][0-9]*\Z")
 REGIONS=("MX","ES")
 MAX_CANDIDATES=2
 MAX_QUERY_PAIRS=4
-QUOTA_CAP=404
+QUOTA_CAP=8
 
 
 def choose_candidates(discovery):
@@ -97,7 +97,7 @@ def study(discovery, *, api_key, now=None, collector=collect_youtube):
     return {
       "provider":"youtube_data_api_v3","collected_on":today.isoformat(),
       "candidate_count":len(selected),"region_count":len(REGIONS),
-      "queries_attempted":count,"quota_units_max":min(QUOTA_CAP,101*count),
+      "queries_attempted":count,"quota_units_max":min(QUOTA_CAP,2*count),
       "state":"measured" if measured==count and count==len(selected)*len(REGIONS) else "partial",
       "queries":queries,"complete_comparisons":measured,
       "market_study_complete":False,"research_automatic":False,
