@@ -1,11 +1,6 @@
 name: Factor de Gigantes - primer dossier financiero PDF real
 on:
   workflow_dispatch:
-  # Solo ejecución inicial de prueba; se retira después.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/blackberry-financial-smoke.yml'
 permissions:
   contents: read
 jobs:
