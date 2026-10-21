@@ -1,6 +1,6 @@
 # Historial de avance — Factor de Gigantes
 
-> **Estado vigente 2026-10-21:** D1 remota 0001–0005 aplicada y datos previos conservados (1 trabajo, 8 eventos). Radar autónomo Wikimedia + noticias RSS → GitHub Actions OIDC → Worker → D1 probado con fuentes reales: **2 empresas, 2 series históricas y 100 titulares RSS** en primer registro. Preselección temática automática explicable y panel privado desarrollados. El sistema todavía NO ha medido competencia real de YouTube, seleccionado tema ganador ni producido/publicado documentales autónomamente.
+> **Estado vigente 2026-10-21:** D1 remota 0001–0006 aplicada en Cloudflare Factor y datos previos conservados. Radar Wikimedia y RSS conectado a GitHub Actions OIDC y D1 (2 empresas, 2 series y 100 titulares reales). Comparador YouTube por empresa/región, persistencia D1 y panel privado implementados, probados con fixtures y desplegados; **aún 0 mediciones públicas YouTube en D1**. Requiere clave/API y habilitación expresa de cuota gratuita, sin pagos. Ranking competitivo real, fuentes primarias, elección fundamentada, investigación/guion/video y publicación autorizada siguen pendientes.
 
 ## 2026-10-20 · Inicio del proyecto
 
@@ -1086,3 +1086,32 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - El navegador privado del propietario sigue pendiente de prueba visual autenticada. La lectura de D1 y el despliegue de código no equivalen a login probado.
 
 **Estado final del bloque:** radar de empresas + radar de noticias con persistencia diaria D1 real ✅; preselección editorial sin IA y lectura desde panel implementadas ✅; estudio de mercado YouTube / mejor tema / documental integral / autopublicación autorizada pendientes ❌.
+
+
+## 2026-10-21 · Hito P0: YouTube Data API por empresa y región, persistencia D1 y cuota sin pagos
+
+### Desarrollo real en `main`
+- Reutilizado `tools/market_sources.py` (cliente oficial YouTube Data API v3 `search.list` + `videos.list`) y agregado `channel_id` público solo si viene en la respuesta; jamás se estima retención o CTR ajenos.
+- Nuevo `tools/youtube_market_study.py`: elige **únicamente las empresas descubiertas por Wikimedia/Wikidata**, hasta 2 y dos mercados hispanohablantes `MX` / `ES`, sin temas escritos manualmente por ChatGPT. Máximo **4 pares empresa-región, 4 búsquedas y 4 solicitudes de estadísticas** por ejecución; calcula muestras de videos recientes, mediana observada de vistas/día de antigüedad, canales identificados, región y fecha. Es **comparación exploratoria**, no prueba de demanda global.
+- **Actualización documentada de cuota octubre de 2026:** el método `search.list` dispone ahora de bucket independiente por llamadas (hasta 100 al día por defecto, 1 unidad por llamada); `videos.list` cuesta 1 unidad en su cuota respectiva. Límite de este workflow: **4 llamadas de búsqueda + 4 de videos = 8 unidades solicitadas entre ambos buckets** por corrida, nunca 404 unidades de la fórmula antigua. Referencia oficial: https://developers.google.com/youtube/data/determine_quota_cost (actualizada 2026-10-15). La cuota real del proyecto debe comprobarse en Google Cloud antes de habilitarla.
+- **Bloqueo de coste por defecto**: el workflow solo realiza llamadas si GitHub tiene `YOUTUBE_DATA_API_KEY` y la variable `YOUTUBE_MARKET_BUDGET_ENABLED=1`. Sin ambas, registra omisión explícita: ninguna llamada YouTube, ninguna muestra ni dato inventado, ningún proveedor cobrable alternativo.
+- Migración aditiva `migrations/0006_youtube_observations.sql`: `market_youtube_runs`, `market_youtube_queries`, `market_youtube_videos`. **Aplicada a D1 remota Factor** tras verificar tablas previas, bookmark Time Travel y exportación temporal; se conservaron `jobs=1`, `events=8` y `market_news_leads=100`. **La restricción SQL de cuota es deliberadamente un límite superior amplio; la validación aplicativa impone el presupuesto real de 8 unidades.**
+- `src/youtube-market.mjs`: valida procedencia, presupuestos, fechas, IDs, conteo de videos/canales y **recalcula la mediana sobre los valores de cada video**, rechazando métricas incoherentes. Persiste lotes D1 idempotentes con IDs SHA-256. No aprueba investigación, guiones ni YouTube.
+- `src/worker.js`: nuevo `POST /api/market/youtube/ingest` protegido por GitHub OIDC, y `GET /api/market/youtube` con el `ADMIN_TOKEN` existente. No requiere token de ingesta adicional.
+- `tools/push_youtube_study.py` envía los resultados solo a Worker Factor, con OIDC efímero, ocultando secretos. `.github/workflows/topic-discovery-smoke.yml` lo ejecuta condicionalmente después del radar real Wikimedia/RSS.
+- Sección de **Comparación YouTube** agregada a `public/index.html` y `public/app.js`: muestran empresas, países, tamaño muestral, mediana por video y canales identificados cuando existan datos; con 0 datos, se muestra estado de insuficiencia sin ranking falso.
+- Pruebas nuevas `tests/test_youtube_market_study.py`, `tests/test_youtube_market.mjs`, `tests/test_youtube_schema.py`; actualizadas `tests/test_market_sources.py` indirectamente por campos adicionales. Validan límite de llamadas, modo sin clave, fallos, fuentes, firma/lógica administrativa, FK y conservación del esquema.
+
+### Evidencia y estado operativo
+- Cloudflare API verificó **tres tablas nuevas presentes** en la D1 real y el Worker desplegado con endpoints/INSERT de YouTube.
+- Recuento observado tras migración: `market_youtube_runs=0`, `market_youtube_queries=0`, `market_youtube_videos=0`. Esto **NO** significa que se haya medido competencia: el servicio espera las condiciones de cuota/API. No se configuraron secretos ni facturación en esta intervención.
+- GitHub Actions CI incluye pruebas JS/Python reales de contrato. Los videos de las pruebas son **fixtures**, no métricas de mercado.
+- Respetadas las reglas: cero pagos, ninguna búsqueda con clave en logs, cero publicaciones, cero cambios destructivos, únicamente rama `main`.
+
+### Próximo hito funcional sin desviar prioridad
+1. Confirmar con la cuenta de Google si existe proyecto YouTube Data API con cuota gratuita disponible y **sin facturación activada**; registrar de forma segura clave GitHub `YOUTUBE_DATA_API_KEY` y activar `YOUTUBE_MARKET_BUDGET_ENABLED=1` únicamente si se autoriza el consumo de cuota gratuita. Probar la ingesta pública y verificar filas remotas, sin inventar estadísticas.
+2. Automatizar obtención de **fuentes primarias verificables** sobre empresas/eventos detectados y vincular titulares RSS con entidades canónicas (Wikidata) y fuentes originales, conservando procedencia.
+3. Generar ranking comparable multiseñal y persistir `market_selection_decisions`, con estado `sin_datos_suficientes` cuando falten fuentes o YouTube. No usar la mediana de videos como pronóstico de crecimiento propio.
+4. Encadenar investigación Gemini gratuita o Qwen local, evidencias, guion, voz oficial aprobada y MP4 profesional de 8–14 min con QA; publicación en YouTube siempre condicionada a revisión y permisos.
+
+**No declarar completada fase P0:** el colector y su almacenamiento están implementados, pero falta primera ejecución con estadísticas YouTube auténticas y conexión de evidencia primaria para selección fundamentada.
