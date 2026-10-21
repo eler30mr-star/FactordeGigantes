@@ -1,6 +1,6 @@
 # Historial de avance — Factor de Gigantes
 
-> **Estado vigente 2026-10-21:** D1 remota 0001–0007 aplicada y datos históricos conservados. Radar Wikimedia + RSS → GitHub Actions OIDC → Worker → D1 integrado; observación real: 2 empresas, 106 titulares RSS acumulados y primer cruce empresa-noticia ejecutado con 0 coincidencias válidas. Colector/comparador YouTube por región, D1, API y panel implementados y desplegados, **0 muestras YouTube observadas** porque no se ha confirmado clave ni presupuesto gratuito habilitado. Investigación primaria, selección profesional de tema, documental 8–14 minutos y publicación YouTube autorizada todavía pendientes.
+> **Estado vigente 2026-10-21:** **D1 real migrada hasta 0009**; radar completo de esta etapa enlaza RSS → resolución Wikidata → páginas corporativas P856 → evaluación automática trazable, con GitHub OIDC y Worker desplegado. Datos REMOTOS verificados: 114 titulares, 2 entidades noticia–Wikidata (Toyota y América Móvil), 2 páginas corporativas accesibles con SHA-256 (Toyota y DuPont), 4 evaluaciones y **0 selecciones aprobadas**. La prioridad continúa siendo YouTube Data API REAL, contrastar afirmaciones primarias, seleccionar y conectar investigador/guionista/productora de 8–14 min. Sin YouTube no se presume ganador; YouTube y publicación permanecen bloqueados por permisos/evidencias.
 
 ## 2026-10-20 · Inicio del proyecto
 
@@ -1143,3 +1143,31 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 4. Después guion con evidencias, voz canónica aprobada, visuales originales/licenciados, documental 8–14 min, QA, autorización editorial y subida a YouTube con OAuth permitido.
 
 **Conclusión técnica:** se han integrado y probado dos nuevos módulos en producción (ingesta informativa y cotejo), y se preparó YouTube condicionado a cuota. No confundir infraestructura lista con inteligencia de mercado competitiva completada.
+
+
+## 2026-10-21 · P0 FUNCIONAL: entidades de noticias, páginas corporativas y evaluaciones D1 automáticas (0008–0009)
+
+### Construcción integrada en main
+- **`tools/news_entity_discovery.py`**: extrae hasta dos términos corporativos potenciales de cada uno de ocho titulares públicos recientes de medios distintos; consulta Wikidata `wbsearchentities` y confirma **clasificación P31 de empresa + etiqueta exacta**, en hasta 16 búsquedas y una obtención de atributos. Sin nombres precargados por ChatGPT. Las relaciones siguen siendo hipótesis hasta leer y contrastar los artículos originales.
+- `migrations/0008_news_entities_assessments.sql`, `src/news-entity-ingest.mjs` y `src/worker.js`: guarda entidades sugeridas y sus titulares, fuente Wikidata, posibles dominios oficiales, errores y estado editorial sin aprobar. Ruta OIDC de escritura `POST /api/market/entities/ingest`.
+- **`src/market-assessment.mjs`**: evaluador directo del historial REAL en D1, reúne empresas descubiertas Wikimedia y noticias Wikidata, cuenta ventanas Wikipedia, noticias y **regiones YouTube realmente medidas**, escribe snapshots explicables `market_assessment_runs` y `market_assessments` (evaluación diaria idempotente); registra faltantes y bloquea selección/guion/publicación si faltan datos YouTube o fuentes primarias verificadas. Endpoint OIDC `POST /api/market/assess/run` y lectura privada `GET /api/market/opportunities`. No se crea «ganador» ficticio.
+- **`tools/market_official_evidence.py`** reutiliza seguridad del descargador del investigador (`fetch_public`, HTTPS, verificación de DNS público y redirecciones, límite de bytes/tiempo). Recupera hasta **3 sitios P856** hallados en Wikidata y conserva URL/resolución, SHA-256 del HTML, cantidad de bloques y enlaces candidatos a documentos. Ningún artículo original, comunicado, derecho o afirmación empresarial se aprueba automáticamente.
+- `migrations/0009_official_evidence.sql`, `src/market-official-ingest.mjs`, `tools/push_news_entity_assess.py`: persisten evidencia oficial como **candidata no contrastada** en D1 real por GitHub OIDC efímero; lectura administrativa `GET /api/market/official`.
+- Workflow diario `.github/workflows/topic-discovery-smoke.yml`: ahora ejecuta **Wikimedia → RSS → identificación de empresas Wikidata → páginas oficiales seguras → cruce de titulares → YouTube condicional por cuota → evaluación y persistencia de bloqueos**. Se añadieron tests Python/Node y controles de presupuestos. No requiere que ChatGPT introduzca un tema ni escriba un episodio.
+- Panel administrativo `public/index.html` y `public/app.js` expone evaluación auditable de oportunidades y lista de fuentes oficiales, con mensajes claros de falta de datos. Los contenidos no se inyectan como HTML.
+
+### Pruebas y producción verificadas
+- GitHub CI de nuevas pruebas Python/JS (incluido `test_news_entity_discovery.py`, `test_news_entity_ingest.mjs`, `test_market_assessment.mjs`, `test_market_official_evidence.py` y `test_market_official_ingest.mjs`) resultó `success`; hubo un error de sintaxis inicial en el colector y fue corregido antes de declarar éxito.
+- **E2E primera tanda:** [Actions 39676935229](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39676935229), `success` con resolución Wikidata y evaluación D1. Lectura directa posterior: `market_news_entity_runs=1`, **2 relaciones noticia–empresa** (Q482267 América Móvil y Q53268 Toyota), `market_assessment_runs=1`, **4 empresas evaluadas**, `qualified_count=0`, `selected_wikidata_id=NULL`.
+- **E2E segunda tanda:** [Actions 39678008994](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39678008994), `success` incluyendo descarga segura de páginas P856 y persistencia por OIDC. D1 confirmó `market_official_source_runs=1`, `market_official_source_items=2` (Toyota: 3 bloques, DuPont: 21 bloques, ambos con hash SHA-256). **0 hechos/propiedad intelectual verificados**. Hay 114 titulares RSS acumulados, 1 trabajo y 8 eventos intactos.
+- Cloudflare cuenta Factor, DB `factor-de-gigantes-db`: migrations **0008 y 0009 aplicadas directamente a D1 remota** tras verificar esquema, bookmark Time Travel y exportación SQL temporal. Los trabajos existentes y las señales anteriores se conservaron. Las páginas oficiales y la evaluación **son resultados del sistema, no de generación manual de contenido por ChatGPT**.
+- Los `push` temporales usados para dos pruebas integrales se retiraron del workflow **y de la lista de eventos permitidos por el verificador OIDC**. Permanecen `schedule` diario y `workflow_dispatch` manual.
+- No se activó facturación ni cuota YouTube; `market_youtube_runs=0` al final de las pruebas, sin estadísticas inventadas. No se ejecutó un render documental final ni publicación.
+
+### Prioridades siguientes, sin reiniciar auditorías
+1. **P0 sin resolver:** clave y presupuesto *gratuito autorizado* de YouTube Data API, sin facturación. Conectar muestras reales de videos/canales en regiones hispanohablantes; comprobar que no se agota cuota y no se imprimen secretos. Si falta autorización, seguir otros módulos sin costo.
+2. **P0/P1:** usar los documentos P856 recuperados como puertas de investigación, descargar originales oficiales y extraer afirmaciones comprobables con fechas/páginas, cotejar independientemente con medios y reguladores. Actualmente `primary_sources_verified=0`; no activar selección automática todavía.
+3. Tras completar evidencia real multifuente, ampliar el evaluador para poder pasar de `awaiting_evidence` a candidatura seleccionable/cola persistente, con auditoría y autorización editorial separada.
+4. Integrar `gemini_free` o `qwen_local` investigador y guionista, voz oficial, visuales y MP4 profesional 8–14 minutos; asegurar QA derechos, y solo luego OAuth/publicación aprobada.
+
+**Estado honesto:** P0 ha avanzado en integración y persistencia real. El proyecto total aún está lejos de su final; no se asigna porcentaje inventado ni se confunden dos páginas descargadas con un documental autónomo.
