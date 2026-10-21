@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from urllib.error import HTTPError
 import re
 from urllib.parse import urlencode
 
@@ -106,6 +107,8 @@ def discover_sec_leads(topic,fetcher=fetch_public,*,max_entities=3):
                             rec["status"]="sec_filings_listed" if sec["filing_candidates"] else "sec_no_eligible_filings"
                         except (OSError,ValueError,TimeoutError,UnicodeError,json.JSONDecodeError) as exc:
                             rec["fetch_error_type"]=type(exc).__name__
+                            if isinstance(exc,HTTPError):
+                                rec["http_status"]=exc.code
         except (OSError,ValueError,TimeoutError,UnicodeError,json.JSONDecodeError) as exc:
             rec["status"]="lookup_unavailable"
             rec["fetch_error_type"]=type(exc).__name__
