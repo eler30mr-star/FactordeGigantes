@@ -104,3 +104,22 @@ Revisar `.github/workflows/render.yml`, pestaña Actions; comprobar `API_BASE_UR
 - `market_study_complete=false` y `automatic_publication_allowed=false`. No hay decisión editorial, generación completa del documental ni subida a YouTube.
 - Antes de habilitar selección automática: fuentes más recientes, métricas reales de YouTube/competencia, puntuaciones explicables, revisión de fuentes primarias y presupuesto de API.
 - La ejecución de prueba no constituye una copia de seguridad permanente de toda D1; conservar política de respaldos y Time Travel antes de futuras migraciones.
+
+
+## 2F. Radar de inteligencia: entidades, noticias y YouTube (21-10-2026)
+
+**Verificado en Cloudflare Factor:** D1 `ef699e75-b50a-4e28-a665-69316d10cdaf`, migraciones **0001–0007** aplicadas con preservación de los datos existentes. Radar Wikimedia y RSS conectado al workflow diario protegido por GitHub OIDC y persistencia D1. Primera correlación automática comprobada [Actions 39673977211](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39673977211): 2 empresas, 100 noticias examinadas y 0 coincidencias precisas en esa corrida; sin inventar vínculos. El panel muestra secciones Radar, Noticias, Coincidencias y Comparación YouTube tras introducir `ADMIN_TOKEN`.
+
+### Activación futura de YouTube Data API (no configurarla mediante chat)
+- El colector `tools/youtube_market_study.py` ya está conectado al workflow y desplegado, pero permanece **inactivo sin autorización**.
+- Solo habilitar si el propietario verifica directamente en la consola Google Cloud un proyecto YouTube Data API gratuito sin facturación y decide utilizar su cuota incluida. Guardar la clave **únicamente** como secreto de Actions `YOUTUBE_DATA_API_KEY`. No escribirla en archivos, tickets, mensajes ni logs.
+- Añadir la variable del repositorio **`YOUTUBE_MARKET_BUDGET_ENABLED`** con valor `1` solo tras esa verificación y autorización. El workflow requiere **ambos** valores. Con cualquiera ausente, el paso imprime omisión y no consume cuota ni produce observaciones falsas.
+- Presupuesto máximo diseñado: **2 compañías seleccionadas por los datos del radar × 2 regiones (MX, ES) = hasta 4 búsquedas `search.list` y 4 llamadas `videos.list`** por corrida; sin paginación. En la cuota publicada el 15-10-2026 cada llamada cuesta 1 unidad; `search.list` pertenece a un bucket separado (límite inicial de 100 llamadas/día), mientras `videos.list` utiliza cuota de otros endpoints. Ver https://developers.google.com/youtube/data/determine_quota_cost. No activar facturación ni ampliaciones de cuota para este proyecto.
+- La base almacena videos públicos reales, medianas de vistas por día de antigüedad y canales cuando Google devuelve un ID oficial. Esto **no** permite observar CTR ni retención de canales ajenos, elegir automáticamente un tema sin fuentes primarias, ni realizar publicaciones.
+- Para revisar resultados autenticados: `GET /api/market/youtube`, `GET /api/market/cross`; sus endpoints de ingesta requieren OIDC de GitHub Actions del workflow oficial en `main`, nunca el token de render ni el de administración.
+- El disparador `push` se habilitó temporalmente para la verificación de extremo a extremo y **fue retirado**; el radar solo funciona diariamente y manualmente.
+
+### Estados que NO deben confundirse
+- **Probado:** escritura y lectura D1 de titulares RSS y corrida de cruces, migraciones, CI, Worker/panel desplegados.
+- **Pendiente:** muestras YouTube con API real (las tablas se encontraban vacías), verificación de artículos originales, selección fundamentada y producción documental final.
+- **No autorizado:** compra de servicios, IA de pago, render/publicación no revisada o OAuth de subida sin aprobación.
