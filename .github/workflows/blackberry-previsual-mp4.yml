@@ -1,0 +1,56 @@
+name: Factor de Gigantes - previsual MP4 sin voz
+on:
+  workflow_dispatch:
+  # Primera prueba única: quitar push después de confirmar MP4.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/blackberry-previsual-mp4.yml'
+permissions:
+  contents: read
+jobs:
+  animatica-segura:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preparar gráficos originales y codec local
+        run: |
+          python -m pip install 'Pillow==11.3.0'
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+      - name: Verificar EDL y guion antes del vídeo
+        run: |
+          python -m unittest discover -s tests -p test_blackberry_script_quality.py -v
+          python -m unittest discover -s tests -p test_blackberry_edl.py -v
+      - name: Exportar MP4 interno 30 s, sin narración ni música
+        run: |
+          python -m tools.render_blackberry_animatic \
+            --out dist/blackberry-animatic/BLACKBERRY_PREVISUAL_30S_SIN_VOZ.mp4
+          ffprobe -v error -show_entries format=duration,size:stream=codec_name,width,height \
+            -of json dist/blackberry-animatic/BLACKBERRY_PREVISUAL_30S_SIN_VOZ.mp4 \
+            > dist/blackberry-animatic/METADATOS_VIDEO.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("dist/blackberry-animatic")
+          status=json.loads((root/"ESTADO_PREVISUAL.json").read_text())
+          probe=json.loads((root/"METADATOS_VIDEO.json").read_text())
+          seconds=float(probe["format"]["duration"])
+          print("MP4_REAL:",root/"BLACKBERRY_PREVISUAL_30S_SIN_VOZ.mp4")
+          print("SEGUNDOS_REALES:",seconds,"PESO_BYTES:",probe["format"]["size"])
+          print("AUDIO:",status["audio_present"],"YOUTUBE:",status["youtube_publication_authorized"])
+          assert 29 <= seconds <= 34, "La previsual de 12 escenas debe durar ~30 segundos"
+          assert status["scenes"]==12 and not status["audio_present"]
+          assert not status["youtube_publication_authorized"]
+          PY
+      - name: Entregar MP4 y metadatos sin publicar a YouTube
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdg-blackberry-previsual-mp4-30s
+          path: dist/blackberry-animatic/
+          retention-days: 7
+          if-no-files-found: error
