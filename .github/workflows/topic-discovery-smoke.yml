@@ -1,10 +1,6 @@
 name: FDG - radar diario empresas y noticias
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/topic-discovery-smoke.yml
   schedule:
     # Wikimedia publica rankings diarios con retraso; 1 chequeo al día
     # evita consumo redundante. No hay IA pagada ni subida a YouTube.
@@ -12,7 +8,6 @@ on:
 permissions:
   contents: read
   id-token: write
-# Prueba E2E RSS: credenciales OIDC efímeras, sin publicación
 concurrency:
   group: fdg-topic-discovery-market
   cancel-in-progress: false
