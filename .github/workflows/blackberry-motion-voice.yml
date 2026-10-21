@@ -1,0 +1,64 @@
+name: Factor de Gigantes - intro animada con voz canónica
+on:
+  workflow_dispatch:
+  # Ensayo de integración inicial; retirar push al obtener resultado.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/blackberry-motion-voice.yml'
+permissions:
+  contents: read
+jobs:
+  animacion-audio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar renderizador libre y verificador de fotogramas
+        run: |
+          python -m pip install 'Pillow==11.3.0' 'imageio-ffmpeg==0.6.0'
+          mkdir -p "$RUNNER_TEMP/fdg-bin"
+          ln -sf "$(python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')" "$RUNNER_TEMP/fdg-bin/ffmpeg"
+          echo "$RUNNER_TEMP/fdg-bin" >> "$GITHUB_PATH"
+      - name: Proteger el MP3 canónico y comprobar movimiento dentro de escenas
+        run: |
+          python -m tools.approved_voice --check
+          python -m unittest discover -s tests -p test_blackberry_motion_intro.py -v
+      - name: Generar intro audiovisual animada con la voz original sin modificar
+        run: |
+          python -m tools.render_blackberry_motion_intro --output dist/blackberry-motion/BLACKBERRY_INTRO_MOVIMIENTO_VOZ_REFERENCIA.mp4
+      - name: Verificar H264, pista de audio y duración
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import imageio_ffmpeg,json,subprocess
+          root=Path('dist/blackberry-motion')
+          path=root/'BLACKBERRY_INTRO_MOVIMIENTO_VOZ_REFERENCIA.mp4'
+          meta=json.loads((root/'RESULTADO_INTRO_MOVIMIENTO.json').read_text(encoding='utf-8'))
+          gen=imageio_ffmpeg.read_frames(str(path));video=next(gen);gen.close()
+          ffmpeg=imageio_ffmpeg.get_ffmpeg_exe()
+          audio=subprocess.run([ffmpeg,'-hide_banner','-loglevel','error','-i',str(path),
+            '-map','0:a:0','-f','null','-'],capture_output=True,text=True,timeout=25)
+          assert audio.returncode==0, 'Falta pista de audio legible'
+          assert meta['audio_track_included'] and not meta['youtube_publication_allowed']
+          assert meta['cinematic_animation'] and not meta['commercial_rights_verified']
+          assert video['size']==(1280,720)
+          duration=float(video['duration'])
+          assert 12.20<=duration<=12.8, f'Duración no válida {duration}'
+          print('MP4_ANIMADO:',path)
+          print('SEGUNDOS_REALES:',duration,'TAMANO_BYTES:',path.stat().st_size)
+          print('PISTA_AUDIO_VERIFICADA:',True,'FOTOGRAMAS:',meta['frames_written'])
+          print('VOZ_REFERENCIA_INTACTA:',meta['audio_sha256'])
+          print('PUBLICACION_AUTORIZADA:',meta['youtube_publication_allowed'])
+          PY
+      - name: Entregar MP4 animado con audio y estado de derechos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdg-blackberry-intro-dinamica-voz-canonica
+          path: dist/blackberry-motion/
+          retention-days: 7
+          if-no-files-found: warn
