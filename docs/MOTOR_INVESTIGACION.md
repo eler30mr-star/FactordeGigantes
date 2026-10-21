@@ -41,3 +41,14 @@ El workflow es SOLO MANUAL para limitar minutos gratuitos. La integración al pa
 2. Pasar del ensayo de investigación al flujo de un episodio dentro del panel y D1 una vez resuelto Cloudflare.
 3. Ampliar calidad de síntesis de guion documental 8–14 min con datos verificados, voz única aprobada y derechos de material, antes del render.
 4. Mantener sin proveedores pagos, sin OAuth ni subida automática.
+
+## Integración desarrollada con panel y control de ejecución (2026-10-20)
+
+- La nueva sección del panel en public/index.html y public/app.js ofrece un formulario «Investigar con IA» para escribir cualquier tema. Solicita una confirmación explícita antes de consumir minutos del runner y proporciona el enlace al workflow donde estarán los resultados.
+- El Worker incluye GET y POST /api/research, protegidos por ADMIN_TOKEN. El módulo src/research-control.mjs valida temas, requiere GITHUB_DISPATCH_TOKEN exclusivamente en servidor, lanza ÚNICAMENTE research-ai-cpu.yml con ref main y entradas de tema. Nunca llama render.yml ni publica en YouTube.
+- El esquema D1 0003_research_requests.sql registra cada solicitud, previene duplicados del mismo tema y día UTC mediante UNIQUE(topic_key,day_utc), y fija cuota nominal máxima de cuatro solicitudes/día. Los rechazos y resultados de red inciertos quedan registrados sin reintento automático. Un 204 de GitHub solo confirma aceptación de la solicitud.
+- Pruebas Node: tests/test_research_control.mjs — límite, identidad de workflow, consentimiento, autenticación, deduplicación, fallo de red, 403, token ausente. Pruebas SQL: tests/test_editorial_migration.py valida el esquema 0003 y su unicidad.
+- [E2E Worker+D1 local 39544778750](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39544778750): success. Migraciones 0001/0002/0003 aplicadas a D1 local aislada; rutas GET/POST verificadas sin PAT de GitHub para impedir gastos. CI Node/Python [39544634359](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39544634359): success.
+- .github/workflows/research-ai-cpu.yml queda manual y usa el nombre de artefacto genérico factor-investigacion-ia-cpu; no se ejecuta automáticamente por el cambio.
+
+**Pendiente operacional:** Cloudflare no proporcionó acceso a su API desde esta sesión, por lo que NO se aplicaron migraciones en producción ni se desplegó el panel. Consultar docs/DESPLIEGUE.md para migrar primero y probar allí la función. La investigación sigue siendo preliminar: las fuentes, guiones, licencias y voz requieren revisión antes del render.
