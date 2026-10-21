@@ -101,6 +101,19 @@ jobs:
         run: |
           python -m tools.push_news_entity_assess --mode entities \
             --input dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json
+      - name: Recuperar sitios corporativos candidatos de Wikidata P856 con DNS seguro
+        run: |
+          python -m unittest discover -s tests -p test_market_official_evidence.py -v
+          timeout -k 5s 75s python -m tools.market_official_evidence \
+            --companies dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
+            --news-entities dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json \
+            --out dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json
+      - name: Persistir hashes y URLs corporativas con identidad temporal GitHub
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m tools.push_news_entity_assess --mode official \
+            --input dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json
       - name: Relacionar empresas y titulares como hipótesis verificables
         run: |
           python -m unittest discover -s tests -p test_market_news_join.py -v
