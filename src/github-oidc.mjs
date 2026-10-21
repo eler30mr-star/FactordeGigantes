@@ -21,7 +21,7 @@ export function allowedMarketClaims(claims, nowSeconds=Math.floor(Date.now()/100
      claims.repository!=="eler30mr-star/FactordeGigantes" ||
      claims.ref!=="refs/heads/main" ||
      claims.workflow_ref!==WORKFLOW ||
-     !["schedule","workflow_dispatch","push"].includes(claims.event_name) ||
+     !["schedule","workflow_dispatch"].includes(claims.event_name) ||
      claims.runner_environment!=="github-hosted") return false;
   const {exp,nbf,iat}=claims;
   if(!Number.isSafeInteger(exp) || !Number.isSafeInteger(iat) ||
