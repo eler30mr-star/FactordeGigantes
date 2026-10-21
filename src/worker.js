@@ -82,6 +82,22 @@ async function setStatus(env,id,status, action, extra = {}) {
     .bind(status, extra.review_note ?? "", extra.last_error ?? "",id).run();
   await record(env,id,action,extra.review_note || extra.last_error || "");
 }
+async function reserveRenderDispatch(env,id) {
+  // Cambio condicional atómico en D1: evita dos workflow_dispatch para el mismo trabajo.
+  const result=await env.DB.prepare(
+    "UPDATE jobs SET status='queued', updated_at=datetime('now') "+
+    "WHERE id=? AND status='approved' AND EXISTS "+
+    "(SELECT 1 FROM editorial_dossiers WHERE job_id=? AND editor_attested=1 AND editor_name<>'')"
+  ).bind(id,id).run();
+  return result.meta?.changes === 1;
+}
+async function restoreRejectedDispatch(env,id) {
+  // Solo ante rechazo explícito de GitHub; timeout ambiguo conserva queued y exige revisión.
+  await env.DB.prepare(
+    "UPDATE jobs SET status='approved', updated_at=datetime('now') WHERE id=? AND status='queued'"
+  ).bind(id).run();
+  await record(env,id,"render_dispatch_rejected","GitHub rechazó el despacho; se permite reintentar tras revisar permisos");
+}
 async function handle(request,env) {
   const url = new URL(request.url);
   if (url.pathname === "/health" && request.method === "GET") return json({ok:true,product:"Factor de Gigantes",version:"0.1.0"});
@@ -184,9 +200,10 @@ async function handle(request,env) {
     // No mutar el guion si Cloudflare aún no tiene la migración 0002.
     await getDossier(env,id);
     const manifest=validateManifest(await parseBody(request));
+    // Si revocar la revisión falla, NO modificar el guion.
+    await env.DB.prepare("UPDATE editorial_dossiers SET editor_attested=0, editor_name='', attested_at=NULL WHERE job_id=?").bind(id).run();
     await env.DB.prepare("UPDATE jobs SET title=?,format=?,manifest_json=?,review_note='',updated_at=datetime('now') WHERE id=?")
       .bind(manifest.title,manifest.format,JSON.stringify(manifest),id).run();
-    await env.DB.prepare("UPDATE editorial_dossiers SET editor_attested=0, editor_name='', attested_at=NULL WHERE job_id=?").bind(id).run();
     await record(env,id,"edited");
     return json({job:dto(await find(env,id))});
   }
@@ -218,12 +235,22 @@ async function handle(request,env) {
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return err("Repositorio GitHub inválido",503);
     const workflow=env.GITHUB_WORKFLOW || "render.yml";
     const endpoint="https://api.github.com/repos/"+repo+"/actions/workflows/"+encodeURIComponent(workflow)+"/dispatches";
-    const response=await fetch(endpoint,{method:"POST",headers:{
-      "Authorization":"Bearer "+env.GITHUB_DISPATCH_TOKEN, "Accept":"application/vnd.github+json",
-      "X-GitHub-Api-Version":"2022-11-28","User-Agent":"FactorDeGigantes-Worker",
-      "Content-Type":"application/json"
-    },body:JSON.stringify({ref:"main", inputs:{job_id:id}})});
+    if (!await reserveRenderDispatch(env,id))
+      return err("Render ya reservado, o el estado/aprobación cambió; no duplicar el envío",409);
+    let response;
+    try {
+      response=await fetch(endpoint,{method:"POST",headers:{
+        "Authorization":"Bearer "+env.GITHUB_DISPATCH_TOKEN, "Accept":"application/vnd.github+json",
+        "X-GitHub-Api-Version":"2022-11-28","User-Agent":"FactorDeGigantes-Worker",
+        "Content-Type":"application/json"
+      },body:JSON.stringify({ref:"main", inputs:{job_id:id}})});
+    } catch {
+      // Puede haberse entregado a GitHub pese al timeout: bloquear reintento ciego.
+      await record(env,id,"render_dispatch_unknown","Resultado de red indeterminado; revisar Actions antes de reintentar");
+      return err("Resultado del envío incierto; revisar GitHub Actions antes de reintentar para evitar duplicados",502);
+    }
     if (!response.ok) {
+      await restoreRejectedDispatch(env,id);
       // GitHub no devuelve los valores de las credenciales en su campo "message".
       // Exponer solo causas conocidas permite corregir permisos sin filtrar detalles.
       let reason = "";
@@ -241,7 +268,7 @@ async function handle(request,env) {
       } catch { /* respuesta sin JSON: mantener código HTTP */ }
       return err("GitHub rechazó el render (HTTP "+response.status+")"+(reason ? ": "+reason : ""),502);
     }
-    await setStatus(env,id,"queued","render_dispatched"); return json({ok:true});
+    await record(env,id,"render_dispatched"); return json({ok:true});
   }
   return err("Acción no válida para este estado",409);
 }
