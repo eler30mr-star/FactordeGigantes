@@ -681,3 +681,29 @@ Continuar el motor de Factor de Gigantes mientras la laptop HP de 12 GB está de
 4. Construir narración documental original de 8–14 min y montaje audiovisual dentro del presupuesto de GitHub Actions, con QA, verificación de derechos de voz/visual y autorización humana. Sin publicación automática en YouTube.
 
 **Estado final:** recuperación del conector, SQL D1 remota, dos despliegues, prueba de cuota y diagnóstico privado **COMPLETADOS Y VERIFICADOS**; uso autenticado real del panel, generación IA desde nuevo botón y documental completo **PENDIENTES**. Todo commit en `main`.
+
+## 2026-10-21 · Auditoría editorial automatizada y documentos originales SEC (rama `main`)
+
+### Cambios realmente implementados
+
+1. `tools/editorial_audit.py`: examen conservador de afirmaciones existentes, URLs de procedencia y posibles huecos de evidencia. Distingue falta de pasajes, falta de corroboración desde más de un dominio, fuentes secundarias, fechas y cifras no coincidentes. Produce `AUDITORIA_EDITORIAL.json` con **cero hechos confirmados** y sin permisos de render/publicación. Una alerta es una cuestión a revisar, no una contradicción confirmada.
+2. Cada `save_report()` en `tools/research_engine.py`, tanto desde expediente como desde tema libre, genera también `ESCALETA_DOCUMENTAL_10MIN_NO_APROBADA.md`. Contiene **12 bloques con duración total 600 s**, ID de afirmaciones candidatas y tareas de narración/visuales pendientes. La escaleta NO es un guion final ni una grabación.
+3. `tools/edgar_discovery.py`: investigación autónoma de identificadores candidatos desde el tema mediante MediaWiki → Wikidata P5531 → SEC EDGAR. Si se consigue `submissions/CIK*.json`, se listan como posibles originales formularios 10-K/10-Q/20-F/40-F/8-K/6-K, fechas, ID de archivo y enlaces oficiales de SEC. Protección de CIK/URLs, máximo ocho documentos por entidad y registro explícito de bloqueo HTTP. **No descarga ni verifica los informes y no inventa cifras**.
+4. El workflow manual `.github/workflows/research-ai-cpu.yml` agrega los contratos y una etapa acotada de búsqueda SEC por tema; el investigador Qwen recibe solo el informe de pasajes previamente recopilado, sin usar la mera lista SEC como hechos. Nuevos artefactos esperados: `AUDITORIA_EDITORIAL.json`, `ESCALETA_DOCUMENTAL_10MIN_NO_APROBADA.md` y, en investigaciones de tema libre, `sec_edgar_documentos_candidatos.json`.
+5. `tests/test_editorial_audit.py` contiene 5 pruebas sobre cifras, fechas, falta de fuentes y escaleta; `tests/test_edgar_discovery.py` contiene 6 pruebas sobre IDs, formato de archivos, SEC inaccesible y ausencia de pruebas falsas. Ninguna test usa API paga ni consume tokens de Qwen.
+
+### Verificación efectiva y despliegue
+
+- **Cloudflare Builds `c6bfd5a1-3cd9-4201-b945-8d653f58f5a3`: `success`.** Ejecutó 25 pruebas JavaScript y las **11 pruebas Python**, todas verdes, al compilar el commit `cc90a481878d9e2c7ddca7c75dd1a28a09b73d71` de `main`. Wrangler completó despliegue de la versión `c110910e-c4ac-4561-bb06-110c40be0fef`. Para futuras compilaciones Cloudflare tiene incorporado el chequeo Python junto con el control previo JavaScript.
+- Se preparó prueba independiente `.github/workflows/edgar-smoke.yml` con tema real Apple Inc., sin Qwen ni render. **Aún no se verificó un resultado real de SEC de esa prueba**; no afirmar accesibilidad ni existencia de archivos regulatorios por un test simulado. Su disparador temporal de push fue retirado y quedó solo manual.
+- No se modificaron D1, credenciales, voz canónica, licencias, publicaciones YouTube ni la rama de trabajo. Los resultados de extracción dependen de la disponibilidad remota del proveedor y de sus reglas de acceso.
+- La implementación queda desplegada en el repositorio conectado y el pipeline manual; no se ha ejecutado Qwen pesado en este avance ni se ha hecho prueba autenticada del nuevo botón desde el navegador del propietario.
+
+### Siguientes pasos que no deben omitirse
+
+1. Comprobar acceso real a SEC o registrar su rechazo, obtener un filing original íntegro y extraer hechos por sección/página con límites CPU. Contrastar CIK con identidad del emisor y con datos de otros organismos.
+2. Construir motor para comparar **métrica + unidad + empresa + periodo** sin llamar contradicción a cifras de años diferentes, antes de redactar narración.
+3. Redactar y verificar documental original completo 8–14 min; auditar frases, visuales, subtítulos y licencias de locución. Los 12 bloques son solo estructura pendiente de desarrollar.
+4. Validar acceso real desde el panel de producción y una investigación voluntaria elegida por el propietario, con seguimiento de ejecución. Mantener desactivada subida automática a YouTube.
+
+**Estado:** código probado y desplegado, sin hechos verificados ni episodio final. La fase documental tiene avances de ingeniería, pero la producción audiovisual continúa pendiente.
