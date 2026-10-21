@@ -970,3 +970,30 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 4. Mantener derechos y revisión editorial como puertas obligatorias antes de una subida/programación de YouTube hecha por el mismo sistema.
 
 **Estado:** descubrió por sí mismo la primera empresa candidata y midió interés en Wikimedia ✅; estudio comparativo profesional de mercado, tema ganador, producción completa y autopublicación aún pendientes ❌. Todo en `main`, sin pagos ni publicación.
+
+## 2026-10-21 · Segunda ronda de descubrimiento autónomo y almacenamiento probado
+
+**Necesidad del propietario:** el propio sistema investiga mercado permanentemente, decide los mejores temas y posteriormente investiga, narra, monta y sube a YouTube después de garantías; no depender del chat. **Todo commit fue directo a `main`.**
+
+### Resultado con fuentes externas verdaderas
+
+1. `tools/topic_discovery.py` + workflow ampliados a **360 artículos Wikipedia es/en** y máximo **12 lotes Wikidata** por corrida, con enriquecimiento de hasta seis páginas mediante ventanas comparables de 14 días. [Ejecución 39652155079](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39652155079) `success`: **Theranos Q16956307** y **DuPont Corporation Q221062** identificadas sin que ChatGPT introdujera esos nombres; se obtuvieron dos series de interés, con días de referencia 18 y 21 octubre (top con 3 días de retraso). Visitas por semana: Theranos 291.435/55.952 y DuPont 3.512/338. **Solo interés Wikimedia**, ningún ranking validado de demanda YouTube.
+2. Migración nueva `migrations/0004_market_intelligence.sql`: tablas aditivas `market_runs`, `market_entities`, `market_pageview_observations`, `market_interest_windows`, `market_selection_decisions`. No afecta `jobs`, `events`, `research_requests` ni `editorial_dossiers`; **NO se ejecutó en D1 remoto**.
+3. `tools/market_persistence.py`: esquema SQLite compatible D1, transacciones idempotentes, verificación QID, fechas, host Wikimedia, métricas y ventanas completas; `tests/test_market_persistence.py` cubre historial multi-día, ausencia de duplicados y preservación de migraciones previas. CI [39652800696](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39652800696) `success`.
+4. [Prueba real integrada 39652982369](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39652982369) `success`: descubrimiento externo y medición, seguida de escritura de **SQLite local**. Se descargó artifact 12369113919 y se leyó con SQLite: `market_runs=1`, `market_entities=2`, `market_pageview_observations=2`, `market_interest_windows=2`, `market_selection_decisions=0`. `D1_PRODUCCION_MODIFICADA: FALSE`. Archivo local nuevo por ejecución, **aún no historial remoto persistente**.
+5. `tools/production_preflight.sh` agregó pruebas de `test_topic_discovery.py` y `test_market_persistence.py`. Se retiró el disparador `push` temporal de la prueba integrada y dejó el workflow de investigación pública **diario (10:17 UTC) + manual**, sin gasto de IA ni publicación.
+
+### Documentación/evidencia
+
+- `research/market/VALIDACION_RADAR_2026-10-21.md` recoge la primera prueba de 240 artículos.
+- `research/market/VALIDACION_RADAR_360_2026-10-21.md` recoge la prueba ampliada a 360 artículos y validación de SQLite, ambos con enlaces a workflows.
+- Los artefactos diarios GitHub caducan; solo la documentación y el código están conservados permanentemente en `main`.
+
+### Próximas tareas prioritarias
+
+- Identificar cuenta Factor en Cloudflare, confirmar respaldo y aplicar D1 0004 remoto sin sobrescribir trabajos existentes; crear vía autenticada para guardar el radar diario y visualizarlo en panel.
+- Incorporar noticias/trends actuales y YouTube Data API para comparar interés de **varios** temas, audiencia hispanohablante, competencia relativa y fuentes primarias suficientes. No elegir por solo Wikipedia.
+- Implementar elección automática + Gemini/Qwen investigador y control factual → guion → voz → escenas → MP4 8–14 min → revisión editorial/derechos → YouTube OAuth y publicación por el propio sistema.
+- Mantener decisiones explicables, cuotas y logs; evitar IA de pago no autorizada y no atribuir al motor una investigación completa que todavía no realiza.
+
+**Estado:** radar de descubrimiento real y primer almacenamiento SQLite verificados; persistencia D1 remota, selección de mejor tema YouTube y productora end-to-end pendientes.
