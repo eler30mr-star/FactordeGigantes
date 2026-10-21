@@ -31,6 +31,30 @@ class InvestigatorTests(unittest.TestCase):
         self.assertEqual(result["status"],"skipped_free_tier_not_authorized")
         self.assertFalse(result["ready_for_script"])
 
+    def test_corporate_homepage_fallback_when_pdf_is_unavailable(self):
+        official={"provider":"wikidata_p856_safe_official_fetch_v1",
+          "primary_facts_verified":0,"ready_for_youtube":False,
+          "evidence":[{"wikidata_id":"Q53268","company":"Toyota",
+            "status":"candidate_page_readable",
+            "resolved_url":"https://global.toyota/",
+            "content_sha256":"b"*64,
+            "short_excerpt":"This is synthetic corporate homepage evidence of a business activity "
+             "and does not certify its factual content for a video."}]}
+        evidence=prepare_evidence(report(False),official_report=official)
+        self.assertEqual(len(evidence),1)
+        self.assertEqual(evidence[0]["id"],"E001")
+        self.assertIsNone(evidence[0]["page"])
+        self.assertEqual(evidence[0]["source_class"],"potential_official_primary")
+        self.assertEqual(evidence[0]["document_sha256"],"b"*64)
+        called=[]
+        def stub(*a,**kw):
+            called.append(1)
+            return {}
+        result=run_investigation(report(False),official_report=official,
+          free_confirmed=False,api_key=None,runner=stub)
+        self.assertEqual(result["status"],"skipped_free_tier_not_authorized")
+        self.assertFalse(called)
+
     def test_valid_candidate_output_propagates_only_unverified_statements(self):
         def model(topic,evidence,**kw):
             self.assertEqual(topic,"Empresa de prueba")
