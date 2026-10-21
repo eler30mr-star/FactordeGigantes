@@ -16,7 +16,7 @@ def safe_line(value,limit=220):
     return " ".join(str(value or "").replace("[","(").replace("]",")").split())[:limit]
 
 
-def summarize(research, audit, edgar=None, finance=None):
+def summarize(research, audit, edgar=None, finance=None, blackberry=None):
     if not isinstance(research,dict) or not isinstance(audit,dict):
         raise ValueError("Informe y auditoría requeridos")
     claims=research.get("candidate_claims",[])
@@ -50,6 +50,20 @@ def summarize(research, audit, edgar=None, finance=None):
     xbrl=fin.get("analysis")
     discrepancies=(xbrl or {}).get("comparison",{}).get("comparisons",[]) if isinstance(xbrl,dict) else []
     financial_status=fin.get("status","not_queried")
+    original_pdf_report=blackberry if isinstance(blackberry,dict) else {}
+    original_pdf_facts=[]
+    for fact in original_pdf_report.get("facts",[])[:12]:
+        if not isinstance(fact,dict) or fact.get("machine_matched_original_pdf") is not True:
+            continue
+        if fact.get("human_verified") is not False:
+            continue
+        original_pdf_facts.append({
+            "id":fact.get("id"),"metric":fact.get("metric"),
+            "period_end":fact.get("period_end"),"accounting_scope":fact.get("accounting_scope"),
+            "value_millions_usd":fact.get("value_millions_usd"),
+            "url":fact.get("source_url"),"pdf_page":fact.get("pdf_page"),
+            "verification_status":"located_in_original_pdf_not_human_approved"
+        })
     blockers=[]
     if research.get("fetched_count",0)==0:
         blockers.append("No se obtuvo contenido documental legible.")
@@ -61,6 +75,8 @@ def summarize(research, audit, edgar=None, finance=None):
         blockers.append("Cifras XBRL no recuperadas o no consultadas.")
     if discrepancies:
         blockers.append("Hay diferencias XBRL del mismo periodo que requieren evaluación editorial.")
+    if original_pdf_facts:
+        blockers.append("Las cifras localizadas en PDF requieren control humano de contexto y comparabilidad.")
     blockers.append("Licencias comerciales de voz, imágenes, música y material externo no comprobadas.")
     return {
         "product":"Factor de Gigantes",
@@ -74,6 +90,9 @@ def summarize(research, audit, edgar=None, finance=None):
         "xbrl_observation_count":(xbrl or {}).get("observation_count",0) if isinstance(xbrl,dict) else 0,
         "same_period_discrepancy_candidates":len(discrepancies),
         "claims":tasks,
+        "corporate_pdf_facts_located":original_pdf_facts,
+        "corporate_pdf_facts_human_verified":0,
+        "corporate_reporting_scope_warning":original_pdf_report.get("comparability_warning") if original_pdf_facts else None,
         "blockers":blockers,
         "verified_claims":0,
         "voice_rights_verified":False,
@@ -107,6 +126,19 @@ def to_markdown(result):
             lines.append("URL original candidata: "+safe_line(ev["url"],300))
         lines.append("Decisión humana: [PENDIENTE].")
         lines.append("")
+    if result.get("corporate_pdf_facts_located"):
+        lines.extend(["## Extractos financieros de documentos originales (AÚN SIN APROBAR)",""])
+        for fact in result["corporate_pdf_facts_located"]:
+            lines.append(
+                "- "+safe_line(fact["id"],60)+": "+safe_line(fact["metric"],90)
+                +" = US$ "+safe_line(fact["value_millions_usd"],30)+" millones;"
+                +" cierre "+safe_line(fact["period_end"],20)
+                +"; PDF página "+str(fact["pdf_page"])
+                +"; alcance "+safe_line(fact["accounting_scope"],100)
+            )
+            lines.append("  Documento original: "+safe_line(fact["url"],300))
+        lines.extend(["","ADVERTENCIA DE COMPARABILIDAD: "+
+                      safe_line(result["corporate_reporting_scope_warning"],440),""])
     lines.extend(["## Bloqueos",""])
     lines.extend("- "+safe_line(b,240) for b in result["blockers"])
     lines.extend(["","**No enviar a render, ni locución comercial, ni YouTube.**",""])
@@ -126,7 +158,8 @@ def consolidate(directory):
         read("reporte_investigacion.json",True),
         read("AUDITORIA_EDITORIAL.json",True),
         read("sec_edgar_documentos_candidatos.json"),
-        read("METRICAS_SEC_CANDIDATAS_NO_VERIFICADAS.json")
+        read("METRICAS_SEC_CANDIDATAS_NO_VERIFICADAS.json"),
+        read("HECHOS_BLACKBERRY_2024_2025_CON_PAGINAS.json")
     )
     (directory/"EXPEDIENTE_EDITORIAL_PENDIENTE.json").write_text(
         json.dumps(output,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
