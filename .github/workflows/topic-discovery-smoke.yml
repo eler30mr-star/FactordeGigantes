@@ -1,10 +1,6 @@
 name: FDG - descubrir empresas por señales Wikimedia
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/topic-discovery-smoke.yml
   schedule:
     # Wikimedia publica rankings diarios con retraso; 1 chequeo al día
     # evita consumo redundante. No hay IA pagada ni subida a YouTube.
@@ -62,7 +58,6 @@ jobs:
       - name: Persistir radar diario con identidad GitHub OIDC efímera
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          FDG_OIDC_DIAGNOSTIC: '1'
         run: |
           if [ -z "$API_BASE_URL" ]; then
             echo "::error::Falta API_BASE_URL para persistir radar en D1"
