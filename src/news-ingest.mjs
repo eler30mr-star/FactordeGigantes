@@ -1,3 +1,4 @@
+import {triageNewsLeads} from "./news-triage.mjs";
 // Titulares auxiliares de Google News RSS; NUNCA hechos o demanda verificados.
 // Ingesta solo desde el workflow de GitHub autenticado por OIDC.
 const CATEGORY = new Set(["empresas","innovacion","tecnologia","industria"]);
@@ -95,7 +96,9 @@ export async function readNewsLeads(db,url) {
       db.prepare("SELECT id,headline,aggregator_url,source_label,category,published_at,verification_state FROM market_news_leads ORDER BY published_at DESC,id LIMIT ?").bind(Number(raw)).all(),
       db.prepare("SELECT id,collected_at,feed_count,lead_count FROM market_news_runs ORDER BY collected_at DESC LIMIT 10").all()
     ]);
-    return {ok:true,leads:rows.results||[],runs:runs.results||[],
+    const leads=rows.results||[];
+    const screening=triageNewsLeads(leads).slice(0,10);
+    return {ok:true,leads,runs:runs.results||[],preliminary_screening:screening,
       source_verification_complete:false,youtube_market_verified:false,
       automatic_publication_allowed:false,warning:"Titulares agregados no son hechos verificados ni demanda YouTube."};
   } catch(e) {
