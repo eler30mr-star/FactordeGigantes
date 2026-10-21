@@ -8,7 +8,7 @@ Cada episodio real debe responder una pregunta concreta y conservar el enlace en
 
 - `title`: título de investigación; `thesis`: enfoque y pregunta.
 - `sources`: al menos dos fuentes con identificador único `S01`, URL HTTPS, entidad publicadora, fecha de consulta y tipo primaria/secundaria.
-- `claims`: afirmaciones con ID `C01`, texto concreto, evidencia asociada a `source_id`, ubicación precisa `locator` dentro del documento, estado `pendiente`, `verificada` o `rechazada` y revisor humano cuando corresponda.
+- `claims`: afirmaciones con ID `C01`, **`segment_index` (número de segmento del guion empezando en 1)**, texto concreto, evidencia asociada a `source_id`, ubicación precisa `locator` dentro del documento, estado `pendiente`, `verificada` o `rechazada` y revisor humano cuando corresponda. Se exige **al menos una afirmación documentada por cada segmento** del guion; no basta un solo registro para un documental con muchas escenas.
 - `assets`: recursos audiovisuales con `kind` (imagen, video, música, voz, gráfico), descripción y `rights_status` (`pendiente`, `verificado`, `rechazado`).
 - `publication_authorized: false` obligatorio en expedientes de investigación. Un documento validado **jamás** habilita por sí mismo subir contenido.
 
@@ -17,6 +17,7 @@ Un ejemplo de una `evidence` estructural (los identificadores deben existir en `
 ```json
 {
   "id": "C01",
+  "segment_index": 1,
   "text": "Una afirmación empresarial concreta que necesita respaldo documental.",
   "evidence": [
     {
@@ -65,3 +66,9 @@ Las pruebas `tests/test_editorial_gate.mjs` comprueban autenticación, guardado,
 ## Restricciones
 
 Repositorio `main`, cero servicios pagos, cero subida automática, ningún video ajeno sin licencia. No presentar el ejemplo de guion hipotético de la audición Qwen como investigación factual de una empresa real.
+
+### Protección ante revisiones y expedientes desactualizados
+
+Cuando cambian las fuentes o los segmentos del guion, el Worker invalida la confirmación humana. Los expedientes que ya no coinciden con el guion pueden abrirse y corregirse desde el panel; `GET /dossier` devuelve `validation_error` sin acreditar ni provocar HTTP 500. Cada nuevo fragmento creado en el formulario del panel recibe una afirmación `pendiente` por defecto; deben reemplazarse esos textos genéricos por verificaciones reales antes de `attest`.
+
+La migración 0002 sigue pendiente de aplicar en D1 remota; `src/worker.js` devuelve HTTP 503 explícito si la tabla no existe, **antes** de modificar un borrador para evitar cambios a medias. La integridad lógica se comprueba en las pruebas Node y la estructura SQL en SQLite local; ninguna es sustituto de probar Cloudflare tras el despliegue.
