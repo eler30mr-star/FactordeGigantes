@@ -20,6 +20,11 @@
   </section>
   <div id="workspace" hidden>
    <div class="stats"><div class="stat"><span>Trabajos</span><strong id="total">0</strong></div><div class="stat"><span>En revisión</span><strong id="review">0</strong></div><div class="stat"><span>Listos</span><strong id="ready">0</strong></div></div>
+   <section class="card" aria-label="Estado técnico de producción">
+    <div class="heading"><h2>Estado del sistema</h2><button id="system-refresh" class="secondary" type="button">Comprobar</button></div>
+    <p id="system-status" class="muted" role="status">Conecta la administración para revisar los componentes.</p>
+    <p class="muted micro">La comprobación lee la D1 y confirma la presencia de configuración. No utiliza IA, no revela claves ni demuestra permisos externos o derechos de publicación.</p>
+   </section>
    <section class="card" aria-label="Motor de investigación automática">
     <div class="heading"><h2>Investigar con IA</h2><span class="muted">Qwen local · GitHub Actions</span></div>
     <p class="muted">Escribe un tema y la IA buscará fuentes públicas y preparará un borrador con citas. La ejecución usa minutos de GitHub Actions; no consume potencia de tu laptop ni publica videos.</p>
