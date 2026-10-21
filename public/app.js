@@ -64,6 +64,7 @@ function blankDossier(job) {
   };
 }
 function dossierSummary(data) {
+  if (data.validation_error) return "Expediente requiere corrección: "+data.validation_error;
   if (!data.summary) return "Expediente aún no guardado.";
   const s=data.summary;
   return "Afirmaciones verificadas: "+s.verified_claims+"/"+s.claim_count+
