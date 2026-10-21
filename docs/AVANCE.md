@@ -515,3 +515,37 @@ Se ha guardado en `main` la estructura inicial del motor:
 - `src/worker.js`: expedientes obsoletos por cambio de fuentes o escenas se devuelven con `validation_error` y nunca se acreditan; el panel permite corregirlos sin devolver error HTTP 500. La falta de tabla `editorial_dossiers` retorna HTTP 503 antes de mutar el borrador.
 - `tests/test_editorial_gate.mjs` añadió cobertura de índices inexistentes, escenas sin evidencia, migración ausente y revocación por cambios. CI de [run 39522588126](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39522588126) completada **`success`** en commit `1a14039e`; dos ejecuciones intermedias fallaron mientras el contrato y los tests se adaptaban, pero se corrigieron y la batería final volvió a verde. `docs/FLUJO_VERIFICACION.md` refleja el contrato de escena y revisión.
 - **Sin despliegue validado**. Sigue siendo el principal bloqueo práctico: aplicar D1 0002 en la cuenta Cloudflare correcta, verificar la tabla y probar panel/Worker reales; las herramientas de Cloudflare conectadas no pudieron completar esa operación aquí.
+
+
+## 2026-10-20 · Panel de investigación visual, D1 local verificada y primer piloto documental
+
+**Objetivo del plan:** mejorar la preparación editorial del canal, probar con D1 real (local) y preparar el primer episodio con investigación primaria; mantener voz original y política de cero pagos.
+
+### Cambios reales en `main`
+
+1. **Editor visual usable desde el panel**: `public/dossier-editor.js` y actualizaciones de `public/app.js`, `public/index.html`, `public/style.css`.
+   - Formularios guiados de fuentes/documentos, afirmaciones agrupadas por escena, evidencia con fuente, sección/página y estado, responsables de la revisión, y derechos de voz/imágenes/música/video/gráficos.
+   - Añadir/quitar evidencias, fuentes adicionales y afirmaciones manteniendo condiciones de integridad (cada escena al menos una; sin suprimir la última voz; fuente del guion no se borra desde el expediente).
+   - Edición JSON relegada a opción avanzada; se importa explícitamente y no equivale a autorizar. Cambios sin guardar impiden acreditar; controles responsivos para móvil.
+   - Pruebas de funciones editoriales en `tests/test_dossier_editor.mjs`; GitHub CI [39523541399](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39523541399) **success**. No hay despliegue de esta UI confirmado en Cloudflare.
+
+2. **Prueba real del Worker con D1 local usando Wrangler**: `tests/e2e_worker_local.mjs` y workflow `.github/workflows/worker-d1-local-e2e.yml`.
+   - [GitHub Actions 39523829006](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39523829006): **success**. Instala Wrangler, ejecuta **ambas migraciones solo en D1 local aislada**, confirma que la tabla `editorial_dossiers` existe, levanta el Worker y prueba por HTTP la autenticación, creación, expediente pendiente, bloqueo 409, acreditación, aprobación, ausencia de token de dispatch real, revocación y registro de eventos.
+   - El disparador `push` fue **temporal de una única prueba**, eliminado después (commit `15be8962`), por lo que el workflow quedó solo manual. **No tocó D1 remota, no desplegó ni despachó videos**.
+
+3. **Corrección de duplicados de render**: `src/worker.js` reserva atómicamente `approved → queued` en D1 antes de llamar a GitHub Actions; evita disparar el mismo trabajo dos veces en simultáneo. Ante rechazo explícito de GitHub, restaura `approved`; si falla la red y el resultado es incierto, conserva `queued` y exige inspección manual de Actions para evitar duplicados. Además, revoca la acreditación ANTES de actualizar un guion, evitando modificaciones parciales que dejen un antiguo visto bueno.
+   - `tests/test_editorial_gate.mjs` cubre duplicados, rechazo HTTP, fallo de red. GitHub CI [39524141335](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39524141335) **success**; un commit intermedio falló por el simulador antiguo y se corrigió en el commit de pruebas siguiente.
+   - `GET /dossier` tampoco muestra acreditación cuando el expediente no sigue estructuralmente completo.
+
+4. **Primer piloto editorial basado en fuentes públicas originales**: `research/blackberry/brief_investigacion.md`, `research/blackberry/expediente_preliminar.json` y `tests/test_blackberry_research.py`.
+   - Tema candidato: **«BlackBerry: el gigante que tuvo que cambiar de negocio»**; líneas narrativas desde RIM (fundada en 1984), la introducción del iPhone en 2007, App Store de 2008, transformación a software en 2016 y cierre de servicios heredados en 2022 hasta su negocio de software seguro.
+   - **Seis fuentes primarias** de Apple y BlackBerry con URLs y localizadores concretos; **ocho afirmaciones** trazables y esquema de 8 bloques para futuro documental de ~12 min.
+   - **Ninguna afirmación está falsamente marcada verificada por un editor**: todas siguen `pendiente`, igual que licencias de voz, imágenes y música. El material no es todavía un guion factual final, investigación exhaustiva, ni autorización de producir/publicar. El guion debe incorporar información financiera independiente, revisar causalidad y obtener recursos licenciados. CI [39524514168](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39524514168) **success**.
+
+### Estado, bloqueos y próximos pasos
+
+- **Confirmado:** código en `main`, CI Node/Python exitosa, prueba E2E con D1 **local** real; voz de 43,296 segundos previamente aceptada. Ningún token privado revelado, servicio pago activado ni canal YouTube publicado.
+- **Pendiente:** aplicar `0002_editorial_dossiers.sql` a la base **remota** Cloudflare y confirmar despliegue Worker+panel. El conector Cloudflare continúa fallando al acceder a la cuenta, por lo que **no se hicieron cambios remotos ni se puede declarar producción actualizada**. Ruta segura documentada en `docs/DESPLIEGUE.md`.
+- **Pendiente:** contrastar formalmente cada fuente del piloto BlackBerry con un editor humano, conseguir fuentes independientes y derechos completos de material/voz, escribir narración original total, storyboard, primera prueba de video 8–14 min y QA.
+- **Pendiente:** preparar reconciliación segura de trabajos con `dispatch` de resultado incierto, sin reintentos automáticos ni duplicados; pulir los formularios con pruebas de usabilidad en móvil tras el despliegue.
+- **Orden siguiente:** D1 remota → Worker y panel remoto → ensayo autenticado con expediente real no publicado → investigación/comprobación editorial → licencia de voz y recursos → producción piloto de video. Todas las operaciones directamente en `main`.
