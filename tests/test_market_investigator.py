@@ -1,0 +1,56 @@
+"""Investigador conectado al radar, pruebas sin modelo ni gasto."""
+import unittest
+from tools.market_investigator import prepare_evidence,run_investigation
+
+def report(has_fragments=True):
+    text=("An original-looking but purely synthetic corporate annual report text "
+      "for the testing of provenance, pagination, claims and quality gates.")
+    return {"provider":"official_pdf_evidence_v1","verified_claim_count":0,
+      "publication_authorized":False,"documents":[
+      {"wikidata_id":"Q53268","company":"Empresa de prueba",
+       "state":"text_extracted" if has_fragments else "fetch_failed",
+       "resolved_url":"https://www.example.org/report.pdf" if has_fragments else None,
+       "sha256":"a"*64 if has_fragments else None,
+       "fragments":[{"page":3,"excerpt":text,"verification_state":"uncorroborated"}] if has_fragments else []}]}
+
+class InvestigatorTests(unittest.TestCase):
+    def test_evidence_passes_url_hash_page_and_same_identifier(self):
+        evidence=prepare_evidence(report())
+        self.assertEqual(len(evidence),1)
+        self.assertEqual(evidence[0]["id"],"E001")
+        self.assertEqual(evidence[0]["page"],3)
+        self.assertEqual(evidence[0]["document_sha256"],"a"*64)
+
+    def test_never_invokes_provider_without_pdf_or_explicit_free_tier(self):
+        def must_not_call(*args,**kwargs):self.fail("Provider accessed without clearance")
+        result=run_investigation(report(False),runner=must_not_call,
+          free_confirmed=True,api_key="x"*20)
+        self.assertEqual(result["status"],"skipped_no_documentary_evidence")
+        result=run_investigation(report(),runner=must_not_call,
+          free_confirmed=False,api_key="x"*20)
+        self.assertEqual(result["status"],"skipped_free_tier_not_authorized")
+        self.assertFalse(result["ready_for_script"])
+
+    def test_valid_candidate_output_propagates_only_unverified_statements(self):
+        def model(topic,evidence,**kw):
+            self.assertEqual(topic,"Empresa de prueba")
+            self.assertEqual(evidence[0]["id"],"E001")
+            self.assertTrue(kw["free_tier_confirmed"])
+            return {"provider":"gemini_free","candidate_claims":[
+              {"statement":"Texto de prueba sin validar","evidence_ids":["E001"],
+               "status":"candidate_unverified"}],
+              "facts_verified_automatically":0,"ready_for_script":False,
+              "ready_for_youtube":False}
+        out=run_investigation(report(),free_confirmed=True,api_key="x"*20,runner=model)
+        self.assertEqual(out["status"],"candidate_claims_generated")
+        self.assertFalse(out["publication_authorized"])
+        self.assertNotIn("excerpt",out["input_evidence"][0])
+
+    def test_rejects_false_verified_ai_results(self):
+        def bad(*args,**kw):
+            return {"facts_verified_automatically":1,"ready_for_script":True,
+                    "ready_for_youtube":True}
+        with self.assertRaises(ValueError):
+            run_investigation(report(),free_confirmed=True,api_key="x"*20,runner=bad)
+
+if __name__=="__main__":unittest.main()
