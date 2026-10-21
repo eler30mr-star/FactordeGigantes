@@ -52,3 +52,24 @@ El workflow es SOLO MANUAL para limitar minutos gratuitos. La integración al pa
 - .github/workflows/research-ai-cpu.yml queda manual y usa el nombre de artefacto genérico factor-investigacion-ia-cpu; no se ejecuta automáticamente por el cambio.
 
 **Pendiente operacional:** Cloudflare no proporcionó acceso a su API desde esta sesión, por lo que NO se aplicaron migraciones en producción ni se desplegó el panel. Consultar docs/DESPLIEGUE.md para migrar primero y probar allí la función. La investigación sigue siendo preliminar: las fuentes, guiones, licencias y voz requieren revisión antes del render.
+
+## Consulta de ejecuciones y fuentes corporativas (2026-10-21)
+
+### El panel puede localizar una ejecución real de GitHub
+
+- El workflow `.github/workflows/research-ai-cpu.yml` admite `request_id` opcional y muestra ese identificador en `run-name`. El Worker envía el UUID original junto con el tema y la rama `main`.
+- `src/research-control.mjs` consulta hasta 50 ejecuciones recientes del workflow al recibir `GET /api/research?runs=1`. Vincula **solo** `display_title` con UUID exactamente solicitado, `event=workflow_dispatch`, `head_branch=main` y URL oficial `https://github.com/eler30mr-star/FactordeGigantes/actions/runs/<id>`. Una solicitud `sent` nunca se interpreta automáticamente como terminada.
+- El panel muestra `queued`, `in_progress` y `completed`, la conclusión de GitHub y el vínculo a la ejecución/artifacts. Sin permisos Actions:read, fallo HTTP o sin coincidencia, mantiene `run:null` e indica ausencia de confirmación. No se realizan consultas a GitHub sin acción del administrador sobre «Actualizar», salvo la revisión posterior a un envío expresamente confirmado.
+- La lectura solo usa el token del Worker, no revela claves al navegador. Las ejecuciones muy antiguas pueden escapar de la ventana de 50 resultados; no está implementado un callback ni un estado persistente de finalización.
+- Pruebas `tests/test_research_control.mjs`: correlación exacta, estados, fallos de API, URL falsa, rama equivocada y no confundir solicitudes con resultados. CI [39587493924](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39587493924) **success**. No se comprobó todavía esta función contra la D1 **remota** ni desde el panel publicado.
+
+### Sitios oficiales desde el tema, sin URLs proporcionadas por el usuario
+
+- `tools/primary_source_discovery.py` recorre resultados MediaWiki, consulta su `wikibase_item` y sigue la propiedad `P856` (sitio web oficial) de Wikidata, siempre por HTTPS y con comprobaciones de hosts públicos, tamaño de página y redirecciones usando el investigador existente. El objetivo es encontrar **candidatos** de fuente directa de organizaciones sin pedir al usuario sus enlaces.
+- Tras un primer intento limitado a dos artículos sin resultados, se corrigió para inspeccionar hasta cinco entidades diferentes. [Prueba real 39588198172](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39588198172), `success`, encontró **1 candidato / 5 entidades** para el tema BlackBerry: artículo `BlackBerry Limited`, sitio Wikidata P856 `https://blackberry.com`.
+- La página oficial quedó en `official_url_candidate` y su descarga **falló con ValueError**: NO se extrajo contenido de esa web. Los otros cuatro artículos no tenían P856 útil; la herramienta registró **cero hechos verificados**. [Artefacto 12340022602](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39588198172/artifacts/12340022602).
+- La primera prueba [39587995688](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39587995688) comprobó que limitarse a dos entidades no bastaba. El workflow temporal fue restaurado a ejecución exclusivamente manual tras la segunda prueba.
+- En el workflow normal `research-ai-cpu.yml`, los temas libres generan también `fuentes_oficiales_candidatas.json` si el servicio externo está disponible, sin marcar verificaciones y sin conceder permisos comerciales.
+- No se supone que una página de Wikipedia pruebe qué web pertenece a una empresa, ni que un enlace P856 esté actualizado. Aún falta contraste de entidad, examen del contenido original y fuentes financieras independientes.
+
+**Pendiente inmediato:** conseguir acceso fiable al sitio corporativo usando URL final HTTPS permitida o fuentes originales alternativas, enlazar páginas/archivos a afirmaciones concretas, y evaluar coincidencias y contradicciones sin otorgar permisos de publicación.
