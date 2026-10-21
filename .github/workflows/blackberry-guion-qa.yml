@@ -1,0 +1,49 @@
+name: Factor de Gigantes - QA guion largo BlackBerry
+on:
+  workflow_dispatch:
+  # Únicamente para verificar por primera vez los artefactos; volver a manual.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/blackberry-guion-qa.yml'
+permissions:
+  contents: read
+jobs:
+  qa-documental:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verificar escenas y fuentes sin voz ni APIs pagadas
+        run: |
+          python -m unittest discover -s tests -p test_blackberry_script_quality.py -v
+          python -m unittest discover -s tests -p test_blackberry_edl.py -v
+      - name: Generar dos reportes verificables
+        run: |
+          python -m tools.blackberry_script_quality --out dist/blackberry-script
+          python -m tools.blackberry_edl --out dist/blackberry-script
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('dist/blackberry-script')
+          report=json.loads((root/'QA_ESTRUCTURAL_GUION.json').read_text())
+          edl=json.loads((root/'EDL_PREVIA_12_ESCENAS.json').read_text())
+          assert report['structural_gate_passed'] and not report['factual_gate_passed']
+          assert not edl['ready_for_commercial_export'] and not edl['upload_to_youtube']
+          assert report['scene_count']==12 and len(edl['scenes'])==12
+          print('ESCENAS:',report['scene_count'])
+          print('PALABRAS:',report['total_words'])
+          print('DURACION_SEGUNDOS:',report['timeline_seconds'])
+          print('ALERTAS_ESTRUCTURALES:',report['flags'])
+          print('AUTORIZACION_YOUTUBE:',edl['upload_to_youtube'])
+          PY
+      - name: Guardar evidencia de QA sin material audiovisual externo
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdg-blackberry-guion-qa-y-edl
+          path: dist/blackberry-script/
+          if-no-files-found: error
+          retention-days: 7
