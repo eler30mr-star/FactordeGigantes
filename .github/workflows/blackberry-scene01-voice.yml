@@ -1,0 +1,63 @@
+name: FDG - voz original BlackBerry escena 01 Qwen CPU
+on:
+  workflow_dispatch:
+  # Un solo smoke de producción de audio; retirar push tras lanzarlo.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/blackberry-scene01-voice.yml'
+permissions:
+  contents: read
+concurrency:
+  group: fdg-blackberry-scene01-voice-cpu
+  cancel-in-progress: false
+jobs:
+  voz-escena01:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '4'
+      OPENBLAS_NUM_THREADS: '2'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      HF_HOME: /tmp/fdg-blackberry-scene01
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Confirmar la identidad vocal original y texto exacto
+        run: |
+          python -m tools.approved_voice --check
+          python -m unittest discover -s tests -p test_qwen_blackberry_scene01.py -v
+          free -h
+          test "$(df -Pk /tmp | tail -n1 | awk '{print $4}')" -gt 8500000
+      - name: Instalar dependencias Qwen 1.7B SOLO CPU
+        run: |
+          python -m pip install torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg sox
+          python -m pip install 'qwen-tts==0.1.1' --no-deps
+          python -m pip install 'transformers==4.57.3' 'accelerate==1.12.0' librosa soundfile sox onnxruntime einops
+      - name: Sintetizar cuatro fragmentos y unirlos para audición
+        run: |
+          /usr/bin/time -v timeout -k 10s 1100s python -m tools.qwen_blackberry_scene01
+          python -m tools.approved_voice --check
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('dist/blackberry-escena01-voz')
+          report=json.loads((root/'ESTADO_ESCENA01_VOZ.json').read_text(encoding='utf-8'))
+          assert len(report['clips'])==4 and not report['owner_approved_new_takes']
+          assert not report['commercial_rights_verified'] and not report['youtube_publication_enabled']
+          print('AUDIO_ESCENA01_S:',report['preview_mp3']['duration_seconds'])
+          print('TOMAS_PENDIENTES:',len(report['clips']))
+          PY
+      - name: Entregar cuatro MP3, unión y referencia canónica para escuchar
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdg-blackberry-escena01-voz-para-audicion
+          path: dist/blackberry-escena01-voz/
+          retention-days: 5
+          if-no-files-found: warn
