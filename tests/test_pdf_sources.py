@@ -65,7 +65,7 @@ class PdfEvidenceTests(unittest.TestCase):
         raw=two_page_pdf()
         def fetch(url):
             if url==PDF_URL:return raw,url,"application/pdf"
-            return b"<html><body><p>La empresa mostró una transición tecnológica sin declarar cifras.</p></body></html>",url,"text/html"
+            return "<html><body><p>La empresa mostró una transición tecnológica sin declarar cifras.</p></body></html>".encode("utf-8"),url,"text/html"
         result=research_engine.research_dossier(dossier,fetcher=fetch,max_requests=2)
         self.assertEqual(result["sources"][0]["document_type"],"pdf")
         self.assertEqual(result["sources"][0]["pdf_total_pages"],2)
