@@ -19,18 +19,22 @@ const sample=()=>({
    {id:"S01",url:manifest.sources[0],publisher:"SEC",accessed_on:"2026-10-20",type:"primaria"},
    {id:"S02",url:manifest.sources[1],publisher:"WIPO",accessed_on:"2026-10-20",type:"primaria"}
   ],
-  claims:[
-    {id:"C01",text:"Afirmación experimental para el ensayo documental interno.",
+  claims:manifest.segments.map((segment,i)=>({
+     id:"C"+String(i+1).padStart(2,"0"),
+     segment_index:i+1,
+     text:segment.voiceover,
      evidence:[{source_id:"S01",locator:"Informe, sección y página por verificar",status:"pendiente"}],
-     reviewed_by:""}
-  ],
+     reviewed_by:""
+  })),
   assets:[{kind:"voz",description:"Narración del documental sin publicar",rights_status:"pendiente"}]
 });
 function approved() {
   const x=sample();
-  x.claims[0].evidence[0].locator="Documento de prueba, página 4";
-  x.claims[0].evidence[0].status="verificada";
-  x.claims[0].reviewed_by="Responsable editorial de pruebas";
+  for(const claim of x.claims) {
+    claim.evidence[0].locator="Documento de prueba, página 4";
+    claim.evidence[0].status="verificada";
+    claim.reviewed_by="Responsable editorial de pruebas";
+  }
   x.assets[0].rights_status="verificado";
   return x;
 }
@@ -103,6 +107,10 @@ test("el contrato editorial no presume veracidad y exige voz y URLs seguras",()=
   assert.throws(()=>validateDossier(noVoice,manifest),/voz/);
   const outOfManifest=approved();outOfManifest.sources[0].url="https://www.example.org/";
   assert.throws(()=>validateDossier(outOfManifest,manifest),/guion/);
+  const withoutScene=approved();withoutScene.claims.pop();
+  assert.throws(()=>validateDossier(withoutScene,manifest),/segmento/);
+  const invalidIndex=approved();invalidIndex.claims[0].segment_index=99;
+  assert.throws(()=>validateDossier(invalidIndex,manifest),/índice/);
 });
 
 test("el expediente no se lee sin token y no se acredita incompleto",async()=>{
