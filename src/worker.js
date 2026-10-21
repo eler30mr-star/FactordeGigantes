@@ -1,3 +1,4 @@
+import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {readMarketRadar} from "./market-radar.mjs";
 import {persistMarketReport} from "./market-ingest.mjs";
 import {validateDossier} from "./editorial.mjs";
@@ -110,9 +111,12 @@ async function handle(request,env) {
   const method=request.method;
   const renderer=parts[1] === "renderer";
   const ingest=parts[1] === "market" && parts[2] === "ingest" && parts.length===3;
-  // Token independiente con permiso único de ingesta. Nunca aceptar token de admin o render.
-  const permission=ingest ? "MARKET_INGEST_TOKEN" : renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN";
-  if (!guard(request,env,permission)) return err("Acceso no autorizado",401);
+  // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
+  if (ingest) {
+    if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
+  } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
+    return err("Acceso no autorizado",401);
+  }
   if (!env.DB) return err("D1 no configurado",503);
   if (ingest) {
     if (method !== "POST") return err("Método no admitido",405);
