@@ -95,17 +95,23 @@ export async function launchResearch(env, payload, githubFetch=fetch, now=new Da
   if (!env.GITHUB_DISPATCH_TOKEN || env.GITHUB_DISPATCH_TOKEN.length<24)
     return {ok:false,status:503,error:"Token GitHub Actions no configurado"};
   const day=now.toISOString().slice(0,10);
-  const quota=await env.DB.prepare(
-    "SELECT COUNT(*) AS total FROM research_requests WHERE day_utc=?"
-  ).bind(day).first();
-  if (Number(quota?.total||0)>=DAILY_LIMIT)
-    return {ok:false,status:429,error:"Límite de cuatro investigaciones solicitadas por día UTC alcanzado"};
+  const topicKey=researchTopicKey(topic);
   const id=crypto.randomUUID();
+  // La comprobación de cupo y su reserva se hacen en UNA sentencia D1.
+  // Dos solicitudes simultáneas de temas distintos no pueden superar el máximo.
   const inserted=await env.DB.prepare(
-    "INSERT OR IGNORE INTO research_requests(id,topic,topic_key,day_utc,state) VALUES(?,?,?,?,'reserved')"
-  ).bind(id,topic,researchTopicKey(topic),day).run();
-  if (inserted.meta?.changes !== 1)
-    return {ok:false,status:409,error:"Este tema ya fue solicitado hoy; revisa Actions antes de repetir"};
+    "INSERT OR IGNORE INTO research_requests(id,topic,topic_key,day_utc,state) " +
+    "SELECT ?,?,?,?,'reserved' WHERE " +
+    "(SELECT COUNT(*) FROM research_requests WHERE day_utc=?) < ?"
+  ).bind(id,topic,topicKey,day,day,DAILY_LIMIT).run();
+  if (inserted.meta?.changes !== 1) {
+    const existing=await env.DB.prepare(
+      "SELECT id FROM research_requests WHERE topic_key=? AND day_utc=?"
+    ).bind(topicKey,day).first();
+    if (existing)
+      return {ok:false,status:409,error:"Este tema ya fue solicitado hoy; revisa Actions antes de repetir"};
+    return {ok:false,status:429,error:"Límite de cuatro investigaciones solicitadas por día UTC alcanzado"};
+  }
   const endpoint="https://api.github.com/repos/"+repo+"/actions/workflows/"+WORKFLOW+"/dispatches";
   let response;
   try {
