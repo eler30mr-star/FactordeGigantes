@@ -41,6 +41,18 @@ async function main(){
  assert.equal(unauth.status,200);
  const noToken=await request("/api/jobs","GET",undefined,"invalid");
  assert.equal(noToken.status,401);
+ // Investigador IA: la tabla 0003 existe; sin PAT no hay gasto ni solicitud GitHub.
+ const researchDenied=await request("/api/research","GET",undefined,"invalid");
+ assert.equal(researchDenied.status,401);
+ const researchList=await request("/api/research");
+ assert.equal(researchList.status,200);
+ assert.ok(Array.isArray(researchList.json.requests));
+ assert.equal(researchList.json.requests.length,0);
+ const mustConfirm=await request("/api/research","POST",{topic:"La transformación del sector móvil",confirmed:false});
+ assert.equal(mustConfirm.status,400);
+ const noResearchGitHub=await request("/api/research","POST",{topic:"La transformación del sector móvil",confirmed:true});
+ assert.equal(noResearchGitHub.status,503,"No hay token GitHub y no debe lanzarse ninguna investigación");
+ assert.equal((await request("/api/research")).json.requests.length,0);
  const creation=await request("/api/jobs","POST",manifest);
  assert.equal(creation.status,201,JSON.stringify(creation));
  const id=creation.json.job.id;
