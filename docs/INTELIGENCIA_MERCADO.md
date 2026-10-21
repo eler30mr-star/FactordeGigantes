@@ -82,3 +82,14 @@ El sondeo aumentó su cobertura a **360 artículos populares** entre Wikipedia e
 - Historial factual y enlaces precisos en `research/market/VALIDACION_RADAR_360_2026-10-21.md`.
 
 **Próximo hito:** persistencia real en D1 de los snapshots por día, señal de noticias actuales, conexión autenticada a YouTube Data API y cálculo de oportunidad relativa + selección de temas aptos. Nunca publicar ni generar un guion por ver solo un pico de Wikipedia.
+
+
+## Tercer avance operativo — noticias RSS y clasificación previa (21 octubre 2026)
+
+**Lo realmente ejecutado:** junto al radar Wikimedia existente, el sistema explora cuatro búsquedas temáticas RSS (empresas, innovación, tecnología e industria) en español e inglés sin nombres fijos de empresas. `tools/news_discovery.py` conserva atribución del agregador, fecha y URL; la migración `0005_news_leads.sql` fue aplicada en D1 remota Factor, no solo simulada.
+
+La ejecución [39668778079](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39668778079) terminó con `success` y se leyeron posteriormente en D1 **1 corrida informativa y 100 titulares almacenados**, además de 2 empresas Wikimedia. Los 100 son el **límite de muestra** y no una estimación de noticias totales ni 100 ideas viables.
+
+El módulo `src/news-triage.mjs` asigna **relevancia preliminar del titular**, con reglas auditables para cambios empresariales, innovación, competencia y tecnología, penalizando titulares puramente comerciales/financieros. Esta puntuación **no usa cifras de demanda**, no demuestra interés de usuarios y no ordena una producción documental; requiere original de noticia, triangulación de fuentes y mercado real YouTube.
+
+Ruta siguiente: resolver identidad de entidades y eventos, contrastar noticias con fuentes primarias, YouTube Data API para métricas observadas y establecer un ranking **multi-señal** con razones trazables. Después, recién conectar investigación autónoma y producción documental. No usar titulares RSS como hechos narrables.
