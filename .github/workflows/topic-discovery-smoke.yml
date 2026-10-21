@@ -134,6 +134,7 @@ jobs:
           python -m unittest discover -s tests -p test_market_investigator.py -v
           timeout -k 5s 65s python -m tools.market_investigator \
             --pdf-report dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json \
+            --official-report dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
             --out dist/radar/INVESTIGACION_IA_NO_APROBADA.json
       - name: Relacionar empresas y titulares como hipótesis verificables
         run: |
