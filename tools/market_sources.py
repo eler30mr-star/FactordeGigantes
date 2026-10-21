@@ -95,11 +95,16 @@ def collect_youtube(topic, *, api_key=None, now=None, request=None, region="MX")
                 continue
         except (ValueError,KeyError,TypeError):
             continue
+        snippet=row["snippet"]
+        channel=snippet.get("channelId")
+        # Canal real solo si videos.list devuelve el ID oficial, nunca inferirlo por título.
+        channel_id=channel if isinstance(channel,str) and re.fullmatch(r"UC[A-Za-z0-9_-]{22}",channel) else None
         videos.append({
             "video_id":row["id"],
             "url":"https://www.youtube.com/watch?v="+row["id"],
             "view_count":views,
             "published_at":published.isoformat(),
+            "channel_id":channel_id,
         })
     if len(videos)<3:
         raise ValueError("Sin videos suficientes con vistas y fecha")
