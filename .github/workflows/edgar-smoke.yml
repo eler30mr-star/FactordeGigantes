@@ -1,11 +1,6 @@
 name: Factor de Gigantes - localizar registros SEC reales
 on:
   workflow_dispatch:
-  # Una prueba acotada en main para validar integracion real; retirar tras ejecutarse.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/edgar-smoke.yml'
 permissions:
   contents: read
 jobs:
