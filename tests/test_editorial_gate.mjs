@@ -152,3 +152,22 @@ test("despacho a GitHub bloquea el expediente revocado y no publica por sí mism
     assert.equal(e.DB.jobs.get("job-one").status,"queued");
   } finally {globalThis.fetch=previous;}
 });
+
+test("migracion no aplicada devuelve 503 y conserva el guion anterior",async()=>{
+  const e=env();
+  const original=e.DB.jobs.get("job-one").manifest_json;
+  const real=e.DB.prepare.bind(e.DB);
+  e.DB.prepare=(sql)=>{
+    if(sql.includes("FROM editorial_dossiers"))return {
+      bind(){return this},
+      async first(){throw Error("D1_ERROR: no such table: editorial_dossiers")}
+    };
+    return real(sql);
+  };
+  const get=await api(e,"/api/jobs/job-one/dossier");
+  assert.equal(get.status,503);
+  const modified={...manifest,title:"Un nuevo título de trabajo para el sistema"};
+  const update=await api(e,"/api/jobs/job-one","PUT",modified);
+  assert.equal(update.status,503);
+  assert.equal(e.DB.jobs.get("job-one").manifest_json,original);
+});
