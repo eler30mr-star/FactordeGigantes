@@ -272,3 +272,15 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Pasar de borradores pequeños a guiones de 8–14 minutos respaldados por evidencias, licencias completas y montaje cinematográfico, manteniendo narrador canónico e intervención humana.
 
 **Estado:** código y pruebas de correlación y descubrimiento implementados en `main`; búsqueda externa oficial probada como **localización de enlace**, no como extracción factual verificada. La productora aún no publica automáticamente ni ha completado la fase 2.
+
+
+## Fase 2 — extracción PDF de fuentes originales con páginas (2026-10-21)
+
+- [x] Soportar documentos públicos PDF en el investigador por expediente (además de HTML), con texto localizable por página, SHA-256, URL final, tipo PDF y límites explícitos de tamaño, páginas y tiempo. Código en `tools/pdf_sources.py` y `tools/research_engine.py`.
+- [x] Incluir los localizadores PDF reales en el reporte editorial y en el contexto enviado a Qwen, sin confundir coincidencia textual con verificación. `tests/test_pdf_sources.py` prueba páginas diferentes y errores de documento.
+- [x] **Validación externa real de un PDF de investigación primario**: [GitHub Actions 39592681746](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39592681746) `success`: artículo arXiv `Attention Is All You Need`, **15 páginas, 328 bloques, 2 pasajes candidatos en páginas 1 y 2**. No se aprobaron hechos; [CI 39592490158](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39592490158) `success` para la batería general.
+- [ ] Buscar PDFs primarios de informes financieros y regulatorios **automáticamente a partir del tema**, no solo desde URL conocida. Ampliar extracción a documentos largos/escaneados y tablas contrastadas sin inventar valores ni sobrepasar recursos CPU.
+- [ ] Integrar evidencia documental y fuentes verificadas al guion completo de 8–14 minutos; conservar aprobación editorial, licencias de voz/imágenes/música y QA antes de render final.
+- [ ] Migración D1 0002/0003 y despliegue remoto Cloudflare siguen **pendientes**: el conector continúa con error interno, así que la mejora está en `main` y probada en GitHub, **no** confirmada en el panel web publicado.
+
+**Decisión:** priorizar una cadena de investigación documental realmente reproducible y sus evidencias antes de ampliar modelos IA o instalar generadores locales de video. Las tareas de PDF y síntesis usan CPU en GitHub Actions, no dependen de la laptop.
