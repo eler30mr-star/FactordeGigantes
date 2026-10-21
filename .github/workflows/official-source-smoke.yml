@@ -1,11 +1,6 @@
 name: Factor de Gigantes - descubrir sitio oficial real
 on:
   workflow_dispatch:
-  # Ejecutar una sola prueba de descubrimiento y luego regresar a modo manual.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/official-source-smoke.yml'
 permissions:
   contents: read
 jobs:
