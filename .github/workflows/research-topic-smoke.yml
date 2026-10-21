@@ -1,10 +1,6 @@
 name: Factor de Gigantes - descubrimiento autónomo sin pagos
 on:
   workflow_dispatch:
-  # Desencadenar UNA prueba controlada y luego retirar.
-  push:
-    branches: [main]
-    paths: ['.github/workflows/research-topic-smoke.yml']
 permissions:
   contents: read
 jobs:
