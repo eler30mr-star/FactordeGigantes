@@ -730,3 +730,25 @@ Continuar el motor de Factor de Gigantes mientras la laptop HP de 12 GB está de
 - Probar login y lectura autenticada del panel y ejecutar una investigación real desde el botón solo cuando el propietario elija tema explícito. Cero solicitudes consumidas de las cuatro diarias durante este trabajo.
 
 **Resultado:** código, tests, documentación y despliegue del comparador / expediente en producción técnica completados, con datos de usuario preservados; acceso real SEC, hechos aprobados y documental completo todavía pendientes. Todo cambio en `main`, sin PR ni ramas secundarias.
+
+## 2026-10-21 · Primer bloque narrativo documental con datos BlackBerry originales (main)
+
+**Alcance:** el propietario pidió avanzar hacia contenido real, no seguir únicamente en infraestructura. Se mantuvo la regla obligatoria de modificar exclusivamente `main` y nunca publicar automáticamente a YouTube.
+
+### Completado con evidencia
+
+1. **Fuentes originales recuperadas:** `tools/blackberry_sources_pilot.py` descarga dos comunicados financieros PDF de BlackBerry Investor Relations (FY2024 y FY2025) y busca pasajes definidos con página física, SHA-256, URL y base contable. En [GitHub Actions 39630703040](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39630703040), prueba real `success`, descargó **2/2 PDF y localizó 5/5 datos**, en páginas 2 y 16. Datos localizados: ingresos FY2024 presentados entonces US$853 millones; US$218 millones vinculados a venta de patentes; ingresos FY2025 US$534,9 millones; QNX FY2025 US$236 millones; e ingresos FY2024 comparativos de US$759,1 millones incluidos en el comunicado de FY2025. Los PDF completos no se distribuyeron en los artefactos.
+2. **Precaución esencial:** FY2024 US$853m reportados en 2024 y FY2024 US$759,1m como comparativo de 2025 no deben restarse ni utilizarse para tasas de crecimiento sin revisar cambios de alcance y operaciones discontinuadas. Una localización textual por máquina no equivale a verificación editorial.
+3. **Paquete editorial actualizado:** `tools/editorial_package.py` puede sumar `HECHOS_BLACKBERRY_2024_2025_CON_PAGINAS.json` al expediente, conservando URL/página, base contable y banderas `pending_human`. `tests/test_editorial_package.py` cubre explícitamente los dos importes FY2024, su alerta de comparabilidad y la prohibición de aprobar automáticamente.
+4. **Investigación Qwen piloto:** `.github/workflows/research-ai-cpu.yml` ejecutará el sondeo de estos PDF solo cuando el tema sea vacío (piloto BlackBerry), antes de consolidar el dossier. No significa que Qwen ya haya generado desde ese flujo un documental terminado.
+5. **Primer texto narrativo real:** `research/blackberry/PRIMER_BLOQUE_NARRATIVO_FUENTES_REALES.md` contiene cuatro escenas originales (~3–4 minutos previstos), preguntas narrativas, cifras referenciadas, localizadores de documentos, ideas visuales sin licencia asumida y bloqueos específicos para revisión. Es un **borrador para evaluar**, no un guion de 8–14 minutos completo ni audio/MP4.
+6. **Validación:** el workflow de prueba de PDF y las pruebas de contrato en `main` terminaron exitosamente; la comprobación de GitHub del commit narrativo fue [39631313656](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39631313656) `success`. La última ejecución CI observada [39631477093](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39631477093) también reportó `success`. Los cambios realizados en GitHub no demuestran por sí mismos la generación de un nuevo video ni la revisión comercial de medios.
+
+### Pendiente prioritario
+
+- Verificar de forma editorial las notas contables del 10-K completo, la clasificación de Cylance y las cifras complementarias de comunicaciones seguras y licencias antes de aprobar la narración.
+- Obtener fuentes independientes para cronología BlackBerry, competencia, QNX y consecuencias; ampliar el borrador a un **guion original de 8–14 minutos** con cada dato vinculado a evidencia revisada.
+- Auditar permisos comerciales del narrador y recursos visuales/musicales; luego generar un MP4 piloto como prueba, **sin subirlo automáticamente a YouTube**.
+- Demostrar una investigación voluntaria desde el panel publicado, autenticada por el propietario; no consumir acciones pesadas sin su decisión explícita.
+
+**Estado preciso:** dos documentos primarios efectivamente descargados y cinco pasajes localizados; primer bloque narrativo escrito y guardado en `main`; documental largo, grabación, render final y publicación todavía pendientes.
