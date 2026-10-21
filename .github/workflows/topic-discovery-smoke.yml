@@ -54,6 +54,18 @@ jobs:
               print("SERIES_HISTORICAS_GUARDADAS:",series)
               print("D1_PRODUCCION_MODIFICADA: FALSE")
           PY
+      - name: Persistir radar en D1 real con credencial exclusiva de ingesta
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          MARKET_INGEST_TOKEN: ${{ secrets.MARKET_INGEST_TOKEN }}
+        run: |
+          if [ -z "$API_BASE_URL" ] || [ -z "$MARKET_INGEST_TOKEN" ]; then
+            echo "::warning::Persistencia D1 remota pendiente de API_BASE_URL y MARKET_INGEST_TOKEN"
+            echo "D1_PRODUCTION_PERSISTED: false (sin secretos)"
+            exit 0
+          fi
+          python -m tools.push_market_radar \
+            --input dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json
       - name: Conservar únicamente informe de candidatos y procedencia
         if: always()
         uses: actions/upload-artifact@v4
