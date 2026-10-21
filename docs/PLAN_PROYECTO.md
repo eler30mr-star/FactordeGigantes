@@ -459,3 +459,16 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Conectar Gemini/Qwen investigador para producir desde esa selección un dossier, guion, voz, visuales, MP4 y ciclo de YouTube **solo tras aprobar derechos/editorial**.
 
 **No declarar completo el sistema de producción por la existencia de una ejecución de radar.** El dato es real; la clasificación empresarial solo abre una puerta a investigación; el ranking de mercado completo sigue bloqueado hasta YouTube/competencia y fuentes originales.
+
+### Hito 2026-10-21 · Radar ampliado, dos empresas y migración de historial probada
+
+- [x] Ampliar descubrimiento automático de 240 a **360 artículos** Wikimedia es/en por corrida, limitando a **12 lotes Wikidata** y 6 enriquecimientos de 14 días, sin claves ni servicios pagados.
+- [x] Validar con datos públicos verdaderos en [39652155079](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39652155079): 2 entidades empresariales, Theranos y DuPont Corporation, con 2 series de 14 días completas. Datos y enlaces en `research/market/VALIDACION_RADAR_360_2026-10-21.md`.
+- [x] Crear esquema **D1 aditivo 0004** para ejecuciones, entidades, visitas diarias, interés 14 días y decisiones de mercado; escribir `tools/market_persistence.py` y pruebas idempotentes/retrocompatibles.
+- [x] Ejecutar [39652982369](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39652982369) `success`: snapshot **SQLite local**, 2 entidades, 2 observaciones y 2 series; conservar ZIP en artefacto temporal GitHub y verificar las tablas reales. La migración **NO se ha aplicado aún a Cloudflare D1 remoto**.
+- [x] `.github/workflows/topic-discovery-smoke.yml` quedó solo **diario programado** (10:17 UTC sujeto a retrasos GitHub) y manual. No se ejecuta por cada push ni publica videos.
+- [ ] Aplicar migración 0004 en D1 remoto con identificación y copia de seguridad verificadas; implementar endpoint autenticado e idempotente para guardar en producción series diarias.
+- [ ] Incorporar fuentes más inmediatas e información de YouTube mediante credenciales con presupuesto autorizado; obtener y comparar **varios temas con demanda real en YouTube** antes de seleccionar un ganador.
+- [ ] Conectar ranking→investigador Gemini/Qwen→guionista autónomo→TTS/escenas/video→QA→publicación YouTube tras autorización; el pipeline todavía no es automático extremo a extremo.
+
+**Aclaración:** Wikipedia muestra interés en un artículo, no oportunidades ya verificadas para el canal. No se han inventado datos YouTube ni se ha iniciado una producción automática por observar Theranos o DuPont.
