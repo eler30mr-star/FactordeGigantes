@@ -5,6 +5,11 @@ on:
     # Wikimedia publica rankings diarios con retraso; 1 chequeo al día
     # evita consumo redundante. No hay IA pagada ni subida a YouTube.
     - cron: '17 10 * * *'
+  # Única prueba de integración del nuevo almacén local; retirar después.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/topic-discovery-smoke.yml'
 permissions:
   contents: read
 concurrency:
@@ -38,6 +43,21 @@ jobs:
           print('YOUTUBE_PUBLICACION_PERMITIDA:',data['ready_for_youtube'])
           assert not data['market_study_complete'] and not data['ready_for_youtube']
           assert data['wikidata_requests']<=12
+          PY
+      - name: Guardar snapshot de mercado con esquema D1 compatible (solo SQLite local)
+        run: |
+          python -m unittest discover -s tests -p test_market_persistence.py -v
+          python -m tools.market_persistence \
+            --input dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
+            --database dist/radar/PROVISIONAL_HISTORIAL_MERCADO.sqlite
+          python - <<'PY'
+          import sqlite3
+          with sqlite3.connect("dist/radar/PROVISIONAL_HISTORIAL_MERCADO.sqlite") as db:
+              entities=db.execute("SELECT count(*) FROM market_entities").fetchone()[0]
+              series=db.execute("SELECT count(*) FROM market_interest_windows").fetchone()[0]
+              print("EMPRESAS_GUARDADAS_SNAPSHOT:",entities)
+              print("SERIES_HISTORICAS_GUARDADAS:",series)
+              print("D1_PRODUCCION_MODIFICADA: FALSE")
           PY
       - name: Conservar únicamente informe de candidatos y procedencia
         if: always()
