@@ -549,3 +549,34 @@ Se ha guardado en `main` la estructura inicial del motor:
 - **Pendiente:** contrastar formalmente cada fuente del piloto BlackBerry con un editor humano, conseguir fuentes independientes y derechos completos de material/voz, escribir narración original total, storyboard, primera prueba de video 8–14 min y QA.
 - **Pendiente:** preparar reconciliación segura de trabajos con `dispatch` de resultado incierto, sin reintentos automáticos ni duplicados; pulir los formularios con pruebas de usabilidad en móvil tras el despliegue.
 - **Orden siguiente:** D1 remota → Worker y panel remoto → ensayo autenticado con expediente real no publicado → investigación/comprobación editorial → licencia de voz y recursos → producción piloto de video. Todas las operaciones directamente en `main`.
+
+
+## 2026-10-20 · Avance real: motor autónomo de investigación con IA local (Fase 2)
+
+**Pedido del propietario:** continuar el avance y que sea la IA quien investigue los documentales, no el usuario. Trabajado directamente en main y siguiendo AGENTS.md / PLAN_PROYECTO.md.
+
+### Trabajo implementado
+
+- **tools/research_engine.py**: modo dossier (visita URLs de fuentes registradas y extrae pasajes candidatos vinculados a afirmaciones) y modo tema libre (busca autónomamente en MediaWiki y lee artículos secundarios). Guardias HTTPS/DNS/hosts internos, redirecciones y tamaños máximos; hashes de contenido, URLs de origen y final, errores distinguibles, fragmentos breves. Archivos de salida: reporte_investigacion.json, LECTURA_PRELIMINAR.md y evidencia_para_ia.txt. Los estados siguen en "pending_human", aunque exista pasaje coincidente.
+- **tools/local_research_ai.py**: genera un borrador original a partir de pasajes documentales mediante Qwen/Qwen3-0.6B CPU, sin API generativa facturable. Rechaza generación sin evidencia; metadatos indican modelo, hashes, citas y ausencia de aprobación. Se añadió control de cifras fuera de pasajes de la fuente citada para detectar alucinaciones numéricas (no certifica exactitud histórica).
+- **.github/workflows/research-ai-cpu.yml**: workflow exclusivamente MANUAL (tras un disparo controlado único y reversible) que ejecuta pruebas, consulta documentos y usa Qwen local. Acepta un tema libre o, en blanco, dossier BlackBerry; artifacts de 3 días. **No activa publicación ni cambia narrador canónico.**
+- **.github/workflows/research-topic-smoke.yml**: prueba de descubrimiento desde un único tema en GitHub; disparo puntual revertido a workflow_dispatch. Sin servicio de pago ni publicación.
+- **tests/test_research_engine.py** y **tests/test_local_research_ai.py**: simulaciones offline de límites y fuentes, bloqueo por falta de evidencia, búsqueda genérica y fechas numéricas inventadas.
+- Documentación técnica docs/MOTOR_INVESTIGACION.md y auditoría concreta research/blackberry/qa_primer_borrador_ia.md.
+
+### Evidencia real (no confundir tests con investigación completa)
+
+1. **[Run 39528648495](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39528648495)**, success: de seis URLs primarias del dossier BlackBerry, **tres legibles** (S01-S03), tres bloqueadas/no analizables (S04-S06), y **cinco pasajes candidatos** para ocho afirmaciones pendientes. El modelo Qwen local 0.6B generó un borrador de **722 caracteres**, cita detectada [S01], 1:08.66 de fase de IA (incluye carga/descarga del modelo) y memoria RSS máxima 4 781 824 KiB (~4.56 GiB). Artefacto [12314626338](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39528648495/artifacts/12314626338). Los resultados fueron descargados e inspeccionados, no solo verificado un workflow verde.
+2. **Error factual real detectado:** el texto IA escribió que la IPO en Toronto fue **10 de octubre de 1997**; S01 recuperada decía **28 de octubre de 1997**. Se añadió guardia audit_numeric_support con pruebas posteriores, que alertaría por esa cifra 10 ausente en pasajes de S01. La ejecución inicial **es anterior a esa corrección** y sigue siendo un borrador defectuoso; no se declara guion verificado ni renderizable.
+3. **[Run 39529286991](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39529286991)**, success: con solo el tema BlackBerry, buscó y descargó **3/3 artículos secundarios** sin dossier manual. Cero hechos verificados automáticamente; es etapa de descubrimiento, todavía no investigación con fuentes primarias de cualquier tema.
+4. **CI [39529112648](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39529112648)**, success: pruebas de detección de una fecha inventada. Los commits posteriores ampliaron el modo tema libre y mantuvieron la batería en verde.
+
+### Bloqueos y próxima secuencia
+
+1. **Investigación autónoma más rigurosa:** descubrir fuentes primarias e independientes desde tema libre, resolver PDF/reportes anuales con referencias precisas, detectar contradicciones y hechos ausentes, en vez de confiar solo en Wikipedia o un pasaje similar.
+2. **Guion completo:** convertir evidencia contrastada en historia de 8–14 minutos con citas por escena, control de duración y voz original aprobada, sin alucinar cifras/causalidad.
+3. **Integración del panel de producción:** actualmente la investigación ya funciona por GitHub Actions manual, pero **NO** está conectada al botón del panel. Se debe aplicar la migración 0002 D1 **remota** y desplegar Worker/GUI; Cloudflare de esta sesión no responde y **no se afirma que esté hecho**.
+4. **Licencias y QA:** referencia de voz canónica SHA-256 78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d sin cambios. Los derechos comerciales de la referencia, música y recursos siguen pendientes. El sistema no sube a YouTube.
+5. **Costos:** modelo ejecutado localmente en GH Actions, sin API de pago, pero vigilar minutos y cuotas de GitHub; workflows intensivos quedan solo manuales.
+
+**Estado correcto:** primer motor de investigación y propuesta por IA probado; calidad editorial insuficiente para publicar; investigación primaria universal, desarrollo completo de guiones, Cloudflare remoto y publicación siguen pendientes. Todo realizado en main y documentado.
