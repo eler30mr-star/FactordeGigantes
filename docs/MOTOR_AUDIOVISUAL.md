@@ -253,3 +253,14 @@ El disparador `push` de uso único fue eliminado tras el lanzamiento y el workfl
 Tras escuchar las dos pruebas reales de `Qwen3-TTS Base 1,7B` generadas en CPU (workflow [39516609592](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39516609592)), el propietario declaró: **«Sí ambas, la 1 es más fiel»**. Las dos muestras resultan aceptables para esta audición; `01_decision.mp3` (8,496 s) es la que más se acerca a la identidad aprobada, y `02_transformacion.mp3` (9,960 s) queda en segundo lugar por fidelidad relativa.
 
 **No elevar ninguna toma experimental a nueva referencia oficial.** La única voz canónica sigue siendo `narrador_documental_aprobado.mp3`. La aceptación de estos clips no valida automáticamente futuros textos ni el uso comercial. El siguiente ensayo debe comprobar estabilidad entre párrafos con límites de CPU y audición humana separada por tramo, sin proveedores de pago y sin cambios al `render.yml` hasta superar derechos y QA.
+
+
+## Ensayo REAL de continuidad narrativa de tres párrafos (2026-10-20)
+
+Motor `tools/qwen_longform_probe.py`; workflow manual `.github/workflows/voice-longform-cpu.yml`. Prueba Qwen3-TTS Base 1,7B en CPU usando en cada llamada la misma toma canónica por SHA-256, semilla reproducible `20261020`, sin API de síntesis paga. No entrenamos voces ni cambiamos el MP3 aprobado. El guion de los tres párrafos es **hipotético** y no formula afirmaciones empresariales comprobables sobre compañías reales.
+
+[Run 39518606909](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39518606909) finalizó `success`. [Artefacto temporal 12311066207](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39518606909/artifacts/12311066207): referencia original 12,336 s + tres tomas MP3 (13,944 / 13,944 / 14,712 segundos), previsualización enlazada de **43,296 s**, reporte JSON y guía de escucha. Los MP3 fueron recuperados y comprobados por SHA y FFprobe. Reunión de tomas mediante huecos de 0,38 s entre párrafos, sin cirugías fonéticas.
+
+Métricas observadas: 125,75 s, 123,76 s y 131,33 s por párrafo, respectivamente; 401,42 s Python sin instalación, 6:48,24 de proceso medido con `/usr/bin/time`; RAM máxima 11 978 044 KiB (~11,42 GiB). **No** garantiza que 10-14 minutos de audio quepan en las cuotas gratuitas; hacen falta optimizaciones y mediciones nuevas.
+
+El primer clip de la prueba ANTERIOR fue el más fiel según el propietario, pero **los tres clips nuevos requieren audición humana**: voz, transiciones, dicción y consistencia no se validan automáticamente. La toma canónica permanece `assets/voice/approved/narrador_documental_aprobado.mp3`. Los derechos de uso comercial de la referencia y de los materiales audiovisuales siguen pendientes (ver `docs/LICENCIAS_NARRACION.md`). `render.yml` y publicación YouTube permanecen sin cambios.
