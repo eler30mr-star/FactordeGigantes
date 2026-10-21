@@ -98,8 +98,8 @@ def extract_observations(data, *, document_url, limit=MAX_OUTPUT_FACTS):
     cik=data.get("cik")
     if isinstance(cik,bool) or not isinstance(cik,int) or not 0<cik<=9_999_999_999:
         raise ValueError("CIK no identificado en companyfacts")
-    if not document_url.endswith(f"CIK{cik:010d}.json"):
-        raise ValueError("CIK de URL y cuerpo no coinciden")
+    if document_url!=f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json":
+        raise ValueError("CIK de URL, servidor SEC y cuerpo no coinciden")
     company=str(data.get("entityName",""))[:120].strip()
     us=data.get("facts",{}).get("us-gaap",{})
     if not isinstance(us,dict):
@@ -190,8 +190,8 @@ def compare_observations(observations):
         if not isinstance(obs.get("accession"),str) or not ACC_NUM.fullmatch(obs["accession"]):
             raise ValueError("Falta acceso SEC")
         src=obs.get("source_url")
-        if not isinstance(src,str) or not src.startswith("https://data.sec.gov/api/xbrl/companyfacts/CIK"):
-            raise ValueError("Fuente SEC no identificada")
+        if src!=f"https://data.sec.gov/api/xbrl/companyfacts/CIK{entity}.json":
+            raise ValueError("Fuente SEC y CIK no coinciden")
         validate_url(src)
         key=(entity,metric,obs["unit"],kind,start,end)
         groups[key].append((obs,value))
