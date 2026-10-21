@@ -119,3 +119,27 @@ El workflow es SOLO MANUAL para limitar minutos gratuitos. La integración al pa
 - Los resultados económicos de los tests proceden de **datos artificiales para validar el contrato**: nunca citarlos como cifras reales de Apple o BlackBerry. Fuente XBRL real / informe financiero contrastado aún **pendientes**.
 
 **Próximo bloque:** buscar enlaces originales de informes que estén realmente disponibles, obtener un conjunto auténtico de métricas o tablas con sus unidades/periodos y contrastarlas; revisar identidad jurídica, fechas y cifras antes de redactar escenas. Después generar guion documental original de 8–14 minutos y audio/video únicamente con licencias validadas.
+
+## 2026-10-21 — primer piloto con **PDF financieros originales descargados**
+
+Se superó la limitación práctica de SEC: no fue necesario acceder a `data.sec.gov` para leer resultados financieros auténticos, porque el propio portal de inversores de BlackBerry enlaza sus comunicados anuales.
+
+**Fuentes originales descargadas, con página física PDF (base 1):**
+
+1. `BB_FY24`, 3 de abril de 2024, comunicado de cierre FY2024 de BlackBerry: https://irp.cdn-website.com/586e2b1b/files/uploaded/Q4-FY24-Earnings-Press-Release.pdf . Página 2, ingresos publicados en aquel momento **US$853 millones**, incluyendo **US$218 millones** asociados a venta de cartera heredada de patentes.
+2. `BB_FY25`, 2 de abril de 2025, comunicado de cierre FY2025: https://irp.cdn-website.com/586e2b1b/files/uploaded/Q4_FY25_Earnings_Press_Release_-_FINAL-7064fd77.pdf . Página 2, ingresos FY2025 **US$534,9 millones**, división QNX **US$236 millones**; página 16, tabla con cifra comparativa FY2024 **US$759,1 millones**. Las cifras fueron localizadas por el extractor, pero no aprobadas editorialmente.
+3. Como documento explicativo adicional, el 10-K FY2025 disponible desde el portal de inversores explica el tratamiento de Cylance como operación discontinuada y reformulación de comparativos cuando corresponde: https://irp.cdn-website.com/586e2b1b/files/uploaded/BlackBerry_Fiscal_2025_10-K_-_SEDAR.pdf . Es un PDF de 122 páginas, supera el límite actual del extractor (35) y **no se procesó automáticamente en el smoke**: su lectura y cita deben revisarse por separado.
+
+**Evidencia ejecutada:** [GitHub Actions 39630703040](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39630703040) `success`: 2/2 PDF descargados y 5/5 valores encontrados en páginas 2, 2, 2, 2 y 16; quedaron URL, hash SHA-256, página, ámbito contable y estado `human_verified=false` por hecho. El artefacto `factor-blackberry-fiscal-originales-2024-2025` contiene únicamente el JSON de referencias, no el texto de los PDF. [Artefacto 12359810175](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39630703040/artifacts/12359810175) (retención 5 días). Los tests del parser usan fixtures separados; **no son el resultado real**.
+
+**Integración de código:**
+- `tools/blackberry_sources_pilot.py`: dos URL concretas de la web corporativa y patrones numéricos por página, con límites de `tools/pdf_sources.py`; no inventa fuentes cuando hay red bloqueada.
+- `tools/editorial_package.py`: admite el artefacto `HECHOS_BLACKBERRY_2024_2025_CON_PAGINAS.json`, preserva cifras/periodo/alcance y una advertencia de comparabilidad, sin elevar ninguna a hecho aprobado.
+- `.github/workflows/research-ai-cpu.yml`: en modo piloto BlackBerry sin tema explícito, descarga los dos PDF antes de consolidar el expediente; el artefacto de investigación contiene los hechos preliminares. En modo tema libre no introduce cifras de BlackBerry ajenas a la investigación.
+- `research/blackberry/PRIMER_BLOQUE_NARRATIVO_FUENTES_REALES.md`: primer bloque original de ~3–4 minutos con cuatro escenas y referencias, separado del guion final. Derechos comerciales y revisión humana pendientes.
+- `tests/test_blackberry_sources_pilot.py` y `tests/test_editorial_package.py` cubren ausencia de documentos, URL/MIME falsos, páginas, base contable, autorización siempre denegada.
+- `.github/workflows/blackberry-financial-smoke.yml` se devolvió a `workflow_dispatch` manual después de la primera corrida: **no automatiza consumo de GitHub**.
+
+**Riesgo descubierto:** el informe original FY2024 publicó 853 millones, mientras el FY2025 muestra FY2024 como 759,1 millones en la tabla comparativa. La causa/alcance exactos requieren confirmar notas del 10-K; el software **prohíbe inferir una variación de ingresos entre bases diferentes**. La comparación FY2025 ↔ FY2024 solo puede hacerse con periodos y definiciones homologadas tras revisión.
+
+**Siguiente trabajo:** auditar pormenorizadamente el 10-K 122 páginas, contrastar el contexto contable, ampliar prueba de hechos QNX/Secure Communications, completar capítulo histórico con fuentes independientes y redactar 8–14 minutos completos. Voz, material visual y publicación siguen pendientes; ningún video fue generado en esta entrega.
