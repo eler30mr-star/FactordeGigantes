@@ -1,6 +1,6 @@
 """Comprobar límites del redactor Qwen sin cargar pesos ni GPU."""
 import unittest
-from tools.local_research_ai import build_messages, result_metadata
+from tools.local_research_ai import build_messages, result_metadata, audit_numeric_support
 
 
 def report(matches=True):
@@ -47,6 +47,28 @@ class LocalResearchAITests(unittest.TestCase):
         self.assertFalse(metadata["claim_verification_automatic"])
         self.assertEqual(metadata["source_markers_in_output"],["[S01]"])
         self.assertFalse(metadata["unsupported_source_ids"])
+
+    def test_catches_fabricated_date_from_real_blackberry_passage(self):
+        historical = report()
+        historical["candidate_claims"][0]["candidate_passages"][0]["excerpt"] = (
+            "Research In Motion's IPO on the Toronto Stock Exchange was October 28, 1997."
+        )
+        fake = "La salida a bolsa ocurrió el 10 de octubre de 1997 [S01]."
+        flags = audit_numeric_support(historical, fake)
+        self.assertEqual(len(flags), 1)
+        self.assertIn("10", flags[0]["numeric_tokens_not_in_passages"])
+        meta = result_metadata(historical, fake + " Pendiente de contrastar la documentación primaria."*2,
+                               model_id="Qwen/Qwen3-0.6B", seconds=1)
+        self.assertFalse(meta["grounding_quality_gate_passed"])
+        self.assertEqual(len(meta["numeric_claims_without_passage_support"]), 1)
+
+    def test_supported_date_still_does_not_equal_fact_verification(self):
+        historical = report()
+        historical["candidate_claims"][0]["candidate_passages"][0]["excerpt"] = (
+            "Research In Motion IPO was on October 28, 1997."
+        )
+        flags = audit_numeric_support(historical, "Según la fuente, ocurrió el 28 de octubre de 1997 [S01].")
+        self.assertEqual(flags, [])
 
     def test_unsupported_citations_are_flagged_not_silently_accepted(self):
         text="Un texto de prueba que menciona [S99] sin soporte y [S01] con pasaje. "*3
