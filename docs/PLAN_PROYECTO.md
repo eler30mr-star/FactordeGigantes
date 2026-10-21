@@ -371,3 +371,18 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Revisar hechos/citas de guion con un editor, comprobar fuentes audiovisuales y licencia del narrador, ensayar un MP4 largo **sin publicarlo** a YouTube; medir calidad antes de automatización general.
 
 **Distinción obligatoria:** este es el primer video técnico REAL, no un documental profesional terminado. La duración de 30 s no es la duración del episodio planificado de 11:50. Todo desarrollo persiste en `main`.
+
+## Corrección a partir de evaluación audiovisual — 2026-10-21
+
+**Comentario del propietario:** «en el video: se muestra los textos y un fondo firme, y sin audio». Se reconoce que la previsual anterior fue una animática de tarjetas estáticas. **No cumpliría el estándar cinematográfico del canal.**
+
+- [x] Mantener intacta la voz canónica del propietario `assets/voice/approved/narrador_documental_aprobado.mp3`, SHA256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`, duración 12,336 s, **aprobada para referencia editorial**, con licencia comercial aún pendiente. No cambiar por Piper o eSpeak.
+- [x] Crear `tools/render_blackberry_motion_intro.py`: render de **297 fotogramas únicos**, 1280×720 a 24 fps, cuatro secuencias con teléfono/cámara móvil, nodos de comunicación, circuitos y cierre; banda sonora de la voz canónica sin recrear sus palabras. No emplea imágenes ajenas ni API de pago.
+- [x] Crear `tests/test_blackberry_motion_intro.py`, con cuatro contratos incluyendo diferencias dentro de cada secuencia y verificación de hash de la referencia.
+- [x] Ejecutar GitHub Actions [39636975142](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39636975142) **success**. Archivo `BLACKBERRY_INTRO_MOVIMIENTO_VOZ_REFERENCIA.mp4`, 12,33 s, 1280×720, H.264 + AAC, 1 623 429 bytes; 297 frames escritos, pista de audio decodificable y SHA original confirmado. [Artefacto temporal 12360694777](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39636975142/artifacts/12360694777). Descargado y verificado también con FFprobe; las cuatro escenas fueron inspeccionadas visualmente.
+- [x] Corregir `.github/workflows/check.yml` para instalar Pillow 11.3.0 en pruebas base (la primera ejecución con el nuevo test falló por `ModuleNotFoundError: PIL`). Volver `.github/workflows/blackberry-motion-voice.yml` a **modo únicamente manual** después de la corrida exitosa.
+- [ ] Avanzar de gráficos abstractos en movimiento a **escenas cinematográficas originales** y montaje continuo por actos, sin tarjetas de títulos como contenido principal.
+- [ ] Generar narración real coherente con las 1.691 palabras del manuscrito completo usando la identidad vocal aprobada y consentimiento/licencia verificables; evaluar segmento a segmento dicción, coherencia y derechos. El MP3 aprobado **solo contiene 12,336 s de texto introductorio, NO narra el guion completo**.
+- [ ] Renderizar un documental **de 8–14 minutos** con metraje y voz sincronizados, sin subir automáticamente a YouTube y solo después de revisión factual, editorial y derechos.
+
+**Estado preciso:** intro de 12,33 segundos con movimiento y audio real = prueba superada; documental de 11:50 con voz y escenas cinematográficas = aún pendiente.
