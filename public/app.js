@@ -1,7 +1,11 @@
+import {mountEditorialEditor} from "./dossier-editor.js";
 let adminToken = "";
 let editingJobId = null;
 let dossierJobId = null;
 let dossierJobStatus = null;
+let dossierEditor = null;
+let dossierDirty = false;
+let dossierManifest = null;
 const $ = id => document.getElementById(id);
 function notice(message) { $("notice").textContent=message; $("notice").classList.add("active"); }
 async function request(path, method = "GET", body) {
@@ -71,33 +75,65 @@ function dossierSummary(data) {
     ". Recursos con derechos pendientes: "+s.pending_assets+
     ". Revisión humana: "+(data.attested ? "confirmada" : "pendiente")+".";
 }
+function setDossierDirty() {
+  if (!["draft","review"].includes(dossierJobStatus)) return;
+  dossierDirty=true;
+  $("dossier-attest").disabled=true;
+  $("dossier-status").textContent="Hay cambios sin guardar; guárdalos y revisa el estado antes de acreditar.";
+}
+function showDossierEditor(dossier, editable) {
+  dossierEditor=mountEditorialEditor($("dossier-form"),dossier,{
+    editable,manifest:dossierManifest,notify:notice,onChange:setDossierDirty
+  });
+  $("dossier-json").value=JSON.stringify(dossier,null,2);
+}
 async function openDossier(job) {
-  dossierJobId=job.id; dossierJobStatus=job.status;
-  const data=await request("/api/jobs/"+encodeURIComponent(job.id)+"/dossier");
-  $("dossier-json").value=JSON.stringify(data.dossier || blankDossier(job),null,2);
+  if (dossierDirty && !confirm("Hay cambios sin guardar. ¿Descartarlos para abrir otro expediente?")) return;
+  // Evitar que una respuesta antigua desplace otro expediente al cambiar de trabajo.
+  const openingJobId=job.id;
+  const data=await request("/api/jobs/"+encodeURIComponent(openingJobId)+"/dossier");
+  dossierJobId=openingJobId; dossierJobStatus=job.status; dossierManifest=job.manifest;
+  dossierDirty=false;
+  const editable=["draft","review"].includes(job.status);
+  showDossierEditor(data.dossier || blankDossier(job),editable);
   $("dossier-heading").textContent=job.title+" · "+(data.attested?"Revisado":"Revisión pendiente");
   $("dossier-status").textContent=dossierSummary(data);
-  const editable=["draft","review"].includes(job.status);
   $("dossier-json").readOnly=!editable;
+  $("dossier-import-json").disabled=!editable;
   $("dossier-save").disabled=!editable;
-  $("dossier-attest").disabled=job.status!=="review" || !data.dossier || data.attested;
+  $("dossier-attest").disabled=job.status!=="review" || !data.dossier || data.attested || !!data.validation_error;
   $("dossier-panel").hidden=false;
   $("dossier-panel").scrollIntoView({behavior:"smooth"});
 }
-$("dossier-close").addEventListener("click",()=>{$("dossier-panel").hidden=true;dossierJobId=null;});
+$("dossier-close").addEventListener("click",()=>{
+  if(dossierDirty && !confirm("Los cambios del expediente no se han guardado. ¿Descartarlos?"))return;
+  $("dossier-panel").hidden=true;dossierJobId=null;dossierEditor=null;dossierDirty=false;
+});
+$("dossier-import-json").addEventListener("click",()=>{
+  if (!dossierEditor || !["draft","review"].includes(dossierJobStatus))return;
+  try {
+    const data=JSON.parse($("dossier-json").value);
+    if(!data || typeof data!=="object" || Array.isArray(data))throw Error("Se requiere un objeto JSON");
+    showDossierEditor(data,true);
+    setDossierDirty();
+    notice("JSON importado al formulario. Revisa los cambios y guárdalos.");
+  }catch(e){notice("No se pudo importar JSON: "+e.message);}
+});
 $("dossier-save").addEventListener("click",async () => {
   if (!dossierJobId || !["draft","review"].includes(dossierJobStatus)) return;
   try {
-    const data=JSON.parse($("dossier-json").value);
+    const data=dossierEditor.getValue();
     $("dossier-save").disabled=true;
     const saved=await request("/api/jobs/"+encodeURIComponent(dossierJobId)+"/dossier","PUT",data);
+    dossierDirty=false;
+    $("dossier-json").value=JSON.stringify(data,null,2);
     $("dossier-status").textContent=dossierSummary(saved);
-    $("dossier-attest").disabled=dossierJobStatus!=="review";
+    $("dossier-attest").disabled=dossierJobStatus!=="review" || !saved.summary?.structurally_complete;
     notice("Expediente guardado. Guardar no equivale a verificar.");
   } catch(e) {notice(e.message);} finally {$("dossier-save").disabled=false;}
 });
 $("dossier-attest").addEventListener("click",async () => {
-  if (!dossierJobId || dossierJobStatus!=="review") return;
+  if (!dossierJobId || dossierJobStatus!=="review" || dossierDirty) return;
   if(!confirm("¿Has leído las fuentes originales, verificado TODAS las afirmaciones y confirmado los derechos de cada recurso declarado?")) return;
   const reviewer=prompt("Identificación del responsable de la revisión editorial:");
   if(!reviewer) return;
