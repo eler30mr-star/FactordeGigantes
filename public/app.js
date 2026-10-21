@@ -245,6 +245,48 @@ async function loadResearch(includeRuns=false) {
     data.run_lookup==="unavailable" ? ". GitHub no respondió o faltan permisos de lectura; consulta Actions directamente." :
     ". Pulsa «Actualizar» para consultar las ejecuciones.");
 }
+// Visualizar exclusivamente observaciones D1 con su procedencia; sin declarar ganador.
+async function loadMarket() {
+  const data=await request("/api/market/radar?limit=30");
+  const container=$("market-results");
+  container.replaceChildren();
+  if(!Array.isArray(data.entities) || !Array.isArray(data.interest_windows) || !Array.isArray(data.runs))
+    throw Error("Respuesta de radar incompleta");
+  const latest=new Map();
+  for(const w of data.interest_windows) {
+    if(!latest.has(w.wikidata_id)) latest.set(w.wikidata_id,w);
+  }
+  $("market-status").textContent="Corridas persistidas mostradas: "+data.runs.length+
+    " · Empresas: "+data.entities.length+
+    " · Investigación YouTube: pendiente · Selección editorial automática: no autorizada.";
+  if(!data.entities.length) {
+    container.append(tag("p","empty","Todavía no hay candidatos medidos en la base de producción."));
+    return;
+  }
+  const fmt=new Intl.NumberFormat("es-PE");
+  for(const item of data.entities) {
+    const row=tag("article","job","");
+    const head=tag("div","jobtop","");
+    head.append(tag("strong","",String(item.title||item.wikidata_id)),
+                tag("span","tag","Señal Wikimedia"));
+    row.append(head);
+    row.append(tag("small","","ID: "+String(item.wikidata_id)+
+      " · Última detección: "+String(item.last_seen||"Sin fecha")));
+    const w=latest.get(item.wikidata_id);
+    if(w) {
+      const last=Number(w.views_last_7d),previous=Number(w.views_previous_7d);
+      if(Number.isSafeInteger(last) && last>=0 && Number.isSafeInteger(previous) && previous>=0)
+        row.append(tag("p","muted","Visitas al artículo: "+
+          fmt.format(last)+" en los últimos 7 días medidos, frente a "+
+          fmt.format(previous)+" en los 7 días anteriores. Serie cerrada: "+
+          String(w.period_end||"Sin fecha")+" (no son vistas de YouTube)."));
+    } else row.append(tag("p","muted","Sin una serie completa de 14 días verificable."));
+    container.append(row);
+  }
+}
+$("market-refresh").addEventListener("click",()=>loadMarket().catch(e=>{
+  $("market-status").textContent=e.message;
+}));
 $("research-refresh").addEventListener("click",()=>loadResearch(true).catch(e=>{
   $("research-status").textContent=e.message;
 }));
@@ -278,6 +320,7 @@ $("connect").addEventListener("click",async () => {
     notice("Conexión privada establecida");
     loadResearch().catch(e=>{$("research-status").textContent=e.message;});
     loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
+    loadMarket().catch(e=>{$("market-status").textContent=e.message;});
   } catch(e) { adminToken=""; $("workspace").hidden=true; notice(e.message);}
 });
 $("refresh").addEventListener("click",()=>load().catch(e=>notice(e.message)));
