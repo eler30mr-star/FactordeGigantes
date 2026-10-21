@@ -14,10 +14,11 @@ import json
 from pathlib import Path
 import re
 from urllib.parse import urlsplit
+from urllib.request import Request, HTTPSHandler, build_opener
+import ssl
 
 from tools.edgar_discovery import CIK
-from tools.pdf_sources import fetch_document_public
-from tools.research_engine import validate_url
+from tools.research_engine import validate_url, check_public_dns, PublicRedirects, USER_AGENT
 
 # Identificadores explícitos. Sin inferencia de métricas similares de distintos tags.
 ALLOWED_TAGS = {
@@ -58,19 +59,34 @@ def decimal_value(value):
     return val
 
 
-def fetch_companyfacts(cik, fetcher=fetch_document_public):
-    """El downloader existente solo permite <=4 MB PDF o <=750KB JSON.
+def fetch_companyfacts(cik, fetcher=None):
+    """Descarga SEC JSON hasta 9MB, HTTPS/DNS público, sin redirects ajenos.
 
-    Usar descarga binaria acotada propia para companyfacts, sin aceptar
-    contenido ni redirects HTTP. Integración remota opt-in en el workflow.
+    Un 403/429 no se elude con proxies; se registra como indisponibilidad.
     """
     if not isinstance(cik,str) or not CIK.fullmatch(cik):
         raise ValueError("CIK incorrecto")
     cik=cik.zfill(10)
     url="https://data.sec.gov/api/xbrl/companyfacts/CIK"+cik+".json"
-    # Inyectable para pruebas, nunca render ni editor.
-    raw, resolved, mime=fetcher(url)
-    if resolved!=url or "json" not in mime.lower() or len(raw)>MAX_JSON_BYTES:
+    if fetcher is None:
+        validate_url(url)
+        check_public_dns(urlsplit(url).hostname)
+        opener=build_opener(HTTPSHandler(context=ssl.create_default_context()),PublicRedirects())
+        request=Request(url,headers={
+            "User-Agent":USER_AGENT,
+            "Accept":"application/json",
+            "Accept-Encoding":"identity"
+        })
+        with opener.open(request,timeout=18) as response:
+            resolved=response.geturl()
+            mime=response.headers.get("Content-Type","").lower()
+            length=response.headers.get("Content-Length")
+            if length and (not length.isdigit() or int(length)>MAX_JSON_BYTES):
+                raise ValueError("JSON SEC supera límite declarado")
+            raw=response.read(MAX_JSON_BYTES+1)
+    else:
+        raw,resolved,mime=fetcher(url)
+    if resolved!=url or not isinstance(mime,str) or "json" not in mime.lower() or not isinstance(raw,bytes) or len(raw)>MAX_JSON_BYTES:
         raise ValueError("Respuesta SEC XBRL inesperada o demasiado grande")
     return raw, url
 
