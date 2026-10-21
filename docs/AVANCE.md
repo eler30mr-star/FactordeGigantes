@@ -627,3 +627,31 @@ Continuar el motor de Factor de Gigantes mientras la laptop HP de 12 GB está de
 - **Investigación y guion:** generar narración completa de 8–14 minutos únicamente tras respaldar las afirmaciones, licencias de material visual y de voz. Mantener el flujo manual controlado de GitHub sin cobrar APIs y respetar `main`.
 
 **Estado preciso:** código implementado y CI verde; descubrimiento de un sitio oficial candidato comprobado externamente; enlace no descargado; funcionalidad remota y documental de producción aún **pendientes**.
+
+
+## 2026-10-21 · Investigación de PDF con evidencia y páginas reales (Fase 2, `main`)
+
+**Pedido del propietario:** continuar avances de Factor de Gigantes, respetando exclusivamente la rama principal, historial y la meta de investigación automática sin APIs de pago ni dependencia de su laptop.
+
+### Implementación efectuada
+
+1. **Nuevo analizador PDF:** `tools/pdf_sources.py`, descarga pública HTTPS protegida por validación DNS/redirecciones, tamaño máximo 4 MB, máximo 35 páginas, límites de texto y cabecera `%PDF-`, extracción textual local mediante `pypdf==5.9.0`. Sin OCR ni extracción de fotos. Rechaza PDFs cifrados/corruptos/no válidos y formatos de red inesperados.
+2. **Integración de extremo a extremo dentro del investigador por expediente:** `tools/research_engine.py` acepta ahora HTML y PDF sin modificar la lista de fuentes del usuario. Registra `document_type`, `pdf_total_pages`, SHA-256 del archivo y `locator: PDF página N` por evidencia localizada. También incorpora la página al contexto de Qwen y al informe de lectura; deja `facts_verified_automatically=0`, `rights_verified_automatically=0`, `production_ready=false`.
+3. **Comprobación y CLI:** `tools/pdf_probe.py` permite consultar un documento PDF original por URL HTTPS y búsqueda; el informe es JSON de referencias, no una redistribución del PDF. `tests/test_pdf_sources.py` fabrica un PDF de dos páginas para comprobar correspondencia de localizador, compatibilidad HTML y rechazo de entradas peligrosas. Workflows `check.yml` y `research-ai-cpu.yml` instalan el parser CPU versionado.
+4. **Ejecución real comprobada:** [GitHub Actions 39592681746](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39592681746), `success`: documento original `https://arxiv.org/pdf/1706.03762` sobre Transformer (Vaswani et al.), PDF de **15 páginas**, **328 bloques** y **2 pasajes candidatos** en **página 1 y página 2**. Cero afirmaciones aprobadas. Se conserva artifact temporal de resultados, no el PDF completo.
+5. **Tests:** batería general [39592490158](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39592490158) `success`. Se detectó y corrigió un problema de literal UTF-8 en un fixture que hacía fallar un commit intermedio; no se declaró listo hasta la ejecución verde. Workflow real de prueba restaurado a `workflow_dispatch` manual después de una única ejecución.
+
+### Estado y bloqueos verificados
+
+- **Código y pruebas en `main`: listos para la siguiente fase de investigación**. No se creó rama secundaria ni PR; no se usó servicio TTS o IA de pago, no se alteró `render.yml` ni la voz original aprobada.
+- **PDFs grandes/escaneados y tablas financieras:** sin resolver. No presentar el texto de un PDF reducido a los primeros 35 folios como análisis suficiente de un informe corporativo completo; se debe obtener sección/página relevante con controles de integridad y verificación independiente.
+- **Descubrimiento autónomo de PDFs de emisores/reguladores:** pendiente. En este ensayo se proporcionó una URL primaría explícita; aún falta encontrarlas por tema sin intervención humana.
+- **Cloudflare:** la herramienta conectada `whoami` respondió error interno nuevamente; no se ejecutaron migraciones D1 remotas 0002/0003 ni se verificó despliegue del nuevo panel. El bloqueo de producción sigue vigente.
+- **Control humano y licencias:** la lectura automática no acredita fechas, decisiones, cifras ni derechos de contenido audiovisual y voz. Sigue prohibido publicar un documental sin verificaciones.
+
+### Próximo trabajo
+
+1. Descubrir fuentes originales financieras y PDF por entidad, clasificar documentos, preservar fecha, URL, versión y página sin inventar datos. Validar con una prueba de fuente corporativa y contraste secundario independiente.
+2. Crear auditoría de contradicciones entre cifras y fuentes, apoyar guion original por escena y revisión humana sin convertir un borrador Qwen en vídeo publicable.
+3. Tras resolver Cloudflare, migrar D1 remota, desplegar Worker/panel, probar investigación y lectura de estado reales en producción.
+4. Mantener la continuidad vocal aprobada y presupuesto gratuito para la prueba de producción audiovisual más larga, con derechos comerciales pendientes.
