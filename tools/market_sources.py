@@ -15,7 +15,7 @@ from urllib.request import Request, urlopen
 API_HOST="https://www.googleapis.com/youtube/v3/"
 PAGEVIEWS_HOST="https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/"
 UA="FactorDeGigantes-MarketResearch/0.1 (https://github.com/eler30mr-star/FactordeGigantes; public research)"
-MAX_PAYLOAD=1_000_000
+MAX_PAYLOAD=5_000_000  # top 1000 artículos Wikimedia puede superar 1 MB; límite estricto 5 MB
 MAX_VIDEOS=10
 ID=re.compile(r"^[A-Za-z0-9_-]{11}$")
 WIKI_TITLE=re.compile(r"^[^\n#?]{2,120}$")
