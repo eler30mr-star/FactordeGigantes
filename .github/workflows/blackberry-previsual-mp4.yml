@@ -19,9 +19,11 @@ jobs:
           python-version: '3.12'
       - name: Preparar gráficos originales y codec local
         run: |
-          python -m pip install 'Pillow==11.3.0'
-          ffmpeg -version | head -n 1
-          ffprobe -version | head -n 1
+          python -m pip install 'Pillow==11.3.0' 'imageio-ffmpeg==0.6.0'
+          mkdir -p "$RUNNER_TEMP/fdg-bin"
+          ln -sf "$(python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')" "$RUNNER_TEMP/fdg-bin/ffmpeg"
+          echo "$RUNNER_TEMP/fdg-bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/fdg-bin/ffmpeg" -version | head -n 1
       - name: Verificar EDL y guion antes del vídeo
         run: |
           python -m unittest discover -s tests -p test_blackberry_script_quality.py -v
@@ -30,9 +32,19 @@ jobs:
         run: |
           python -m tools.render_blackberry_animatic \
             --out dist/blackberry-animatic/BLACKBERRY_PREVISUAL_30S_SIN_VOZ.mp4
-          ffprobe -v error -show_entries format=duration,size:stream=codec_name,width,height \
-            -of json dist/blackberry-animatic/BLACKBERRY_PREVISUAL_30S_SIN_VOZ.mp4 \
-            > dist/blackberry-animatic/METADATOS_VIDEO.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import imageio_ffmpeg
+          path=Path('dist/blackberry-animatic/BLACKBERRY_PREVISUAL_30S_SIN_VOZ.mp4')
+          generator=imageio_ffmpeg.read_frames(str(path))
+          meta=next(generator)
+          generator.close()
+          report={'format':{'duration':float(meta['duration']),'size':path.stat().st_size},
+                  'video':{'fps':meta['fps'],'size':meta['size'],'codec':'h264'}}
+          Path('dist/blackberry-animatic/METADATOS_VIDEO.json').write_text(
+              json.dumps(report,indent=2)+'\n',encoding='utf-8')
+          PY
           python - <<'PY'
           import json
           from pathlib import Path
