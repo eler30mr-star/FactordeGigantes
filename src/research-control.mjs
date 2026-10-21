@@ -17,12 +17,72 @@ export function researchTopicKey(topic) {
   return topic.toLocaleLowerCase("es").normalize("NFKC");
 }
 
-export async function listResearchRequests(env) {
+const RUN_PREFIX = "FDG Investigación · ";
+const RUNS_ENDPOINT = "https://api.github.com/repos/eler30mr-star/FactordeGigantes/actions/workflows/" + WORKFLOW + "/runs?event=workflow_dispatch&per_page=50";
+const workflowStatuses = new Set(["queued","in_progress","completed"]);
+const workflowConclusions = new Set(["success","failure","cancelled","timed_out","skipped","action_required","neutral","stale"]);
+
+export function matchResearchRuns(rows, data) {
+  const results=new Map();
+  const ids=new Set(rows.map(row=>row.id));
+  if (!Array.isArray(data?.workflow_runs)) return results;
+  for(const run of data.workflow_runs) {
+    if (!run || run.event!=="workflow_dispatch" || run.head_branch!=="main") continue;
+    const title=run.display_title;
+    if (typeof title!=="string" || !title.startsWith(RUN_PREFIX)) continue;
+    const id=title.slice(RUN_PREFIX.length);
+    if (!ids.has(id) || results.has(id)) continue;
+    if (!Number.isInteger(run.id) || run.id<=0) continue;
+    if (!workflowStatuses.has(run.status)) continue;
+    if (run.status==="completed" && !workflowConclusions.has(run.conclusion)) continue;
+    const expected="https://github.com/eler30mr-star/FactordeGigantes/actions/runs/"+run.id;
+    if (run.html_url!==expected) continue;
+    results.set(id,{
+      id:run.id,
+      status:run.status, conclusion:run.status==="completed"?run.conclusion:null,
+      url:expected, artifacts_url:expected+"/artifacts"
+    });
+  }
+  return results;
+}
+
+export async function listResearchRequests(env,{includeRuns=false,githubFetch=fetch}={}) {
   const result=await env.DB.prepare(
     "SELECT id,topic,state,created_at,updated_at FROM research_requests ORDER BY created_at DESC LIMIT 20"
   ).all();
-  return {requests:result.results,workflow_url:workflowUrl,daily_limit:DAILY_LIMIT,
-          outcome_note:"Enviado solo significa aceptación de la solicitud; revisa Actions para el resultado."};
+  const rows=result.results||[];
+  let lookup="not_requested";
+  let requests=rows.map(row=>({...row,run:null}));
+  if (includeRuns) {
+    lookup="unavailable";
+    if (env.GITHUB_REPO==="eler30mr-star/FactordeGigantes" &&
+        typeof env.GITHUB_DISPATCH_TOKEN==="string" && env.GITHUB_DISPATCH_TOKEN.length>=24 &&
+        rows.some(row=>["sent","unknown","reserved"].includes(row.state))) {
+      try {
+        const response=await githubFetch(RUNS_ENDPOINT,{
+          headers:{
+            "Authorization":"Bearer "+env.GITHUB_DISPATCH_TOKEN,
+            "Accept":"application/vnd.github+json",
+            "X-GitHub-Api-Version":"2022-11-28",
+            "User-Agent":"FactorDeGigantes-Investigador"
+          },
+          signal:AbortSignal.timeout(6000)
+        });
+        if (response.ok) {
+          const json=await response.json();
+          const matched=matchResearchRuns(rows,json);
+          requests=requests.map(row=>({...row,run:matched.get(row.id)||null}));
+          lookup="checked";
+        }
+      } catch {
+        // Fallo de GitHub no convierte solicitudes enviadas en fallidas.
+      }
+    } else if (!rows.length || rows.every(row=>!["sent","unknown","reserved"].includes(row.state))) {
+      lookup="checked";
+    }
+  }
+  return {requests,workflow_url:workflowUrl,daily_limit:DAILY_LIMIT,run_lookup:lookup,
+          outcome_note:"El estado GitHub procede de Actions y no autoriza publicar. Si no aparece un run, verifica Actions manualmente."};
 }
 
 export async function launchResearch(env, payload, githubFetch=fetch, now=new Date()) {
@@ -55,7 +115,7 @@ export async function launchResearch(env, payload, githubFetch=fetch, now=new Da
       "X-GitHub-Api-Version":"2022-11-28",
       "User-Agent":"FactorDeGigantes-Investigador",
       "Content-Type":"application/json"
-    },body:JSON.stringify({ref:"main", inputs:{topic}})});
+    },body:JSON.stringify({ref:"main", inputs:{topic,request_id:id}})});
   } catch {
     await env.DB.prepare(
       "UPDATE research_requests SET state='unknown',updated_at=datetime('now') WHERE id=? AND state='reserved'"
