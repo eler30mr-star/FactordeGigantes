@@ -1,4 +1,5 @@
 import {validateDossier} from "./editorial.mjs";
+import {launchResearch,listResearchRequests} from "./research-control.mjs";
 // Factor de Gigantes — backend de aprobación y orquestación.
 // Tokens secretos configurados con 'wrangler secret put'; no hay publicación directa.
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -107,6 +108,24 @@ async function handle(request,env) {
   const renderer=parts[1] === "renderer";
   if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) return err("Acceso no autorizado",401);
   if (!env.DB) return err("D1 no configurado",503);
+  // El investigador usa un workflow distinto de render.yml; requiere confirmación humana.
+  // Se ejecuta tras ADMIN_TOKEN, nunca por el token del renderizador.
+  if (!renderer && url.pathname === "/api/research") {
+    if (method === "GET") return json(await listResearchRequests(env));
+    if (method === "POST") {
+      const body=await parseBody(request);
+      let result;
+      try { result=await launchResearch(env,body); }
+      catch(e) {
+        if (e?.message?.includes("no such table: research_requests")) throw new Error("RESEARCH_MIGRATION_PENDING");
+        if (e instanceof RangeError || e?.message?.startsWith("Tema") ||
+            e?.message?.startsWith("Escribe") || e?.message?.startsWith("El tema")) return err(e.message,400);
+        throw e;
+      }
+      return result.ok ? json(result,result.status) : err(result.error,result.status);
+    }
+    return err("Método no admitido",405);
+  }
   if (renderer) {
     if (parts[2] !== "jobs" || !parts[3]) return err("Ruta no encontrada",404);
     const id=parts[3];
@@ -276,6 +295,8 @@ export default {
   async fetch(request,env) {
     try { return await handle(request,env); }
     catch(e) {
+      if (e?.message === "RESEARCH_MIGRATION_PENDING" || /no such table: research_requests/i.test(String(e?.message || "")))
+        return err("D1 requiere migración 0003_research_requests.sql antes de investigar",503);
       if (e?.message === "EDITORIAL_MIGRATION_PENDING")
         return err("D1 necesita aplicar la migración 0002_editorial_dossiers.sql antes de usar expedientes",503);
       if (e instanceof SyntaxError || e instanceof TypeError || String(e.message).includes("Solicitud demasiado grande"))
