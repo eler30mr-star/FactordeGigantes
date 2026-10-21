@@ -466,3 +466,12 @@ Se ha guardado en `main` la estructura inicial del motor:
 4. Después de licencias, calidad y viabilidad verificadas, abordar 8–14 min y mejoras cinematográficas. **Sin servicios pagados, sin OAuth/YouTube ni integración a `render.yml` mientras falten controles.**
 
 **Estado preciso:** código y pruebas CI efectuados; audios nuevos GENERADOS y verificados; evaluación de identidad de estos nuevos párrafos, derechos comerciales integrales, integración al panel y render productivo PENDIENTES.
+
+
+## 2026-10-20 · Aceptación auditiva del montaje continuo de 43,296 segundos
+
+**Respuesta del propietario al escuchar la previsualización de tres párrafos:** «Está bien». Se registra como **aceptación editorial del resultado de esta audición continua**: `04_previsualizacion_unida.mp3`, 43,296 s, producido por [GitHub Actions 39518606909](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39518606909). La observación no identifica defectos adicionales ni pide cambiar timbre o cadencia.
+
+**Alcance exacto de la aprobación:** la narración continua corta puede tomarse como referencia de calidad de este ensayo. No supone que cada futura generación vaya a conservar la identidad ni convierte las muestras en sustitutas de la **única voz canónica**, `assets/voice/approved/narrador_documental_aprobado.mp3`, SHA-256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`. Tampoco verifica términos comerciales, permisos de las salidas, calidad de un documental completo o autorización de publicar.
+
+**Siguiente hito conforme al plan maestro, Fase 2:** pasar a mejoras reproducibles del motor para narración segmentada de varios minutos con controles de memoria, tiempos y límites gratuitos; trabajar investigación factual y derechos por afirmación, conectar después estos controles al panel y a D1, y únicamente con validación editorial/legal evaluar el primer documental de 8–14 min. Mantener cero pagos, `main` exclusivamente y sin subir a YouTube.
