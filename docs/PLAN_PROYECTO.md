@@ -360,3 +360,14 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Realizar prueba de aceptación del guion/archivos y del panel conectado con el propietario. Los tests solo demuestran estructura y código, no que esté listo para publicación.
 
 **Estado:** guion narrativo largo y cronograma de edición redactados e integrados en `main`; hechos/editorial/licencias/audio/MP4 siguen pendientes. `docs/AVANCE.md` debe conservar evidencias de las ejecuciones para la próxima sesión.
+
+## Hito de render técnico 2026-10-21 — primer MP4 verificable sin narración
+
+- [x] Desarrollar `tools/render_blackberry_animatic.py`, un renderizador de **gráficos y títulos 100 % propios** en Pillow, utilizando `blackberry_edl.py` para representar las doce escenas con barra de progreso, identificadores de fuentes y aviso de no publicación. No descarga imágenes, voces ni música ajena. Exporta H.264 MP4 1280×720 a 24 fps mediante FFmpeg, **sin pista de audio**.
+- [x] Crear workflow `.github/workflows/blackberry-previsual-mp4.yml` que instala Pillow 11.3.0 e imageio-ffmpeg 0.6.0 (FFmpeg empacado, sin dependencia del portátil), ejecuta 7 pruebas de guion/EDL, produce el MP4 y revisa duración/tamaño con el lector de metadatos. Quedó solo manual tras la primera ejecución positiva.
+- [x] **Verificar una exportación real:** [GitHub Actions 39635649958](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39635649958) `success`, [artefacto MP4 12360967934](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39635649958/artifacts/12360967934). Archivo `BLACKBERRY_PREVISUAL_30S_SIN_VOZ.mp4`: **30,04 s, 1280×720, H.264, 204.427 bytes, doce escenas**, sin voz, sin música ni subida a YouTube. El archivo se descargó y validó además con `ffprobe` en el entorno de trabajo.
+- [x] Resolver una dependencia faltante de FFmpeg en el ejecutor Linux de GitHub: primera corrida [39635497277](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39635497277) falló porque `ffmpeg` no estaba instalado; fue corregido usando `imageio-ffmpeg` y la segunda corrida es válida. No esconder el primer fallo.
+- [ ] **Siguiente hito de producto real:** reemplazar tarjetas estáticas por escenas audiovisuales originales con movimiento/cámara y gráficos basados en hechos, generar la voz narradora con derechos comerciales aclarados, sincronizar audio y obtener un MP4 **de 8–14 minutos**, no solo una muestra de 30 s.
+- [ ] Revisar hechos/citas de guion con un editor, comprobar fuentes audiovisuales y licencia del narrador, ensayar un MP4 largo **sin publicarlo** a YouTube; medir calidad antes de automatización general.
+
+**Distinción obligatoria:** este es el primer video técnico REAL, no un documental profesional terminado. La duración de 30 s no es la duración del episodio planificado de 11:50. Todo desarrollo persiste en `main`.
