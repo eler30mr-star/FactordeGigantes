@@ -21,4 +21,6 @@ python3 -m unittest discover -s tests -p 'test_primary_source_discovery.py' -v
 python3 -m unittest discover -s tests -p 'test_blackberry_sources_pilot.py' -v
 python3 -m unittest discover -s tests -p 'test_blackberry_script_quality.py' -v
 python3 -m tools.blackberry_script_quality --out dist/blackberry-script
+python3 -m unittest discover -s tests -p 'test_blackberry_edl.py' -v
+python3 -m tools.blackberry_edl --out dist/blackberry-script
 echo "Factor de Gigantes: pruebas previas al despliegue SUPERADAS"
