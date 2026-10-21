@@ -53,7 +53,13 @@ async function find(env,id) {
   return env.DB.prepare("SELECT * FROM jobs WHERE id=?").bind(id).first();
 }
 async function getDossier(env,id) {
-  return env.DB.prepare("SELECT dossier_json, editor_attested, editor_name, attested_at, updated_at FROM editorial_dossiers WHERE job_id=?").bind(id).first();
+  try {
+    return await env.DB.prepare("SELECT dossier_json, editor_attested, editor_name, attested_at, updated_at FROM editorial_dossiers WHERE job_id=?").bind(id).first();
+  } catch(e) {
+    if (/no such table.*editorial_dossiers/i.test(String(e?.message || e)))
+      throw new Error("EDITORIAL_MIGRATION_PENDING");
+    throw e;
+  }
 }
 async function editorialGate(env,id,manifest) {
   const stored = await getDossier(env,id);
@@ -171,6 +177,8 @@ async function handle(request,env) {
   }
   if (parts.length === 3 && method === "PUT") {
     if (row.status !== "draft") return err("Solo se editan borradores",409);
+    // No mutar el guion si Cloudflare aún no tiene la migración 0002.
+    await getDossier(env,id);
     const manifest=validateManifest(await parseBody(request));
     await env.DB.prepare("UPDATE jobs SET title=?,format=?,manifest_json=?,review_note='',updated_at=datetime('now') WHERE id=?")
       .bind(manifest.title,manifest.format,JSON.stringify(manifest),id).run();
@@ -237,6 +245,8 @@ export default {
   async fetch(request,env) {
     try { return await handle(request,env); }
     catch(e) {
+      if (e?.message === "EDITORIAL_MIGRATION_PENDING")
+        return err("D1 necesita aplicar la migración 0002_editorial_dossiers.sql antes de usar expedientes",503);
       if (e instanceof SyntaxError || e instanceof TypeError || String(e.message).includes("Solicitud demasiado grande"))
         return err("Solicitud incorrecta: "+String(e.message).slice(0,150),400);
       // Fail closed: no filtrar secretos o trazas al cliente.
