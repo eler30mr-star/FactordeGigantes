@@ -1,0 +1,46 @@
+name: FDG - descubrir empresas por señales Wikimedia
+on:
+  workflow_dispatch:
+  # Ejecución inicial única para probar fuente pública; retirar trigger al completar.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/topic-discovery-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  topic-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contrato del descubridor, sin nombres preparados ni pago
+        run: python -m unittest discover -s tests -p test_topic_discovery.py -v
+      - name: Consultar popularidad Wikimedia y clasificar tipo empresa en Wikidata
+        run: |
+          timeout -k 5s 150s python -m tools.topic_discovery \
+            --limit 120 --max-requests 8 \
+            --out dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json')
+          data=json.loads(p.read_text(encoding='utf-8'))
+          print('EMPRESAS_REALES_DETECTADAS:',data['company_candidates_count'])
+          print('DIA_OBSERVADO:',data['data_day'])
+          print('ESTUDIO_COMPLETO:',data['market_study_complete'])
+          print('YOUTUBE_PUBLICACION_PERMITIDA:',data['ready_for_youtube'])
+          assert not data['market_study_complete'] and not data['ready_for_youtube']
+          assert data['wikidata_requests']<=8
+          PY
+      - name: Conservar únicamente informe de candidatos y procedencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdg-empresas-descubiertas-wikimedia
+          path: dist/radar/
+          retention-days: 5
+          if-no-files-found: warn
