@@ -186,7 +186,10 @@ def excerpts_for_claim(claim: str, blocks: list[str], limit: int = MAX_EXCERPTS_
     } for score, _, index, block in rankings[:limit]]
 
 
-def research_dossier(dossier: dict, fetcher=fetch_public, max_requests: int = MAX_REQUESTS) -> dict:
+def research_dossier(dossier: dict, fetcher=None, max_requests: int = MAX_REQUESTS) -> dict:
+    from tools.pdf_sources import analyze_document, fetch_document_public, page_cited_matches
+    if fetcher is None:
+        fetcher = fetch_document_public
     if dossier.get("publication_authorized") is not False:
         raise ValueError("El motor solo acepta expedientes no publicables")
     sources = dossier.get("sources", [])
@@ -204,14 +207,18 @@ def research_dossier(dossier: dict, fetcher=fetch_public, max_requests: int = MA
         by_id[sid] = None
         try:
             raw, final_url, content_type = fetcher(url)
-            blocks = extract_blocks(raw, content_type)
+            analysis = analyze_document(raw, content_type)
+            blocks = analysis["blocks"]
             retrieval.append({
                 "source_id": sid, "requested_url": url, "resolved_url": final_url,
                 "publisher_declared": source["publisher"], "status": "fetched" if blocks else "no_readable_text",
                 "content_sha256": hashlib.sha256(raw).hexdigest(),
+                "document_type": analysis["type"],
+                "pdf_total_pages": analysis["total_pages"],
                 "readable_blocks": len(blocks),
                 "limited_extracts": [
-                    {"claim_id": claim["id"], "matches": excerpts_for_claim(claim["text"], blocks)}
+                    {"claim_id": claim["id"], "matches": page_cited_matches(
+                        claim["text"], analysis, matcher=excerpts_for_claim)}
                     for claim in claims
                     if any(ev["source_id"] == sid for ev in claim["evidence"])
                 ],
@@ -235,7 +242,9 @@ def research_dossier(dossier: dict, fetcher=fetch_public, max_requests: int = MA
                 evidence.extend([{
                     "source_id": ev["source_id"], "url": record["resolved_url"],
                     "excerpt": x["excerpt"], "similarity": x["similarity"],
-                    "block_index": x["block_index"]
+                    "block_index": x["block_index"],
+                    "page": x["page"], "locator": x["locator"],
+                    "document_type": record["document_type"]
                 } for x in found["matches"]])
         evidence.sort(key=lambda x: x["similarity"], reverse=True)
         candidates.append({
@@ -352,7 +361,8 @@ def assemble_ai_evidence(report: dict, max_chars: int = 10500) -> str:
         if not candidate["candidate_passages"]:
             chunks.append("  SIN PASAJES ENCONTRADOS; investigar más y NO completar inventando.")
         for x in candidate["candidate_passages"][:2]:
-            chunks.append(f"  [{x['source_id']}] {x['url']} | TEXTO: {x['excerpt']}")
+            location = x.get("locator") or (f"PDF página {x['page']}" if x.get("page") else "página no identificada")
+            chunks.append(f"  [{x['source_id']}] {x['url']} | {location} | TEXTO: {x['excerpt']}")
     return "\n".join(chunks)[:max_chars]
 
 
@@ -371,7 +381,8 @@ def save_report(report: dict, output_dir: Path):
         lines.append(f"### {candidate['id']} · Escena {candidate['segment_index'] or 'por decidir'}")
         lines.append(candidate["proposition"])
         for x in candidate["candidate_passages"]:
-            lines.append(f"- Candidato [{x['source_id']}]({x['url']}), similitud {x['similarity']}: {x['excerpt']}")
+            location = x.get("locator") or (f"PDF página {x['page']}" if x.get("page") else "sin página")
+            lines.append(f"- Candidato [{x['source_id']}]({x['url']}), {location}, similitud {x['similarity']}: {x['excerpt']}")
         if not candidate["candidate_passages"]:
             lines.append("- Sin fragmento coincidente. Requiere una nueva búsqueda.")
         lines.append("")
