@@ -1,0 +1,69 @@
+"""Puente de nuevas entidades/decisiones D1 bajo OIDC de GitHub Actions.
+
+Cada endpoint está fijado y el JWT nunca se imprime. No hay publicación YouTube.
+"""
+from __future__ import annotations
+import argparse,json,os
+from pathlib import Path
+from urllib.request import Request,urlopen
+from urllib.error import HTTPError,URLError
+from urllib.parse import urlsplit
+from tools.push_market_radar import HOST,github_oidc_token
+
+PATHS={"entities":"/api/market/entities/ingest","assess":"/api/market/assess/run"}
+
+def post_report(*,mode,base_url,token,report=None,opener=urlopen):
+    if mode not in PATHS:raise ValueError("Operación no permitida")
+    base=base_url.strip().rstrip("/") if isinstance(base_url,str) else ""
+    u=urlsplit(base)
+    if u.scheme!="https" or u.hostname!=HOST or u.path not in ("","/") or \
+       u.username or u.password or u.port or u.query or u.fragment:
+        raise ValueError("Solo Worker Factor permitido")
+    if not isinstance(token,str) or len(token)<40 or token.count(".")!=2:
+        raise ValueError("GitHub OIDC ausente")
+    if mode=="entities":
+        if not isinstance(report,dict) or report.get("provider")!="wikidata_news_company_resolution_v1" or \
+            report.get("market_study_complete") is not False or report.get("ready_for_youtube") is not False:
+            raise ValueError("Candidatas sin procedencia")
+        body=json.dumps(report,ensure_ascii=False,separators=(",",":")).encode("utf-8")
+        if len(body)>250000:raise ValueError("Reporte fuera de límite")
+    else:
+        if report is not None:raise ValueError("Evaluación se construye exclusivamente desde D1")
+        body=b"{}"
+    req=Request(base+PATHS[mode],method="POST",data=body,headers={
+       "Authorization":"Bearer "+token,"Content-Type":"application/json",
+       "Accept":"application/json","User-Agent":"FactorDeGigantes-DataGate/1.0"})
+    try:
+        with opener(req,timeout=35) as response:
+            result=json.load(response)
+            if response.status!=201 or result.get("stored_in")!="d1" or \
+               result.get("automatic_publication_allowed") is not False or \
+               result.get("ok") is not True:
+                raise RuntimeError("D1 no confirmó inserción sin publicación")
+            if mode=="assess" and (result.get("selected_wikidata_id") is not None or
+                                     result.get("qualified_count")!=0):
+                raise RuntimeError("La selección requiere fuentes y una puerta editorial independiente")
+            return result
+    except HTTPError as exc:
+        raise RuntimeError("Ingreso D1 "+mode+" falló HTTP "+str(exc.code)) from None
+    except (URLError,TimeoutError) as exc:
+        raise RuntimeError("Comunicación D1 "+mode+" falló: "+type(exc).__name__) from None
+
+def main():
+    p=argparse.ArgumentParser()
+    p.add_argument("--mode",choices=list(PATHS),required=True)
+    p.add_argument("--input",type=Path)
+    a=p.parse_args()
+    if a.mode=="entities" and not a.input:p.error("Se requiere --input")
+    data=json.loads(a.input.read_text(encoding="utf-8")) if a.mode=="entities" else None
+    result=post_report(mode=a.mode,report=data,
+      base_url=os.getenv("API_BASE_URL",""),token=github_oidc_token())
+    if a.mode=="assess":
+        print("EVALUACIONES_D1:",result["candidates_evaluated"],
+          "SELECCION_AUTOMATICA:",result["selected_wikidata_id"],
+          "DOCUMENTALES_AUTORIZADOS:",result["automatic_publication_allowed"])
+    else:
+        print("NUEVAS_ENTIDADES_D1:",result["candidates_seen"],
+          "FUENTES_PRIMARIAS_VERIFICADAS:",result["primary_sources_verified"])
+
+if __name__=="__main__":main()
