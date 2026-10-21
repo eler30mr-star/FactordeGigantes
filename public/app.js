@@ -246,6 +246,48 @@ async function loadResearch(includeRuns=false) {
     ". Pulsa «Actualizar» para consultar las ejecuciones.");
 }
 // Visualizar exclusivamente observaciones D1 con su procedencia; sin declarar ganador.
+async function loadPdfEvidence() {
+  const report=await request("/api/market/pdf?limit=20");
+  if(!Array.isArray(report.documents)||!Array.isArray(report.fragments)||!Array.isArray(report.runs))
+    throw Error("Evidencia PDF incompleta");
+  const root=$("pdf-results");
+  root.replaceChildren();
+  $("pdf-status").textContent="Informes rastreados: "+report.documents.length+
+    " · fragmentos paginados: "+report.fragments.length+
+    " · afirmaciones verificadas: 0.";
+  if(!report.documents.length) {
+    root.append(tag("p","empty","No se han encontrado enlaces PDF corporativos elegibles. No se inventan informes ni citas."));
+    return;
+  }
+  for(const doc of report.documents) {
+    const el=tag("article","job","");
+    const title=tag("div","jobtop","");
+    title.append(tag("strong","",String(doc.company||doc.wikidata_id)),
+      tag("span","tag","Sin corroborar"));
+    el.append(title);
+    el.append(tag("p","muted","Estado: "+String(doc.state)+
+      " · páginas: "+String(doc.pages_total??"Sin lectura")+
+      " · SHA-256: "+String(doc.sha256||"Sin archivo")));
+    try {
+      const u=new URL(String(doc.document_url||""));
+      if(u.protocol==="https:") {
+        const link=tag("a","news-link","Consultar documento de referencia");
+        link.href=u.href;link.target="_blank";link.rel="noopener noreferrer";
+        el.append(link);
+      }
+    }catch{/* Ignorar enlace inválido */}
+    const related=report.fragments.filter(f=>f.wikidata_id===doc.wikidata_id&&
+      f.document_url===doc.document_url).slice(0,5);
+    for(const fragment of related){
+      el.append(tag("small","",String(fragment.locator||"Página sin localizar")));
+      el.append(tag("p","muted",String(fragment.excerpt||"")));
+    }
+    root.append(el);
+  }
+}
+$("pdf-refresh").addEventListener("click",()=>loadPdfEvidence().catch(e=>{
+  $("pdf-status").textContent=e.message;
+}));
 async function loadOfficialEvidence() {
   const data=await request("/api/market/official?limit=20");
   if(!Array.isArray(data.runs)||!Array.isArray(data.items))
@@ -506,6 +548,7 @@ $("connect").addEventListener("click",async () => {
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
     loadOpportunities().catch(e=>{$("opportunities-status").textContent=e.message;});
     loadOfficialEvidence().catch(e=>{$("official-status").textContent=e.message;});
+    loadPdfEvidence().catch(e=>{$("pdf-status").textContent=e.message;});
     loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
     loadYoutubeMarket().catch(e=>{$("youtube-status").textContent=e.message;});
     loadCrossSignals().catch(e=>{$("cross-status").textContent=e.message;});
