@@ -472,3 +472,20 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Conectar ranking→investigador Gemini/Qwen→guionista autónomo→TTS/escenas/video→QA→publicación YouTube tras autorización; el pipeline todavía no es automático extremo a extremo.
 
 **Aclaración:** Wikipedia muestra interés en un artículo, no oportunidades ya verificadas para el canal. No se han inventado datos YouTube ni se ha iniciado una producción automática por observar Theranos o DuPont.
+
+
+### Hito cumplido 21 de octubre de 2026 — radar con persistencia remota real
+
+- [x] Descubrimiento autónomo de empresas desde rankings reales Wikimedia/Wikidata y primera medición independiente de 14 días.
+- [x] Ampliación de cobertura a 360 artículos / 12 consultas de entidades, sin introducir una lista fija de compañías.
+- [x] Migración D1 remota 0004 aplicada, cinco tablas de mercado confirmadas y tablas editoriales previas conservadas.
+- [x] Flujo programado GitHub Actions → token OIDC efímero verificable → Worker → D1, sin secreto de larga duración para ingesta.
+- [x] Primera ejecución integral [39658991775](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39658991775): 2 empresas, 2 observaciones y 2 ventanas guardadas en D1 real; cero selección editorial automática.
+- [x] Panel privado con lectura de radar D1; desplegado desde `main`, pendiente comprobación de navegación autenticada.
+- [ ] Cobertura adicional de fuentes de noticias y tendencias recientes, con registro verificable de procedencia.
+- [ ] Datos observados de YouTube Data API y competencia hispanohablante, comparados entre varios temas mediante criterios explicables.
+- [ ] **Decidir automáticamente el mejor tema con evidencia suficiente** y persistir la decisión; Wikipedia sola no acredita demanda.
+- [ ] Producción original autónoma de 8–14 minutos con fuentes, investigación Gemini/Qwen, voz, visuales y control de calidad.
+- [ ] Autorización editorial/legal, OAuth oficial y publicación por el sistema solo con permisos correspondientes.
+
+**Importante:** se completó la infraestructura de descubrimiento y almacenamiento, **no** la productora autónoma ni el estudio de mercado de YouTube. Las etapas pendientes mantienen sus criterios de aceptación.
