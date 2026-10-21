@@ -260,3 +260,15 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Ampliar investigación autónoma a fuentes primarias, contraste factual y guion de 8–14 min; el motor actual genera borradores no verificados. Material audiovisual y derechos de narrador aún bloquean producción comercial.
 
 **Importante:** sin nuevas GPU o compras. La laptop HP con 12 GB RAM no participa en la inferencia de la fase 2, que se hace en GitHub Actions bajo ejecución manual y cuotas del servicio. ComfyUI/otros motores de video local quedan condicionados a identificar GPU/VRAM y derechos de uso, sin instalación automática.
+
+## Fase 2 — resultados vinculados y fuentes oficiales desde el tema (2026-10-21)
+
+- [x] Cada nueva solicitud del panel envía un `request_id` de correlación a `research-ai-cpu.yml` sin modificar `render.yml`; GitHub muestra dicho ID en el título de ejecución.
+- [x] El panel puede consultar manualmente estado/conclusión y URL de una ejecución real por GET autenticado `/api/research?runs=1`, distinguiendo `queued`, `in_progress`, `completed` y fallas de lectura. CI [39587493924](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39587493924) `success`; estado real de ejecución con la D1 remota **todavía no probado**.
+- [x] Motor auxiliar `tools/primary_source_discovery.py` para descubrir sitios oficiales candidatos desde MediaWiki/Wikidata P856. CI local de seguridad y contratos en `main` [39587923760](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39587923760), `success`.
+- [x] Prueba de recuperación real por tema: [39588198172](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39588198172) `success`, identificó `https://blackberry.com` como **candidato** a sitio oficial de `BlackBerry Limited` entre cinco entidades examinadas. **No** se pudo leer esa web (ValueError) ni verificar hechos. El flujo de investigación con Qwen puede incluir ahora el reporte de candidatos.
+- [ ] Mejorar recuperación de contenidos originales HTTPS y fuentes primarias financieras, archivos PDF con páginas/citas precisas, y contraste de cifras; ninguna fuente candidata constituye por sí sola prueba editorial.
+- [ ] Resolver acceso Cloudflare, migraciones D1 0002/0003 y despliegue, y comprobar consultas de estado del panel contra Actions reales. Ningún cambio de esta sesión se considera operativo en producción.
+- [ ] Pasar de borradores pequeños a guiones de 8–14 minutos respaldados por evidencias, licencias completas y montaje cinematográfico, manteniendo narrador canónico e intervención humana.
+
+**Estado:** código y pruebas de correlación y descubrimiento implementados en `main`; búsqueda externa oficial probada como **localización de enlace**, no como extracción factual verificada. La productora aún no publica automáticamente ni ha completado la fase 2.
