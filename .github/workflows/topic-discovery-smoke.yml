@@ -5,6 +5,11 @@ on:
     # Wikimedia publica rankings diarios con retraso; 1 chequeo al día
     # evita consumo redundante. No hay IA pagada ni subida a YouTube.
     - cron: '17 10 * * *'
+  # Ensayo de cobertura ampliada; retirar después de confirmar el resultado.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/topic-discovery-smoke.yml'
 permissions:
   contents: read
 concurrency:
@@ -24,7 +29,7 @@ jobs:
       - name: Consultar popularidad Wikimedia y clasificar tipo empresa en Wikidata
         run: |
           timeout -k 5s 150s python -m tools.topic_discovery \
-            --limit 120 --max-requests 8 --enrich-interest \
+            --limit 180 --max-requests 12 --enrich-interest \
             --out dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json
           python - <<'PY'
           import json
@@ -37,7 +42,7 @@ jobs:
           print('ESTUDIO_COMPLETO:',data['market_study_complete'])
           print('YOUTUBE_PUBLICACION_PERMITIDA:',data['ready_for_youtube'])
           assert not data['market_study_complete'] and not data['ready_for_youtube']
-          assert data['wikidata_requests']<=8
+          assert data['wikidata_requests']<=12
           PY
       - name: Conservar únicamente informe de candidatos y procedencia
         if: always()
