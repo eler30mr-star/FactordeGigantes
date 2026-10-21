@@ -287,6 +287,44 @@ async function loadMarket() {
 $("market-refresh").addEventListener("click",()=>loadMarket().catch(e=>{
   $("market-status").textContent=e.message;
 }));
+async function loadNewsRadar() {
+  const result=await request("/api/market/news?limit=30");
+  const root=$("news-results");
+  root.replaceChildren();
+  if(!Array.isArray(result.leads)||!Array.isArray(result.runs)) throw Error("Noticias incompletas");
+  $("news-status").textContent="Titulares recientes: "+result.leads.length+
+    " · Consultas almacenadas: "+result.runs.length+
+    " · Fuentes originales y demanda YouTube: sin verificar.";
+  if(!result.leads.length){
+    root.append(tag("p","empty","El radar todavía no ha registrado titulares recientes."));
+    return;
+  }
+  for(const article of result.leads) {
+    const card=tag("article","job","");
+    const head=tag("div","jobtop","");
+    head.append(tag("strong","",String(article.headline||"Titular sin texto")),
+      tag("span","tag",String(article.category||"noticia")));
+    card.append(head);
+    card.append(tag("small","",String(article.source_label||"Medio atribuido")+" · "+
+      String(article.published_at||"Fecha no disponible")));
+    const url=String(article.aggregator_url||"");
+    try {
+      const parsed=new URL(url);
+      if(parsed.protocol==="https:" && parsed.hostname==="news.google.com") {
+        const link=tag("a","news-link","Abrir referencia en Google Noticias");
+        link.href=parsed.href;
+        link.target="_blank";
+        link.rel="noopener noreferrer";
+        card.append(link);
+      }
+    } catch { /* URL defectuosa: no generar enlace */ }
+    card.append(tag("p","muted micro","Titular informativo pendiente de contrastar; no constituye un documental aprobado."));
+    root.append(card);
+  }
+}
+$("news-refresh").addEventListener("click",()=>loadNewsRadar().catch(e=>{
+  $("news-status").textContent=e.message;
+}));
 $("research-refresh").addEventListener("click",()=>loadResearch(true).catch(e=>{
   $("research-status").textContent=e.message;
 }));
@@ -321,6 +359,7 @@ $("connect").addEventListener("click",async () => {
     loadResearch().catch(e=>{$("research-status").textContent=e.message;});
     loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
+    loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
   } catch(e) { adminToken=""; $("workspace").hidden=true; notice(e.message);}
 });
 $("refresh").addEventListener("click",()=>load().catch(e=>notice(e.message)));
