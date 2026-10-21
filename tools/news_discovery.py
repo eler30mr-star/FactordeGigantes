@@ -55,6 +55,8 @@ def parse_news_rss(data, category, *, now):
         raise ValueError("Categoría inválida")
     if not isinstance(data,(bytes,bytearray)) or len(data)>MAX_RESPONSE_BYTES:
         raise ValueError("RSS inválido")
+    if b"<!DOCTYPE" in data.upper() or b"<!ENTITY" in data.upper():
+        raise ValueError("XML con DTD/ENTITY no permitido")
     root=ET.fromstring(data)
     if root.tag!="rss": raise ValueError("No es RSS 2.0")
     channel=root.find("channel")
