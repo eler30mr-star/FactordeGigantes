@@ -14,12 +14,13 @@ jobs:
       - name: Revisar sintaxis JS
         run: |
           node --check src/worker.js
+          node --check src/research-control.mjs
           node --check public/app.js
           node --check public/dossier-editor.js
       - name: Pruebas de contratos del renderizador
         run: python -m unittest discover -s tests -v
       - name: Verificar seguridad editorial en API Worker y contrato D1
-        run: node --test tests/test_editorial_gate.mjs tests/test_dossier_editor.mjs
+        run: node --test tests/test_editorial_gate.mjs tests/test_dossier_editor.mjs tests/test_research_control.mjs
       - name: Validar manifest de ejemplo
         run: python tools/render.py --manifest examples/documental.json --validate-only
 
