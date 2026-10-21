@@ -386,3 +386,18 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Renderizar un documental **de 8–14 minutos** con metraje y voz sincronizados, sin subir automáticamente a YouTube y solo después de revisión factual, editorial y derechos.
 
 **Estado preciso:** intro de 12,33 segundos con movimiento y audio real = prueba superada; documental de 11:50 con voz y escenas cinematográficas = aún pendiente.
+
+## Siguiente etapa de producción: primer capítulo con voz nueva comprobable (2026-10-21)
+
+**Objetivo:** ampliar la introducción aceptada de 12,33 segundos a un tramo del manuscrito BlackBerry real, con narración nueva de la misma identidad de referencia, animación original y archivos para audición. Mantener siempre la rama `main`, sin servicios TTS pagados ni publicación automática.
+
+- [x] Implementar `tools/qwen_blackberry_scene01.py`, que obtiene literalmente el texto de la escena 01 del manuscrito largo y lo divide en **cuatro** tomas seguras; validez de nombres, límites de caracteres y texto sin pérdidas. Conservar la referencia Qwen 1.7B en SHA `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`. Nuevas tomas mantienen estado pendiente.
+- [x] Añadir `tests/test_qwen_blackberry_scene01.py` y workflow `blackberry-scene01-voice.yml` CPU limitado a una escena. GitHub CI [39639684664](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684664) aprobada. Primera generación real [39639684819](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684819) en ejecución al escribir este punto. No marcar MP3 nuevos como realizados sin ver su artifact.
+- [x] Implementar `tools/render_blackberry_scene01.py`, que exige 4 MP3 con SHA conforme a reportes, texto exacto, referencia original sin cambios y minutos de audio dentro de límites. Secuencia propia con cambios de planos cada 5 segundos y animación real por fotograma, H264 + AAC, reportes y bloqueo de publicación; tests `test_render_blackberry_scene01.py`. CI [39640085857](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39640085857) exitosa.
+- [x] Agregar `blackberry-scene01-video.yml`: recupera los MP3 únicamente desde la ejecución Qwen correcta, genera video con su longitud real y comprueba pista AAC/duración y 1280×720, sin tocar D1 o YouTube. El primer disparador automático es un acoplamiento acotado al éxito de la voz; después volver a manual.
+- [ ] **Verificar entregables reales:** cuatro MP3, unión audible y primer MP4 de **escena 01**, duración exacta de voz y fotogramas distintos entre tomas. Descargar y escuchar; corregir si la voz o video falla. No sustituir éxito de código por archivos auténticos.
+- [ ] Audición humana del propietario de las cuatro tomas nuevas, confirmar parecido con la referencia, dicción y ritmo antes de declarar identidad vocal aprobada. Los derechos comerciales continúan sujetos a evaluación aparte.
+- [ ] Planificar ensayos de escenas 02–12 por lotes controlados, sin exceder memoria/minutos de GitHub Actions; reutilizar material si pasa QA en vez de regenerar indiscriminadamente.
+- [ ] Completar aprobación histórica y fuentes, assets cinematográficos originales/licenciados, final de 8–14 min y validación audiovisual. **No** subir automáticamente a YouTube.
+
+**Situación:** infraestructura, guion largo y prueba de intro están verificados; la nueva escena narrada y el documental completo aún no lo están. Ver `docs/AVANCE.md` para estado de corridas.
