@@ -216,3 +216,17 @@ El montaje breve de tres párrafos (43,296 s) obtuvo conformidad editorial del p
 - [ ] Construir un expediente factual con fuentes originales comprobadas, revisión legal de voz y materiales, y primer documental investigado de 8–14 minutos. La narración de 43,296 s aprobada por el propietario permanece como ensayo, sin autorización comercial automática.
 
 **Orden obligatorio del próximo avance:** migración D1 y confirmación → despliegue Worker/assets → prueba de acceso, expediente, bloqueo/atestado y aprobación → materiales con licencias y guion de un documental original → nueva validación de narración y montaje. Cero proveedores de pago, `main` exclusiva y YouTube sin subida automática.
+
+
+## Fase 2 — integración probada con D1 local y primera investigación (2026-10-20)
+
+- [x] Editor guiado de fuentes, afirmaciones y derechos por escena en el panel; JSON avanzado opcional. Permite registrar múltiples evidencias por afirmación y bloquea acreditaciones con cambios sin guardar. Pruebas de componentes: [CI 39523541399](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39523541399) `success`.
+- [x] Validar migraciones y recorrido de edición/acreditación/aprobación con **Worker real + D1 local** mediante Wrangler: [Actions 39523829006](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39523829006) `success`. Sin credenciales remotas ni publicación.
+- [x] Asegurar el despacho de renders frente a solicitudes duplicadas mediante reserva condicional en D1, con manejo explícito de rechazos y resultados de red inciertos; [CI 39524141335](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39524141335) `success`.
+- [x] Crear el **primer piloto de investigación documental** (BlackBerry, tema provisional) con seis fuentes originales, ocho afirmaciones identificadas y estructura editorial de ~12 minutos: `research/blackberry/brief_investigacion.md` y `expediente_preliminar.json`. Las afirmaciones y licencias siguen en **estado pendiente de revisión humana**.
+- [ ] Resolver acceso a Cloudflare y aplicar **D1 0002 en remoto** sin alterar trabajos existentes. Confirmar de forma verificable la nueva tabla.
+- [ ] Desplegar y auditar panel/Worker en Cloudflare y recorrer un expediente auténtico con usuario autorizado, sin lanzar render si hay derechos no confirmados.
+- [ ] Completar investigación del piloto con fuentes independientes y datos financieros originales, escribir narración verificada, obtener música/gráficos/visuales utilizables legalmente y aclarar los derechos de la voz canónica.
+- [ ] Realizar el primer render documental de 8–14 minutos con el nivel editorial deseado, límites gratuitos de CPU y control de QA, **solo tras superar las verificaciones técnicas y comerciales**.
+
+**Nota:** un ensayo local exitoso, un expediente preliminar o un clip de voz aprobado no significa que la productora ya publique automáticamente. La fase 2 está parcialmente implementada y sigue abierta; las fases 3 y 4 no han comenzado.
