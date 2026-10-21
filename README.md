@@ -31,7 +31,7 @@ El sistema NO publica videos automáticamente en esta primera etapa. No está co
 
 ## Estado
 
-**MVP técnico conectado:** Worker y D1 desplegados; aprobaciones privadas y flujo Cloudflare → GitHub Actions → FFmpeg → MP4 → reporte `ready` comprobados con un render real. La voz neuronal y el nuevo montaje aún requieren la verificación real del pipeline mejorado. **No hay OAuth ni publicación a YouTube**. Consultar `docs/AVANCE.md`.
+**Backend técnico conectado y radar real:** Worker y D1 desplegados; base `0001–0004` migrada; el descubridor diario detectó compañías públicas sin lista manual y un workflow autenticado con **GitHub OIDC** confirmó la escritura real de dos empresas y dos series Wikimedia en D1. El panel cuenta con sección privada de radar. El render preliminar está comprobado, pero la investigación competitiva YouTube, elección autónoma fundamentada, documental profesional integral y OAuth/publicación todavía no están terminados. **No hay publicación automática a YouTube**. Ver `docs/AVANCE.md`.
 
 ## Límites y costes
 
