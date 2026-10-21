@@ -29,6 +29,11 @@ REGLAS NO NEGOCIABLES:
   de investigación específica. No ocultes contradicciones.
 - No afirmes que la voz, música, fotografías o clips pueden utilizarse comercialmente.
 - No copies párrafos extensos de la fuente.
+- Limita las fechas y cifras a los pasajes expresamente proporcionados.
+  No agregues datos de bolsa, productos o mercados ajenos a las afirmaciones
+  indicadas aunque creas recordarlos por entrenamiento.
+- Si la evidencia es escasa, entrega un esquema corto y preguntas abiertas:
+  es preferible ser incompleto a inventar.
 Entrega los apartados:
 1) Pregunta poderosa de apertura.
 2) Secuencia narrativa propuesta con citas [Sxx] y advertencias.
@@ -51,6 +56,37 @@ def build_messages(report: dict) -> list[dict]:
             {"role": "user", "content": context}]
 
 
+def audit_numeric_support(report: dict, text: str) -> list[dict]:
+    """Detecta números ausentes en pasajes de las fuentes citadas por cada línea.
+
+    NO demuestra verdad aunque no halle anomalías. Este guardia detecta
+    ejemplos obvios como un día de IPO inventado por el modelo pequeño.
+    """
+    snippets = {}
+    for c in report.get("candidate_claims", []):
+        for p in c.get("candidate_passages", []):
+            snippets.setdefault(p["source_id"], []).append(p["excerpt"])
+    flags = []
+    for line in text.splitlines():
+        ids = re.findall(r"\[(S\d{2,3})\]", line)
+        body = re.sub(r"\[S\d{2,3}\]", "", line)
+        numbers = set(re.findall(r"(?<!\w)\d{1,4}(?!\w)", body))
+        if not numbers or not ids:
+            continue
+        supported = set()
+        for sid in ids:
+            for snippet in snippets.get(sid, []):
+                supported.update(re.findall(r"(?<!\w)\d{1,4}(?!\w)", snippet))
+        missing = sorted(numbers - supported)
+        if missing:
+            flags.append({
+                "line_excerpt": line[:170].strip(), "sources": sorted(set(ids)),
+                "numeric_tokens_not_in_passages": missing,
+                "action": "manual_check_required"
+            })
+    return flags[:20]
+
+
 def result_metadata(report: dict, text: str, *, model_id: str, seconds: float):
     if not isinstance(text, str) or len(text.strip()) < 80:
         raise ValueError("El modelo no produjo una propuesta textual útil")
@@ -58,11 +94,14 @@ def result_metadata(report: dict, text: str, *, model_id: str, seconds: float):
                    for p in c.get("candidate_passages", [])})
     cited = sorted(set(re.findall(r"\[S\d{2,3}\]", text)))
     unauthorized = [x for x in cited if x[1:-1] not in used]
+    numeric_flags = audit_numeric_support(report, text)
     return {
         "model": model_id, "backend": "local_cpu_transformers",
         "no_paid_ai_api": True, "source_ids_available": used,
         "source_markers_in_output": cited,
         "unsupported_source_ids": unauthorized,
+        "numeric_claims_without_passage_support": numeric_flags,
+        "grounding_quality_gate_passed": bool(cited) and not unauthorized and not numeric_flags,
         "needs_editor_review": True,
         "claim_verification_automatic": False,
         "copyright_and_commercial_rights_verified": False,
