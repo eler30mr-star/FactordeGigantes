@@ -230,3 +230,20 @@ El montaje breve de tres párrafos (43,296 s) obtuvo conformidad editorial del p
 - [ ] Realizar el primer render documental de 8–14 minutos con el nivel editorial deseado, límites gratuitos de CPU y control de QA, **solo tras superar las verificaciones técnicas y comerciales**.
 
 **Nota:** un ensayo local exitoso, un expediente preliminar o un clip de voz aprobado no significa que la productora ya publique automáticamente. La fase 2 está parcialmente implementada y sigue abierta; las fases 3 y 4 no han comenzado.
+
+
+## Fase 2 — motor de investigación propia con IA local (2026-10-20)
+
+**Meta final:** que Factor de Gigantes investigue y documente el episodio con IA, dejando al propietario principalmente el control editorial y la aprobación, y sin servicios facturables. Esta meta aún **no** está completa.
+
+- [x] **Primera consulta automática de fuentes web con trazabilidad**: tools/research_engine.py visita URLs HTTPS declaradas, propone pasajes breves ligados a cada afirmación, y registra URL, hash, similitud y bloqueos. No marca datos verificados por coincidencia textual.
+- [x] **Investigar cualquier tema sin expediente previo**: descubrimiento MediaWiki y lectura de fuentes secundarias. Probado en [run 39529286991](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39529286991), 3/3 páginas legibles, 0 afirmaciones aprobadas. La búsqueda de primarias independiente del usuario sigue pendiente.
+- [x] **Redacción autónoma preliminar por IA local sin API paga**: tools/local_research_ai.py usa Qwen/Qwen3-0.6B CPU y propone una estructura con citas. [Run 39528648495](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39528648495) success: 3/6 fuentes BlackBerry legibles, 5 pasajes y borrador de 722 caracteres. No llegó a guion completo.
+- [x] **Auditoría básica antiinvenciones**: comprueba referencias inventadas y señala cifras que no aparecen en pasajes citados; CI [39529112648](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39529112648) success. El primer borrador contiene un error real de fecha IPO BlackBerry; se documentó y **no se certifica** ni se elimina por una prueba verde posterior.
+- [x] **Workflow manual y controlado** de investigación: .github/workflows/research-ai-cpu.yml; tema libre o dossier BlackBerry, artefactos no publicables y retención corta. Sin activación recurrente ni servicios de IA de pago.
+- [ ] **Búsqueda autónoma de fuentes primarias e independientes**, extracción de reportes PDF/financieros y contrastes de afirmaciones con contexto y contradicciones; la herramienta aún no puede asumir que un texto secundario o una mención prueban un hecho.
+- [ ] **Generación de guion original completo de 8–14 minutos** y plan escena-por-escena; los textos actuales son solo borradores de demostración y pueden contener errores.
+- [ ] **Vincular investigación por tema y por episodio al panel Cloudflare**, respetando tokens aislados y revisión humana; D1 remota 0002 y despliegue todavía no confirmados.
+- [ ] Validar derechos de voz canónica, música e imágenes, QA de narración y visuales, antes de render y publicación.
+
+La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecutado de verdad**, no un sistema de investigación autónomo completo ni una fábrica de videos finalizada. Mantener todas las tareas en main, sin gasto facturable ni publicación automática.
