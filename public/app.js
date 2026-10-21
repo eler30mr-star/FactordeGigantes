@@ -287,6 +287,41 @@ async function loadMarket() {
 $("market-refresh").addEventListener("click",()=>loadMarket().catch(e=>{
   $("market-status").textContent=e.message;
 }));
+async function loadYoutubeMarket() {
+  const result=await request("/api/market/youtube?limit=30");
+  const root=$("youtube-results");
+  root.replaceChildren();
+  if(!Array.isArray(result.runs)||!Array.isArray(result.queries)) throw Error("Estudio YouTube incompleto");
+  const observed=result.queries.filter(r=>r.evidence_state==="observed_sample");
+  $("youtube-status").textContent="Corridas: "+result.runs.length+
+    " · Comparaciones con muestra observada: "+observed.length+
+    " · Datos privados de competidores y selección editorial: no disponibles.";
+  if(!observed.length) {
+    root.append(tag("p","empty","Aún no existen mediciones públicas YouTube persistidas. El sistema necesita clave de API y presupuesto gratuito expresamente habilitado; no simula resultados."));
+    return;
+  }
+  const num=new Intl.NumberFormat("es-PE",{maximumFractionDigits:2});
+  const sorted=[...observed].sort((a,b)=>
+    Number(b.median_daily_views||0)-Number(a.median_daily_views||0));
+  for(const entry of sorted.slice(0,30)){
+    const row=tag("article","job","");
+    const heading=tag("div","jobtop","");
+    heading.append(tag("strong","",String(entry.topic||entry.wikidata_id)),
+      tag("span","tag",String(entry.region||"Región desconocida")));
+    row.append(heading);
+    row.append(tag("p","muted",
+      "Mediana de vistas por día de antigüedad en la muestra: "+
+      num.format(Number(entry.median_daily_views||0))+
+      " · videos medidos: "+String(entry.sample_size)+
+      " · canales identificados: "+String(entry.distinct_channels)+
+      " · observado: "+String(entry.observed_on)+
+      " · sin verificación de fuentes primarias."));
+    root.append(row);
+  }
+}
+$("youtube-refresh").addEventListener("click",()=>loadYoutubeMarket().catch(e=>{
+  $("youtube-status").textContent=e.message;
+}));
 async function loadNewsRadar() {
   const result=await request("/api/market/news?limit=30");
   const root=$("news-results");
@@ -370,6 +405,7 @@ $("connect").addEventListener("click",async () => {
     loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
     loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
+    loadYoutubeMarket().catch(e=>{$("youtube-status").textContent=e.message;});
   } catch(e) { adminToken=""; $("workspace").hidden=true; notice(e.message);}
 });
 $("refresh").addEventListener("click",()=>load().catch(e=>notice(e.message)));
