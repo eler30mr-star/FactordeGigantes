@@ -1,6 +1,6 @@
 # Historial de avance — Factor de Gigantes
 
-> **Estado vigente 2026-10-21 (última actualización):** D1 remota 0001–0004 aplicada, 1 trabajo y 8 eventos preservados. Radar automático Wikimedia → GitHub Actions → JWT GitHub OIDC → Worker → D1 **validado de extremo a extremo** (2 empresas y 2 ventanas de 14 días persistidas), autenticado sin credenciales adicionales. Panel de radar incorporado en `main`. **Estudio competitivo YouTube, elección del tema ganador, generación profesional completa y publicación siguen pendientes.**
+> **Estado vigente 2026-10-21:** D1 remota 0001–0005 aplicada y datos previos conservados (1 trabajo, 8 eventos). Radar autónomo Wikimedia + noticias RSS → GitHub Actions OIDC → Worker → D1 probado con fuentes reales: **2 empresas, 2 series históricas y 100 titulares RSS** en primer registro. Preselección temática automática explicable y panel privado desarrollados. El sistema todavía NO ha medido competencia real de YouTube, seleccionado tema ganador ni producido/publicado documentales autónomamente.
 
 ## 2026-10-20 · Inicio del proyecto
 
