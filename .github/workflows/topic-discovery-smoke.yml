@@ -89,6 +89,23 @@ jobs:
           fi
           python -m tools.push_news_radar \
             --input dist/radar/NOTICIAS_NO_VERIFICADAS.json
+      - name: Medir competencia YouTube con presupuesto explícito y limitado
+        env:
+          YOUTUBE_DATA_API_KEY: ${{ secrets.YOUTUBE_DATA_API_KEY }}
+          YOUTUBE_MARKET_BUDGET_ENABLED: ${{ vars.YOUTUBE_MARKET_BUDGET_ENABLED }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m unittest discover -s tests -p test_youtube_market_study.py -v
+          # Sin clave o aprobación de cuota, no realiza llamadas ni inventa resultados.
+          timeout -k 5s 120s python -m tools.youtube_market_study \
+            --discovery dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
+            --out dist/radar/YOUTUBE_MUESTRAS_NO_CALIFICADAS.json
+          if [ -f dist/radar/YOUTUBE_MUESTRAS_NO_CALIFICADAS.json ]; then
+            python -m tools.push_youtube_study \
+              --input dist/radar/YOUTUBE_MUESTRAS_NO_CALIFICADAS.json
+          else
+            echo "YOUTUBE_D1_SIN_CAMBIOS: falta clave, autorización de cuota o candidatos"
+          fi
       - name: Conservar únicamente informe de candidatos y procedencia
         if: always()
         uses: actions/upload-artifact@v4
