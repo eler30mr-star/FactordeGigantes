@@ -12,6 +12,27 @@ La base real ya existe: `factor-de-gigantes-db`, UUID `ef699e75-b50a-4e28-a665-6
 
 **No crear otra base D1 ni ejecutar manualmente los CREATE TABLE ahora.** La migración SQL se aplicó fuera del mecanismo de historial de Wrangler; el script de migración es idempotente y Wrangler podría registrar su aplicación en un despliegue posterior.
 
+## 2B. Migración editorial 0002 — PENDIENTE EN D1 REMOTA
+
+La integración del nuevo expediente documental exige `migrations/0002_editorial_dossiers.sql`. El código y la migración se probaron en GitHub Actions **en base local**, pero **no hay confirmación de que esta tabla exista aún en la D1 remota**. Antes de desplegar el nuevo Worker desde `main`:
+
+1. Confirmar estar en la cuenta Cloudflare correcta (base `factor-de-gigantes-db` ya existente). No crear otra base ni copiar un ID diferente.
+2. Desde el repositorio actualizado a `main` y con sesión Wrangler autorizada, ejecutar:
+
+```sh
+npm install
+npx wrangler d1 migrations apply factor-de-gigantes-db --remote
+npx wrangler d1 execute factor-de-gigantes-db --remote --command "SELECT name FROM sqlite_master WHERE type='table' AND name='editorial_dossiers';"
+```
+
+El segundo comando debe devolver exactamente la tabla `editorial_dossiers`. La primera migración `0001_initial.sql` tiene instrucciones `IF NOT EXISTS`; como se aplicó en su momento fuera del historial de Wrangler, puede ser registrada de nuevo por la herramienta sin borrar los datos. Revisar el mensaje de Wrangler y hacer copia de respaldo antes de operar sobre datos reales.
+
+3. Solo tras verificar la tabla, ejecutar `npx wrangler deploy` o confirmar el build/deploy automático ya configurado.
+4. Acceder al panel y probar un expediente `draft → review → acreditación humana → approved` con datos de prueba **sin lanzar render de producción**. Comprobar en `events` los eventos `dossier_saved` y `dossier_attested`, y que las aprobaciones incompletas devuelvan HTTP 409.
+5. No crear secretos nuevos ni modificar `GITHUB_DISPATCH_TOKEN` si ya funcionan; nunca imprimir valores.
+
+Si se despliega código nuevo antes de migrar, las rutas editoriales responderán **HTTP 503** con una advertencia explícita, evitando aprobar expedientes sobre tablas ausentes. Esta comprobación no equivale a un despliegue exitoso.
+
 ## 3. Crear/importar Worker desde GitHub
 
 1. Cloudflare → Workers & Pages → Create application → Import a repository.
@@ -39,8 +60,9 @@ Habilitar Actions del repositorio. La API del Worker dispara `render.yml` en `ma
 1. Abrir URL del Worker (panel) desde PC o teléfono.
 2. Escribir `ADMIN_TOKEN` en el campo de acceso; no queda almacenado en disco o localStorage.
 3. Crear trabajo con título, enfoque, **al menos dos fuentes URL https** y entre 2 y 18 segmentos originales.
-4. Pasar a revisión, comprobar investigación y aprobar.
-5. Hacer clic en «Generar prueba». La acción GitHub produce MP4 descargable en «Actions → Render de prueba»; nunca se sube a YouTube automáticamente.
+4. En «Fuentes y licencias», abrir el expediente del trabajo y completar sus fuentes documentales, evidencias por afirmación y derechos de todos los recursos audiovisuales usados, incluida la voz. Cada `locator` debe apuntar a una sección/página real y las marcas `verificada` requieren lectura humana de los documentos.
+5. Pasar el guion a revisión. El editor debe acreditar la revisión en el expediente usando «Confirmar revisión de hechos y derechos» e identificándose; solo entonces es posible pulsar «Aprobar». Guardar un expediente **no** significa verificarlo.
+6. Hacer clic en «Generar prueba». La acción GitHub produce MP4 descargable en «Actions → Render de prueba»; nunca se sube a YouTube automáticamente.
 
 ## 6. Seguridad antes de producción
 
