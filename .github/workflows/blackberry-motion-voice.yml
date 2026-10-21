@@ -1,11 +1,6 @@
 name: Factor de Gigantes - intro animada con voz canónica
 on:
   workflow_dispatch:
-  # Ensayo de integración inicial; retirar push al obtener resultado.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/blackberry-motion-voice.yml'
 permissions:
   contents: read
 jobs:
