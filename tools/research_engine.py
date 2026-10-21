@@ -279,6 +279,71 @@ def discover_wikipedia(topic: str, fetcher=fetch_public) -> list[dict]:
     } for r in results[:5] if r.get("title")]
 
 
+def research_topic(topic: str, fetcher=fetch_public, max_requests: int = 3) -> dict:
+    """Sin expedientes preexistentes: localizar artículos públicos y extraer hipótesis.
+
+    Los artículos de Wikipedia son SECUNDARIOS; ninguna frase se trata como dato
+    corroborado. El objetivo es iniciar investigación automáticamente.
+    """
+    found = discover_wikipedia(topic, fetcher=fetcher)
+    if not found:
+        raise ValueError("No se encontraron artículos para este tema")
+    max_requests = max(1, min(4, int(max_requests)))
+    records, candidates = [], []
+    for index, item in enumerate(found[:max_requests], 1):
+        sid, cid = f"S{index:02d}", f"C{index:02d}"
+        url = item["url"]
+        try:
+            raw, final, kind = fetcher(url)
+            blocks = extract_blocks(raw, kind)
+            chosen = excerpts_for_claim(topic + " " + item["title"], blocks, limit=2)
+            if not chosen and blocks:
+                # Inicio sin aprobación: primeros bloques legibles, NO citados como hechos.
+                chosen = [{"excerpt": block[:MAX_EXCERPT_CHARS],
+                           "similarity": 0, "block_index": i,
+                           "verification_status": "candidate_unchecked"}
+                          for i, block in enumerate(blocks[:2])]
+            record = {
+                "source_id": sid, "requested_url": url, "resolved_url": final,
+                "publisher_declared": item["publisher"],
+                "source_class": "secondary_discovery_not_primary",
+                "status": "fetched" if blocks else "no_readable_text",
+                "content_sha256": hashlib.sha256(raw).hexdigest(),
+                "readable_blocks": len(blocks),
+                "limited_extracts": [{"claim_id": cid, "matches": chosen}],
+            }
+            snippets = [{
+                "source_id": sid, "url": final, "excerpt": x["excerpt"],
+                "similarity": x["similarity"], "block_index": x["block_index"]
+            } for x in chosen]
+        except (ValueError, HTTPError, URLError, TimeoutError, OSError, UnicodeError) as exc:
+            record = {"source_id": sid, "requested_url": url,
+                      "source_class": "secondary_discovery_not_primary",
+                      "status": "blocked_or_unavailable", "reason_category": type(exc).__name__}
+            snippets = []
+        records.append(record)
+        candidates.append({
+            "id": cid, "segment_index": index,
+            "proposition": "Pregunta inicial: ¿Qué hechos comprobables sobre " + topic[:90] +
+                           " se pueden investigar a partir del artículo «" + item["title"][:90] + "»?",
+            "candidate_passages": snippets, "verification_status": "pending_human",
+            "claim_confirmed": False, "source_class": "secondary_not_confirmed"
+        })
+    return {
+        "product": "Factor de Gigantes", "engine_version": "0.1",
+        "topic": topic, "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "research_mode": "automatic_topic_discovery",
+        "source_quality": "secondary_only_requires_primary_sources",
+        "request_count": len(records), "requested_max": max_requests,
+        "fetched_count": sum(1 for x in records if x["status"] == "fetched"),
+        "sources": records, "candidate_claims": candidates,
+        "facts_verified_automatically": 0, "rights_verified_automatically": 0,
+        "original_dossier_changed": False,
+        "production_ready": False, "youtube_publication_authorized": False,
+        "editorial_warning": "Solo descubrimiento en fuentes secundarias. Investigar y contrastar con documentos primarios; ninguna afirmación ni licencia verificada."
+    }
+
+
 def assemble_ai_evidence(report: dict, max_chars: int = 10500) -> str:
     """Solo pasar al LLM pasajes explícitamente enlazados a las fuentes consultadas."""
     chunks = [f"TEMA: {report['topic']}", "EVIDENCIA DOCUMENTAL SIN VERIFICAR:"]
@@ -327,16 +392,12 @@ def main():
         parser.error("Indica exactamente --dossier o --topic")
     if args.topic:
         try:
-            discoveries = discover_wikipedia(args.topic)
+            result = research_topic(args.topic, max_requests=args.max_requests)
         except (ValueError, HTTPError, URLError, OSError) as e:
-            raise SystemExit("No hay acceso a la búsqueda enciclopédica: " + type(e).__name__)
-        args.out.mkdir(parents=True, exist_ok=True)
-        (args.out / "descubrimiento.json").write_text(json.dumps({
-            "topic": args.topic, "results": discoveries,
-            "automatic_fact_verification": False, "primary_sources_required": True,
-            "publication_authorized": False,
-        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        print("DESCUBRIMIENTO:", len(discoveries), "entradas secundarias; buscar fuentes primarias.")
+            raise SystemExit("No hay acceso al descubrimiento: " + type(e).__name__)
+        save_report(result, args.out)
+        print("DESCUBRIMIENTO:", result["fetched_count"], "/", result["request_count"],
+              "artículos secundarios, sin hechos aprobados.")
         return
     dossier = json.loads(args.dossier.read_text(encoding="utf-8"))
     result = research_dossier(dossier, max_requests=args.max_requests)
