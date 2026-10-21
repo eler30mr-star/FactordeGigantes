@@ -151,7 +151,7 @@ async function handle(request,env) {
       try { summary=validateDossier(dossier,JSON.parse(row.manifest_json)); }
       catch(e) { validation_error=String(e.message).slice(0,160); }
       return json({dossier, summary, validation_error,
-        attested:stored.editor_attested === 1 && !validation_error,
+        attested:stored.editor_attested === 1 && !validation_error && summary?.structurally_complete === true,
         editor_name:stored.editor_name, attested_at:stored.attested_at});
     }
     if (method === "PUT") {
