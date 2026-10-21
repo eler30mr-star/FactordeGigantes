@@ -62,6 +62,7 @@ jobs:
       - name: Persistir radar diario con identidad GitHub OIDC efímera
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          FDG_OIDC_DIAGNOSTIC: '1'
         run: |
           if [ -z "$API_BASE_URL" ]; then
             echo "::error::Falta API_BASE_URL para persistir radar en D1"
