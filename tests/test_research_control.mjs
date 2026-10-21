@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import worker from "../src/worker.js";
-import {validateResearchTopic,researchTopicKey,launchResearch,listResearchRequests} from "../src/research-control.mjs";
+import {validateResearchTopic,researchTopicKey,launchResearch,listResearchRequests,matchResearchRuns} from "../src/research-control.mjs";
 
 const TOKEN="private-admin-token-for-tests-0001";
 const ENV={GITHUB_REPO:"eler30mr-star/FactordeGigantes",GITHUB_DISPATCH_TOKEN:"private-github-token-for-tests-0001",ADMIN_TOKEN:TOKEN};
@@ -65,6 +65,7 @@ test("token configurado, confirmación, 204 y main; mismo tema se deduplica",asy
     assert.equal(options.method,"POST");
     assert.equal(JSON.parse(options.body).ref,"main");
     assert.equal(JSON.parse(options.body).inputs.topic,"La historia de BlackBerry");
+    assert.match(JSON.parse(options.body).inputs.request_id,/^[0-9a-f-]{36}$/);
     assert.equal(options.headers.Authorization,"Bearer "+ENV.GITHUB_DISPATCH_TOKEN);
     return {status:204};
   };
@@ -133,4 +134,69 @@ test("rutas privadas Worker GET y POST mantienen autenticación y 503 por falta 
   const post=await worker.fetch(build("POST",TOKEN,{topic:"Historia de Tesla",confirmed:true}),e);
   assert.equal(post.status,503);
   assert.equal(e.DB.requests.length,0);
+});
+
+
+test("estado real enlazado por request_id exacto y URL oficial de Actions",async()=>{
+  const e=env();
+  const launched=await launchResearch(e,{topic:"Historia de compañías innovadoras",confirmed:true},
+    async()=>({status:204}),now);
+  assert.equal(launched.status,202);
+  const id=launched.request.id;
+  let calls=0;
+  const gh=async(url,options)=>{
+    calls++;
+    assert.match(url,/\/actions\/workflows\/research-ai-cpu.yml\/runs\?event=workflow_dispatch/);
+    assert.match(options.headers.Authorization,/^Bearer /);
+    return {ok:true,async json(){
+      return {workflow_runs:[
+        {id:77,event:"workflow_dispatch",head_branch:"main",display_title:"FDG Investigación · "+id,
+         status:"completed",conclusion:"success",html_url:"https://github.com/eler30mr-star/FactordeGigantes/actions/runs/77"},
+        {id:78,event:"workflow_dispatch",head_branch:"main",display_title:"FDG Investigación · other",
+         status:"completed",conclusion:"failure",html_url:"https://github.com/eler30mr-star/FactordeGigantes/actions/runs/78"}
+      ]};
+    }};
+  };
+  const res=await listResearchRequests(e,{includeRuns:true,githubFetch:gh});
+  assert.equal(calls,1);
+  assert.equal(res.run_lookup,"checked");
+  assert.equal(res.requests[0].run.id,77);
+  assert.equal(res.requests[0].run.status,"completed");
+  assert.equal(res.requests[0].run.conclusion,"success");
+  assert.equal(res.requests[0].run.artifacts_url,"https://github.com/eler30mr-star/FactordeGigantes/actions/runs/77/artifacts");
+  const cache=await listResearchRequests(e);
+  assert.equal(cache.run_lookup,"not_requested");
+  assert.equal(cache.requests[0].run,null);
+});
+
+test("no empareja ramas equivocadas, URL ajena ni ejecuciones manuales",()=>{
+  const id="a1ea2f60-7464-4bea-8a6e-fad207ca0159";
+  const rows=[{id}];
+  const expected="FDG Investigación · "+id;
+  const fake=[
+    {id:2,event:"workflow_dispatch",head_branch:"other",display_title:expected,status:"completed",conclusion:"success",
+     html_url:"https://github.com/eler30mr-star/FactordeGigantes/actions/runs/2"},
+    {id:3,event:"workflow_dispatch",head_branch:"main",display_title:expected,status:"completed",conclusion:"success",
+     html_url:"https://example.com/actions/runs/3"},
+    {id:4,event:"push",head_branch:"main",display_title:expected,status:"completed",conclusion:"success",
+     html_url:"https://github.com/eler30mr-star/FactordeGigantes/actions/runs/4"},
+    {id:5,event:"workflow_dispatch",head_branch:"main",display_title:expected,status:"completed",conclusion:"failure",
+     html_url:"https://github.com/eler30mr-star/FactordeGigantes/actions/runs/5"}
+  ];
+  const m=matchResearchRuns(rows,{workflow_runs:fake});
+  assert.equal(m.size,1);
+  assert.equal(m.get(id).id,5);
+  assert.equal(m.get(id).conclusion,"failure");
+});
+
+test("fallo de lectura de GitHub nunca afirma que una ejecución finalizó",async()=>{
+  const e=env();
+  await launchResearch(e,{topic:"Empresas de telefonía histórica",confirmed:true},async()=>({status:204}),now);
+  const unavailable=await listResearchRequests(e,{includeRuns:true,githubFetch:async()=>{throw Error("timeout")}});
+  assert.equal(unavailable.run_lookup,"unavailable");
+  assert.equal(unavailable.requests[0].state,"sent");
+  assert.equal(unavailable.requests[0].run,null);
+  const denied=await listResearchRequests(e,{includeRuns:true,githubFetch:async()=>({ok:false,status:403})});
+  assert.equal(denied.run_lookup,"unavailable");
+  assert.equal(denied.requests[0].run,null);
 });
