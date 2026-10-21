@@ -287,6 +287,36 @@ async function loadMarket() {
 $("market-refresh").addEventListener("click",()=>loadMarket().catch(e=>{
   $("market-status").textContent=e.message;
 }));
+async function loadCrossSignals() {
+  const data=await request("/api/market/cross?limit=25");
+  if(!Array.isArray(data.links)||!Array.isArray(data.runs))
+    throw Error("Respuesta de correlación incompleta");
+  const root=$("cross-results");
+  root.replaceChildren();
+  $("cross-status").textContent="Corridas de cruce: "+data.runs.length+
+    " · menciones candidatas: "+data.links.length+
+    " · identidades y noticias originales por contrastar.";
+  if(!data.links.length){
+    root.append(tag("p","empty","Sin coincidencias textuales confirmables entre las empresas observadas y los titulares actuales. No se infieren relaciones."));
+    return;
+  }
+  for(const link of data.links) {
+    const el=tag("article","job","");
+    const head=tag("div","jobtop","");
+    head.append(tag("strong","",String(link.company||link.wikidata_id)),
+      tag("span","tag","Coincidencia provisional"));
+    el.append(head);
+    el.append(tag("small","",String(link.source_label||"Medio atribuido")+
+      " · "+String(link.published_at||"")));
+    el.append(tag("p","muted",String(link.headline||"")));
+    el.append(tag("p","micro muted","Término encontrado: "+String(link.matched_alias||"")+
+      " · sin fuente original contrastada"));
+    root.append(el);
+  }
+}
+$("cross-refresh").addEventListener("click",()=>loadCrossSignals().catch(e=>{
+  $("cross-status").textContent=e.message;
+}));
 async function loadYoutubeMarket() {
   const result=await request("/api/market/youtube?limit=30");
   const root=$("youtube-results");
@@ -406,6 +436,7 @@ $("connect").addEventListener("click",async () => {
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
     loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
     loadYoutubeMarket().catch(e=>{$("youtube-status").textContent=e.message;});
+    loadCrossSignals().catch(e=>{$("cross-status").textContent=e.message;});
   } catch(e) { adminToken=""; $("workspace").hidden=true; notice(e.message);}
 });
 $("refresh").addEventListener("click",()=>load().catch(e=>notice(e.message)));
