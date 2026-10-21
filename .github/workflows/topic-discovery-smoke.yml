@@ -126,6 +126,15 @@ jobs:
         run: |
           python -m tools.push_news_entity_assess --mode pdf \
             --input dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json
+      - name: Preparar investigador autónomo desde citas PDF verificables
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_RESEARCH_FREE_CONFIRMED: ${{ vars.GEMINI_RESEARCH_FREE_CONFIRMED }}
+        run: |
+          python -m unittest discover -s tests -p test_market_investigator.py -v
+          timeout -k 5s 65s python -m tools.market_investigator \
+            --pdf-report dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json \
+            --out dist/radar/INVESTIGACION_IA_NO_APROBADA.json
       - name: Relacionar empresas y titulares como hipótesis verificables
         run: |
           python -m unittest discover -s tests -p test_market_news_join.py -v
