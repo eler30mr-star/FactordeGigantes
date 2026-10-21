@@ -191,6 +191,45 @@ async function load() {
     card.append(actions);list.append(card);
   }
 }
+// Investigación autónoma desde panel. El servidor impide duplicados y requiere token ADMIN.
+function researchRow(item) {
+  const article=tag("div","research-item","");
+  const state={"sent":"Enviado a GitHub","reserved":"Solicitud reservada","unknown":"Envío incierto: revisar Actions","rejected":"Rechazado por GitHub"}[item.state] || item.state;
+  article.append(tag("strong","",item.topic),tag("span","muted",state));
+  article.append(tag("small","muted",item.created_at || ""));
+  return article;
+}
+async function loadResearch() {
+  const data=await request("/api/research");
+  const container=$("research-history");
+  container.replaceChildren();
+  if(!data.requests.length) container.append(tag("p","muted","Sin investigaciones solicitadas aún."));
+  for(const item of data.requests) container.append(researchRow(item));
+  $("research-status").textContent="Solicitudes registradas: "+data.requests.length+
+    ". Revisa GitHub Actions para saber si finalizaron.";
+}
+$("research-refresh").addEventListener("click",()=>loadResearch().catch(e=>{
+  $("research-status").textContent=e.message;
+}));
+$("research-form").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const topic=$("research-topic").value.trim();
+  if (!topic) return;
+  if (!confirm("¿Iniciar investigación IA de «"+topic+"»? Consume minutos de GitHub Actions. No publica contenido."))return;
+  const btn=$("research-start");
+  btn.disabled=true;
+  try {
+    const result=await request("/api/research","POST",{topic,confirmed:true});
+    $("research-status").textContent=result.notice;
+    notice("GitHub aceptó la solicitud de investigación. Consulta los resultados en Actions.");
+    $("research-form").reset();
+    await loadResearch();
+  }catch(e){
+    $("research-status").textContent=e.message;
+    notice(e.message);
+  }finally{btn.disabled=false;}
+});
+
 $("connect").addEventListener("click",async () => {
   const proposed=$("token").value.trim();
   if (!proposed) return notice("Introduce el token ADMIN_TOKEN");
@@ -200,6 +239,7 @@ $("connect").addEventListener("click",async () => {
     $("workspace").hidden=false;
     $("indicator").textContent="Conectado";
     notice("Conexión privada establecida");
+    loadResearch().catch(e=>{$("research-status").textContent=e.message;});
   } catch(e) { adminToken=""; $("workspace").hidden=true; notice(e.message);}
 });
 $("refresh").addEventListener("click",()=>load().catch(e=>notice(e.message)));
