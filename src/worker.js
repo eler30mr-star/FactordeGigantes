@@ -1,4 +1,5 @@
 import {verifyMarketOIDC} from "./github-oidc.mjs";
+import {storeNewsReport,readNewsLeads} from "./news-ingest.mjs";
 import {readMarketRadar} from "./market-radar.mjs";
 import {persistMarketReport} from "./market-ingest.mjs";
 import {validateDossier} from "./editorial.mjs";
@@ -111,8 +112,9 @@ async function handle(request,env) {
   const method=request.method;
   const renderer=parts[1] === "renderer";
   const ingest=parts[1] === "market" && parts[2] === "ingest" && parts.length===3;
+  const ingestNews=parts[1] === "market" && parts[2] === "news" && parts[3] === "ingest" && parts.length===4;
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
-  if (ingest) {
+  if (ingest || ingestNews) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
   } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
     return err("Acceso no autorizado",401);
@@ -127,6 +129,21 @@ async function handle(request,env) {
         return err("D1 necesita migración 0004_market_intelligence.sql",503);
       throw e;
     }
+  }
+  if (ingestNews) {
+    if (method !== "POST") return err("Método no admitido",405);
+    try { return json(await storeNewsReport(env.DB,await parseBody(request)),201); }
+    catch(e) {
+      if(e instanceof RangeError) return err("Reporte informativo rechazado: "+e.message,400);
+      if(/no such table:\s*market_news_/i.test(String(e?.message||"")))
+        return err("D1 necesita migración 0005_news_leads.sql",503);
+      throw e;
+    }
+  }
+  if (!renderer && url.pathname === "/api/market/news") {
+    if(method !== "GET") return err("Método no admitido",405);
+    const news=await readNewsLeads(env.DB,url);
+    return news.error ? err(news.error,news.status) : json(news);
   }
   if (!renderer && url.pathname === "/api/market/radar") {
     if (method !== "GET") return err("Método no admitido",405);
