@@ -14,7 +14,7 @@ concurrency:
 jobs:
   topic-discovery:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -89,6 +89,18 @@ jobs:
           fi
           python -m tools.push_news_radar \
             --input dist/radar/NOTICIAS_NO_VERIFICADAS.json
+      - name: Identificar compañías emergentes desde los titulares vía Wikidata
+        run: |
+          python -m unittest discover -s tests -p test_news_entity_discovery.py -v
+          timeout -k 5s 90s python -m tools.news_entity_discovery \
+            --news dist/radar/NOTICIAS_NO_VERIFICADAS.json \
+            --out dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json
+      - name: Persistir candidatas corporativas nuevas con GitHub OIDC
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m tools.push_news_entity_assess --mode entities \
+            --input dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json
       - name: Relacionar empresas y titulares como hipótesis verificables
         run: |
           python -m unittest discover -s tests -p test_market_news_join.py -v
@@ -119,6 +131,11 @@ jobs:
           else
             echo "YOUTUBE_D1_SIN_CAMBIOS: falta clave, autorización de cuota o candidatos"
           fi
+      - name: Evaluar oportunidades desde D1 y registrar bloqueos reales
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m tools.push_news_entity_assess --mode assess
       - name: Conservar únicamente informe de candidatos y procedencia
         if: always()
         uses: actions/upload-artifact@v4
