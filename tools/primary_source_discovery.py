@@ -72,7 +72,9 @@ def discover_official(topic, fetcher=fetch_public, *, max_entities=2):
     suggestions = discover_wikipedia(topic, fetcher=fetcher)
     results = []
     seen_sites = set()
-    for suggestion in suggestions[:max_entities]:
+    # Un tema puede remitir primero a un producto y luego a su empresa.
+    # Analizar hasta cinco entidades para hallar hasta max_entities sitios distintos.
+    for suggestion in suggestions[:min(5, max_entities * 3)]:
         title = suggestion["title"]
         record = {
             "title": title, "encyclopedia_url": suggestion["url"],
@@ -110,6 +112,8 @@ def discover_official(topic, fetcher=fetch_public, *, max_entities=2):
             record["status"] = "discovery_unavailable"
             record["error_type"] = type(exc).__name__
         results.append(record)
+        if len(seen_sites) >= max_entities:
+            break
     return {
         "product": "Factor de Gigantes",
         "topic": topic,
