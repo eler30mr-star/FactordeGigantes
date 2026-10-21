@@ -72,6 +72,16 @@ class DB {
           return {};
         }
         if(sql.startsWith("INSERT INTO events")){db.events.push({id:p[0],action:p[1]});return {}}
+        if(sql.startsWith("UPDATE jobs SET status='queued'")) {
+          const j=db.jobs.get(p[0]), d=db.dossiers.get(p[1]);
+          if(j?.status!=="approved" || d?.editor_attested!==1 || !d.editor_name) return {meta:{changes:0}};
+          j.status="queued";return {meta:{changes:1}};
+        }
+        if(sql.startsWith("UPDATE jobs SET status='approved'")) {
+          const j=db.jobs.get(p[0]);
+          if(j?.status!=="queued")return {meta:{changes:0}};
+          j.status="approved";return {meta:{changes:1}};
+        }
         if(sql.startsWith("UPDATE jobs SET status")){const j=db.jobs.get(p[3]);j.status=p[0];j.review_note=p[1];j.last_error=p[2];return {}}
         if(sql.startsWith("UPDATE jobs SET title")){const j=db.jobs.get(p[3]);j.title=p[0];j.format=p[1];j.manifest_json=p[2];return {}}
         throw Error("Unknown run statement "+sql);
@@ -158,6 +168,8 @@ test("despacho a GitHub bloquea el expediente revocado y no publica por sí mism
     assert.equal((await api(e,"/api/jobs/job-one/dispatch","POST",{})).status,200);
     assert.equal(fetchCount,1);
     assert.equal(e.DB.jobs.get("job-one").status,"queued");
+    assert.equal((await api(e,"/api/jobs/job-one/dispatch","POST",{})).status,409);
+    assert.equal(fetchCount,1,"Nunca se envían dos peticiones de render al mismo trabajo");
   } finally {globalThis.fetch=previous;}
 });
 
@@ -178,4 +190,25 @@ test("migracion no aplicada devuelve 503 y conserva el guion anterior",async()=>
   const update=await api(e,"/api/jobs/job-one","PUT",modified);
   assert.equal(update.status,503);
   assert.equal(e.DB.jobs.get("job-one").manifest_json,original);
+});
+
+test("rechazo HTTP de GitHub restaura approved; timeout no permite reintentos duplicados",async()=>{
+  const e=env();
+  e.DB.jobs.get("job-one").status="approved";
+  e.DB.dossiers.set("job-one",{dossier_json:JSON.stringify(approved()),
+    editor_attested:1,editor_name:"Revisor",attested_at:"now"});
+  const previous=globalThis.fetch;
+  try{
+    let tries=0;
+    globalThis.fetch=async()=>{tries++;return new Response(JSON.stringify({message:"Bad credentials"}),{
+      status:403,headers:{"Content-Type":"application/json"}})};
+    assert.equal((await api(e,"/api/jobs/job-one/dispatch","POST",{})).status,502);
+    assert.equal(e.DB.jobs.get("job-one").status,"approved");
+    assert.ok(e.DB.events.some(x=>x.action==="render_dispatch_rejected"));
+    globalThis.fetch=async()=>{tries++;throw Error("Simulated network timeout")};
+    assert.equal((await api(e,"/api/jobs/job-one/dispatch","POST",{})).status,502);
+    assert.equal(e.DB.jobs.get("job-one").status,"queued");
+    assert.equal((await api(e,"/api/jobs/job-one/dispatch","POST",{})).status,409);
+    assert.equal(tries,2,"Un resultado de red incierto bloquea reintentos");
+  }finally{globalThis.fetch=previous;}
 });
