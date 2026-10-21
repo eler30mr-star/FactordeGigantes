@@ -84,6 +84,23 @@ class ResearchEngineTests(unittest.TestCase):
         self.assertTrue(all(x["type"] == "secundaria" for x in data))
         self.assertEqual(data[0]["verification_status"], "discovery_only")
 
+    def test_any_topic_can_start_research_without_manual_seed_dossier(self):
+        response = json.dumps({"query":{"search":[{"title":"BlackBerry"},{"title":"Teléfono inteligente"}]}})
+        def mock_discovery(url):
+            if "/w/api.php?" in url:
+                return response.encode(), "https://es.wikipedia.org/w/api.php", "application/json"
+            return HTML.encode(), url, "text/html; charset=utf-8"
+        result = engine.research_topic("BlackBerry", fetcher=mock_discovery, max_requests=2)
+        self.assertEqual(result["research_mode"], "automatic_topic_discovery")
+        self.assertEqual(result["fetched_count"], 2)
+        self.assertEqual(result["source_quality"], "secondary_only_requires_primary_sources")
+        self.assertEqual(len(result["candidate_claims"]), 2)
+        self.assertFalse(result["production_ready"])
+        self.assertEqual(result["facts_verified_automatically"], 0)
+        self.assertTrue(all(not c["claim_confirmed"] for c in result["candidate_claims"]))
+        self.assertTrue(all(s["source_class"] == "secondary_discovery_not_primary"
+                            for s in result["sources"]))
+
     def test_dossier_cannot_be_publication_approved(self):
         x = copy.deepcopy(DOSSIER)
         x["publication_authorized"] = True
