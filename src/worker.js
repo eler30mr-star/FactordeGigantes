@@ -131,8 +131,12 @@ async function handle(request,env) {
       const stored=await getDossier(env,id);
       if (!stored) return json({dossier:null, summary:null, attested:false});
       const dossier=JSON.parse(stored.dossier_json);
-      return json({dossier, summary:validateDossier(dossier,JSON.parse(row.manifest_json)),
-        attested:stored.editor_attested === 1, editor_name:stored.editor_name, attested_at:stored.attested_at});
+      let summary=null, validation_error=null;
+      try { summary=validateDossier(dossier,JSON.parse(row.manifest_json)); }
+      catch(e) { validation_error=String(e.message).slice(0,160); }
+      return json({dossier, summary, validation_error,
+        attested:stored.editor_attested === 1 && !validation_error,
+        editor_name:stored.editor_name, attested_at:stored.attested_at});
     }
     if (method === "PUT") {
       if (!["draft","review"].includes(row.status))
