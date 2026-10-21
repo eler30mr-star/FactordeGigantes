@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {validateNewsReport,storeNewsReport,readNewsLeads} from "../src/news-ingest.mjs";
-const fmt=(date)=>date.toISOString().replace(".000Z","Z");
+const fmt=(date)=>date.toISOString().slice(0,19)+"Z";
 function report(){
  const now=new Date();
  const pub=new Date(now.getTime()-3*3600000);
