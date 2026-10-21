@@ -489,3 +489,19 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Autorización editorial/legal, OAuth oficial y publicación por el sistema solo con permisos correspondientes.
 
 **Importante:** se completó la infraestructura de descubrimiento y almacenamiento, **no** la productora autónoma ni el estudio de mercado de YouTube. Las etapas pendientes mantienen sus criterios de aceptación.
+
+
+### Hito P0 cumplido 2026-10-21: radar informativo e histórico D1
+
+- [x] Colectar noticias recientes **sin nombres de compañías preparados** mediante cuatro búsquedas RSS industriales y tecnológicas es/en, con registros de URL agregadora, medio atribuido, fecha y categoría.
+- [x] Mantener tabla D1 separada de señales informativas con migración aditiva `0005_news_leads.sql`; preservar trabajos y expedientes anteriores.
+- [x] Integrar consulta de noticias en GitHub Actions → Worker autenticado por OIDC → D1, con prueba real [39668778079](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39668778079). Primera corrida persistió **100 titulares** (límite de muestra), **no 100 oportunidades cualificadas**.
+- [x] Panel autenticado para leer titulares recientes y puntuación de *relevancia temática preliminar*, calculada sin datos falsos ni LLM y con explicaciones.
+- [x] Eliminar trigger `push` de prueba y conservar ejecución **diaria y manual**.
+- [ ] Resolver y cotejar URLs originales de las noticias; buscar múltiples fuentes independientes y confirmar datos regulatorios/corporativos.
+- [ ] Implementar estudio de **demanda y competencia en YouTube** con estadísticas realmente observadas; no confundir noticias, visitas Wikipedia ni puntuación de relevancia con oportunidad definitiva.
+- [ ] Agrupar candidatos por empresas y eventos, registrar hipótesis y decisión de prioridad con razones, descartes, calidad de datos y revisión editorial.
+- [ ] Conectar la oportunidad suficientemente verificada al motor de investigación Gemini/Qwen, dossier, guion, voz y video 8–14 min.
+- [ ] Programación/subida oficial a YouTube **solo con autorización humana, derechos comprobados y OAuth**.
+
+**Aclaración del progreso:** está avanzado el código y la infraestructura REAL del radar; el producto final sigue condicionado a investigación, calidad audiovisual, licencias y automatización de publicación segura.
