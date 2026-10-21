@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 from urllib.parse import urlencode
 
+from tools.official_document_links import find_official_document_links
 from tools.research_engine import (
     MAX_EXCERPT_CHARS, discover_wikipedia, extract_blocks,
     fetch_public, validate_url,
@@ -104,6 +105,7 @@ def discover_official(topic, fetcher=fetch_public, *, max_entities=2):
                             "content_sha256": hashlib.sha256(body).hexdigest(),
                             "readable_blocks": len(blocks),
                             "short_excerpt": blocks[0][:MAX_EXCERPT_CHARS] if blocks else "",
+                            "linked_document_candidates": find_official_document_links(resolved,body,mime=mime),
                         })
                     except (OSError, ValueError, TimeoutError, UnicodeError, json.JSONDecodeError) as exc:
                         record["fetch_error_type"] = type(exc).__name__
