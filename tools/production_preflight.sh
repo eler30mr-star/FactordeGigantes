@@ -16,4 +16,5 @@ python3 -m unittest discover -s tests -p 'test_editorial_audit.py' -v
 python3 -m unittest discover -s tests -p 'test_edgar_discovery.py' -v
 python3 -m unittest discover -s tests -p 'test_financial_facts.py' -v
 python3 -m unittest discover -s tests -p 'test_editorial_package.py' -v
+python3 -m unittest discover -s tests -p 'test_official_document_links.py' -v
 echo "Factor de Gigantes: pruebas previas al despliegue SUPERADAS"
