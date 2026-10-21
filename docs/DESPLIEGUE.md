@@ -85,3 +85,22 @@ Habilitar Actions del repositorio. La API del Worker dispara `render.yml` en `ma
 ## 7. Si falla el render
 
 Revisar `.github/workflows/render.yml`, pestaña Actions; comprobar `API_BASE_URL`, `RENDERER_TOKEN`, estados en el panel. Los errores se registran en `jobs.last_error`. No publicar material de demostración.
+
+## 2E. Radar de mercado en D1 y autorización OIDC (21 de octubre de 2026)
+
+**Producción verificada, no es una maqueta.** Se identificó cuenta Cloudflare **Factor** y base `factor-de-gigantes-db` (`ef699e75-b50a-4e28-a665-69316d10cdaf`). Antes de la migración 0004 se registró un bookmark Time Travel y exportación SQL temporal. Se aplicó el SQL **aditivo** original `migrations/0004_market_intelligence.sql` mediante Cloudflare D1 SQL API y se verificó que las cinco tablas `market_*` existían. Los recuentos existentes no cambiaron: `jobs=1`, `events=8`, `editorial_dossiers=0`, `research_requests=0`.
+
+**Primera escritura integrada real:** ejecución de GitHub Actions [39658991775](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39658991775) con `success`: descubrió entidades de Wikimedia, midió series, guardó snapshot SQLite local y, por primera vez, envió el informe con identidad GitHub OIDC. Verificación posterior directamente en D1 remota: `market_runs=1`, `market_entities=2`, `market_pageview_observations=2`, `market_interest_windows=2`, `market_selection_decisions=0`. Esta es persistencia remota efectiva, no el artefacto de GitHub.
+
+### Seguridad sin secretos compartidos adicionales
+- `POST /api/market/ingest`: valida criptográficamente RS256 mediante el JWKS oficial `https://token.actions.githubusercontent.com/.well-known/jwks`, audiencia `factor-de-gigantes-market-v1`, identificador inmutable del repositorio, archivo exacto de workflow, rama `main`, vigencia y evento `schedule` o `workflow_dispatch`. No acepta `ADMIN_TOKEN` ni `RENDERER_TOKEN` como sustitutos.
+- `.github/workflows/topic-discovery-smoke.yml`: concede solo `contents: read` e `id-token: write`; ejecuta descubrimiento diario a las 10:17 UTC (según disponibilidad de GitHub Actions) o manual. **El trigger temporal de `push` usado durante la integración fue eliminado** y el verificador OIDC también bloquea `push`.
+- `tools/push_market_radar.py`: solicita JWT temporal al proveedor oficial GitHub Actions y llama únicamente al Worker esperado. Nunca imprime JWT ni el token de bootstrap.
+- `GET /api/market/radar?limit=30`: lectura protegida por `ADMIN_TOKEN` de empresas, ventanas y corridas, sin publicar ni elegir automáticamente un documental. La sección «Radar de oportunidades» del panel permite ver estos datos una vez autenticado.
+- **No configurar `MARKET_INGEST_TOKEN`**: la credencial persistente propuesta originalmente se sustituyó por OIDC. Continúa usando el secreto existente `API_BASE_URL` en GitHub Actions; sin esa URL la corrida falla de manera visible, no simula guardado.
+
+### Alcance y límites
+- La lista de empresas proviene de Wikimedia/Wikidata; páginas vistas no son resultados de YouTube, estimaciones de CTR ni evidencia de que un tema sea ganador.
+- `market_study_complete=false` y `automatic_publication_allowed=false`. No hay decisión editorial, generación completa del documental ni subida a YouTube.
+- Antes de habilitar selección automática: fuentes más recientes, métricas reales de YouTube/competencia, puntuaciones explicables, revisión de fuentes primarias y presupuesto de API.
+- La ejecución de prueba no constituye una copia de seguridad permanente de toda D1; conservar política de respaldos y Time Travel antes de futuras migraciones.
