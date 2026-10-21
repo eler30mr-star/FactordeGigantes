@@ -20,6 +20,20 @@
   </section>
   <div id="workspace" hidden>
    <div class="stats"><div class="stat"><span>Trabajos</span><strong id="total">0</strong></div><div class="stat"><span>En revisión</span><strong id="review">0</strong></div><div class="stat"><span>Listos</span><strong id="ready">0</strong></div></div>
+   <section class="card" aria-label="Motor de investigación automática">
+    <div class="heading"><h2>Investigar con IA</h2><span class="muted">Qwen local · GitHub Actions</span></div>
+    <p class="muted">Escribe un tema y la IA buscará fuentes públicas y preparará un borrador con citas. La ejecución usa minutos de GitHub Actions; no consume potencia de tu laptop ni publica videos.</p>
+    <form id="research-form">
+      <label for="research-topic">Tema que deseas investigar</label>
+      <input id="research-topic" name="topic" required minlength="5" maxlength="110" placeholder="Por qué BlackBerry cambió del teléfono al software">
+      <p class="muted micro">Máximo cuatro solicitudes por día UTC. Evita repetir el tema; los textos y derechos quedan pendientes de aprobación.</p>
+      <button id="research-start" type="submit">Iniciar investigación</button>
+    </form>
+    <div class="heading research-history-head"><h3>Solicitudes recientes</h3><button id="research-refresh" class="secondary" type="button">Actualizar</button></div>
+    <p id="research-status" class="muted" role="status">Sin consultar.</p>
+    <div id="research-history" class="research-history"></div>
+    <p class="micro"><a id="research-actions-link" href="https://github.com/eler30mr-star/FactordeGigantes/actions/workflows/research-ai-cpu.yml" target="_blank" rel="noopener noreferrer">Ver resultados en GitHub Actions</a>. GitHub guarda los informes durante un periodo limitado.</p>
+   </section>
    <section class="card">
     <div class="heading"><h2>Nuevo documental</h2><span class="muted">Guion original con fuentes</span></div>
     <form id="create">
