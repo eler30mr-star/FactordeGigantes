@@ -20,7 +20,7 @@ class OfficialSourceTests(unittest.TestCase):
                 {"mainsnak":{"datavalue":{"value":"https://www.blackberry.com/en"}}},
                 {"mainsnak":{"datavalue":{"value":"http://example.com"}}},
                 {"mainsnak":{"datavalue":{"value":"https://127.0.0.1/internal"}}}
-            ]}}}}}).encode(), url, "application/json"
+            ]}}}}).encode(), url, "application/json"
         if url=="https://www.blackberry.com/en":
             return b"<html><body><p>BlackBerry is a secure software and systems company for industries worldwide.</p></body></html>",url,"text/html"
         raise AssertionError("unexpected URL: "+url)
