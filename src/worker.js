@@ -111,7 +111,9 @@ async function handle(request,env) {
   // El investigador usa un workflow distinto de render.yml; requiere confirmación humana.
   // Se ejecuta tras ADMIN_TOKEN, nunca por el token del renderizador.
   if (!renderer && url.pathname === "/api/research") {
-    if (method === "GET") return json(await listResearchRequests(env));
+    if (method === "GET") return json(await listResearchRequests(env,{
+      includeRuns:url.searchParams.get("runs")==="1"
+    }));
     if (method === "POST") {
       const body=await parseBody(request);
       let result;
