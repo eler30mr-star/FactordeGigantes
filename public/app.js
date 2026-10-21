@@ -191,6 +191,26 @@ async function load() {
     card.append(actions);list.append(card);
   }
 }
+// Diagnóstico privado de solo lectura. No interpreta un secreto presente como permiso válido.
+async function loadSystemStatus() {
+  const data=await request("/api/system/status");
+  const missing=Object.entries(data.production_d1 || {})
+    .filter(([,present])=>!present).map(([name])=>name);
+  const parts=[
+    data.database_complete ? "D1: tablas completas" : "D1: faltan "+missing.join(", "),
+    data.github_repository_configured ? "Repositorio: correcto" : "Repositorio: revisar configuración",
+    data.github_dispatch_secret_present ?
+      "Token de despacho: presente (permisos sin comprobar)" : "Token de despacho: ausente",
+    data.research_prerequisites_present ?
+      "Investigación: requisitos locales presentes" : "Investigación: requisitos incompletos",
+    "Publicación en YouTube: no autorizada"
+  ];
+  $("system-status").textContent=parts.join(" · ");
+}
+$("system-refresh").addEventListener("click",()=>loadSystemStatus().catch(e=>{
+  $("system-status").textContent=e.message;
+}));
+
 // Investigación autónoma desde panel. El servidor impide duplicados y requiere token ADMIN.
 function researchRow(item) {
   const article=tag("div","research-item","");
@@ -257,6 +277,7 @@ $("connect").addEventListener("click",async () => {
     $("indicator").textContent="Conectado";
     notice("Conexión privada establecida");
     loadResearch().catch(e=>{$("research-status").textContent=e.message;});
+    loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
   } catch(e) { adminToken=""; $("workspace").hidden=true; notice(e.message);}
 });
 $("refresh").addEventListener("click",()=>load().catch(e=>notice(e.message)));
