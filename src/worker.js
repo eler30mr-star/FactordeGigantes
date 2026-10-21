@@ -119,7 +119,7 @@ async function handle(request,env) {
     try {return json(await persistMarketReport(env.DB,await parseBody(request)),201);}
     catch(e) {
       if (e instanceof RangeError) return err("Informe de radar rechazado: "+e.message,400);
-      if (/no such table:\\s*market_/i.test(String(e?.message || "")))
+      if (/no such table:\s*market_/i.test(String(e?.message || "")))
         return err("D1 necesita migración 0004_market_intelligence.sql",503);
       throw e;
     }
