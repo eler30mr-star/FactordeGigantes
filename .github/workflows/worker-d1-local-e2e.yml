@@ -1,11 +1,6 @@
 name: Verificar Worker y D1 local - Factor de Gigantes
 on:
   workflow_dispatch:
-  # Disparador temporal ÚNICO de este ensayo local; retirar tras lanzarlo.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/worker-d1-local-e2e.yml'
 permissions:
   contents: read
 jobs:
