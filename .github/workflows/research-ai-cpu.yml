@@ -1,0 +1,65 @@
+name: Factor de Gigantes - investigador IA local CPU
+on:
+  workflow_dispatch:
+  # Trigger acotado de una sola corrida autorizada en este avance; retirar al lanzarse.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/research-ai-cpu.yml'
+permissions:
+  contents: read
+concurrency:
+  group: factor-gigantes-research-ai-local
+  cancel-in-progress: false
+jobs:
+  investigation:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      HF_HOME: /tmp/factor-hf-research
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      HF_HUB_DISABLE_XET: '1'
+      OMP_NUM_THREADS: '4'
+      TOKENIZERS_PARALLELISM: 'false'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contratos de investigación sin conexión de pago
+        run: |
+          python -m unittest discover -s tests -p test_research_engine.py -v
+          python -m unittest discover -s tests -p test_local_research_ai.py -v
+      - name: Investigar fuentes reales de BlackBerry (borrador acotado)
+        run: |
+          timeout -k 5s 140s python -m tools.research_engine \
+            --dossier research/blackberry/expediente_preliminar.json \
+            --max-requests 6 --out dist/research-blackberry
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path("dist/research-blackberry/reporte_investigacion.json").read_text())
+          print("Documentos obtenidos:",p["fetched_count"],"/",p["request_count"])
+          print("Pasajes candidatos:",sum(len(c["candidate_passages"]) for c in p["candidate_claims"]))
+          print("Comprobaciones humanas realizadas por la herramienta:",p["facts_verified_automatically"])
+          PY
+      - name: Instalar modelo abierto y PyTorch SOLO CPU
+        run: |
+          python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'transformers==4.57.3' 'accelerate==1.12.0' 'sentencepiece>=0.2.0'
+      - name: IA local genera borrador solo con los pasajes extraídos
+        run: |
+          /usr/bin/time -v timeout -k 10s 540s python -m tools.local_research_ai \
+            --report dist/research-blackberry/reporte_investigacion.json \
+            --out dist/research-blackberry \
+            --model Qwen/Qwen3-0.6B --max-new-tokens 235
+      - name: Entregar informe de fuentes y borrador no verificado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factor-investigador-ia-blackberry-cpu
+          path: dist/research-blackberry/
+          retention-days: 3
+          if-no-files-found: warn
