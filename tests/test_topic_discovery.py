@@ -50,6 +50,33 @@ class AutonomousDiscoveryTests(unittest.TestCase):
         self.assertFalse(result["market_study_complete"])
         self.assertIsNone(result["selected_automatically_for_research"])
 
+    def test_validated_interest_enrichment_is_not_youtube_demand(self):
+        calls=[]
+        def interest(title,*,language,now):
+            calls.append((title,language,now))
+            return {
+                "observed_at":"2026-10-21",
+                "url":"https://es.wikipedia.org/wiki/Compañía_Ejemplo",
+                "views_last_7d":8800,"views_previous_7d":4200,
+            }
+        result=discover(today=DAY,limit=10,fetch=fake_fetch,
+                        enrich_interest=True,interest_collector=interest)
+        self.assertEqual(result["wikipedia_interest_measured_count"],1)
+        self.assertEqual(result["candidates"][0]["interest_14d_status"],"measured")
+        self.assertEqual(result["candidates"][0]["wikipedia_interest"]["views_last_7d"],8800)
+        self.assertEqual(len(calls),1)
+        self.assertFalse(result["youtube_market_verified"])
+        self.assertFalse(result["market_study_complete"])
+
+    def test_unavailable_interest_does_not_fabricate_growth(self):
+        def rejected(title,*,language,now):
+            raise RuntimeError("Provider is unavailable")
+        result=discover(today=DAY,limit=10,fetch=fake_fetch,
+                        enrich_interest=True,interest_collector=rejected)
+        self.assertEqual(result["wikipedia_interest_measured_count"],0)
+        self.assertEqual(result["candidates"][0]["interest_14d_status"],"unavailable")
+        self.assertNotIn("wikipedia_interest",result["candidates"][0])
+
     def test_date_lag_and_capped_request_budget(self):
         urls=[]
         def fetch(url):
