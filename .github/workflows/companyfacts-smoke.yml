@@ -1,11 +1,6 @@
 name: Factor de Gigantes - prueba SEC XBRL sin Qwen
 on:
   workflow_dispatch:
-  # Ejecución única inicial; se retira el evento push tras probar.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/companyfacts-smoke.yml'
 permissions:
   contents: read
 jobs:
