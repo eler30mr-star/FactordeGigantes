@@ -133,11 +133,14 @@ function action(fn,notify) {
 }
 
 /** Mantiene un borrador en memoria; no persiste nada sin "Guardar expediente". */
-export function mountEditorialEditor(root,initial,{editable=true,manifest,notify=()=>{}}) {
+export function mountEditorialEditor(root,initial,{editable=true,manifest,notify=()=>{},onChange=()=>{}}) {
   const dossier=cloneDossier(initial);
   let isEditable=editable;
   const manifestSources=(manifest?.sources||[]).map(s=>typeof s==="string"?s:s.url);
   const segments=manifest?.segments||[];
+  root.oninput=onChange;
+  root.onchange=onChange;
+  root.onclick=event=>{if(event.target.closest('button:not([disabled])'))onChange();};
 
   function draw() {
     root.replaceChildren();
