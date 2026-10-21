@@ -2,7 +2,7 @@
 
 **VERSIÓN DE MONTAJE 01 · BORRADOR DE VOZ COMPLETO · NO APROBADO**
 
-**Duración planificada:** 11:50, dividida en 12 escenas. **Narración original:** 1691 palabras, estimación a 130 palabras/minuto = 13.0 min de voz continua; el tiempo de montaje incluye pausas visuales. El minutaje de cada escena es objetivo editorial y deberá ajustarse tras una locución de prueba.
+**Duración planificada:** 11:50, dividida en 12 escenas. **Narración original:** 1691 palabras, estimación a 145 palabras/minuto = 11,7 min de voz continua; el tiempo de montaje (11:50 objetivo) incluye pausas visuales y deberá recalcularse al probar la voz. El minutaje de cada escena es objetivo editorial y deberá ajustarse tras una locución de prueba.
 
 **Reglas editoriales:** No usar imágenes, música ni la voz del narrador sin licencia comercial comprobada. Ningún documento sustituye la revisión factual humana. El material no está autorizado para render final ni YouTube. Los números financieros se atribuyen al ejercicio y base contable descritos por la empresa. Referencias [ID] abajo son claves de fuente de `FUENTES_GUION_10MIN.json`, no licencias.
 
