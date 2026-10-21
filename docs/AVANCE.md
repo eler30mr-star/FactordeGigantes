@@ -1,6 +1,6 @@
 # Historial de avance — Factor de Gigantes
 
-> **Estado vigente 2026-10-20:** el banco Qwen 1.7B CPU de dos fragmentos se ejecutó con éxito; ambos MP3 fueron generados, conservados y verificados. Pendiente indispensable: audición y aceptación humanas, licencia comercial y pruebas de narración larga.
+> **Estado vigente 2026-10-21:** Cloudflare cuenta «Factor» restablecida; D1 remota 0002/0003 aplicadas, 1 trabajo y 8 eventos preservados; Worker y panel nuevos desplegados desde `main` con 25 pruebas Node verdes. El motor documental, verificación factual, validación de derechos y login final de interfaz siguen en progreso. El banco Qwen de voz 1.7B conserva su estado previo de audición/licencia pendiente.
 
 ## 2026-10-20 · Inicio del proyecto
 
@@ -655,3 +655,29 @@ Continuar el motor de Factor de Gigantes mientras la laptop HP de 12 GB está de
 2. Crear auditoría de contradicciones entre cifras y fuentes, apoyar guion original por escena y revisión humana sin convertir un borrador Qwen en vídeo publicable.
 3. Tras resolver Cloudflare, migrar D1 remota, desplegar Worker/panel, probar investigación y lectura de estado reales en producción.
 4. Mantener la continuidad vocal aprobada y presupuesto gratuito para la prueba de producción audiovisual más larga, con derechos comerciales pendientes.
+
+## 2026-10-21 · Infraestructura real recuperada y desplegada (rama obligatoria `main`)
+
+**Solicitud autorizada:** propietario confirmó que se deben aplicar migraciones 0002 y 0003 y continuar avanzando sin ramas aparte, pagos por API ni publicaciones automáticas.
+
+### Verificaciones y operaciones efectivamente realizadas
+
+1. **Conexión correcta de Cloudflare:** los errores anteriores surgieron porque había dos cuentas conectadas y la herramienta requería `link_id`. Se seleccionó expresamente `Factor`, no `Primary`. Cloudflare confirmó el Worker `factor-de-gigantes` y la D1 `factor-de-gigantes-db` enlazada con el identificador esperado.
+2. **Resguardo de datos previo:** se obtuvo un bookmark de Time Travel de la D1 y se solicitó una exportación SQL de las tablas `jobs` y `events`. Cloudflare API respondió estado `complete` y URL firmada temporal. La copia **no fue descargada permanentemente fuera de Cloudflare**; el enlace firmado vence y cualquier recuperación depende de la retención del servicio. No se publicaron datos de usuarios ni secretos.
+3. **Migraciones remotas auténticas:** `migrations/0002_editorial_dossiers.sql` y `migrations/0003_research_requests.sql` leídas desde `main` y comparadas con los blobs esperados; ambas aplicadas mediante API SQL de D1 con `success`. Se verificaron tablas `editorial_dossiers`/`research_requests` e índices, sin anomalías en `PRAGMA foreign_key_check`. La API denegó `PRAGMA integrity_check` (`SQLITE_AUTH`), por lo que **no** se certifica un chequeo de integridad profundo.
+4. **Preservación comprobada después de migrar y desplegar:** `jobs=1`, `events=8`, `editorial_dossiers=0`, `research_requests=0`. Mismo conteo de trabajos y eventos antes/después de las operaciones. Estas migraciones se ejecutaron por Cloudflare SQL API, **no** por Wrangler migrations, y `d1_migrations` todavía no existe. No crear otra D1 ni repetir SQL por rutina.
+5. **Primer redespliegue controlado:** Cloudflare Builds conectado a `eler30mr-star/FactordeGigantes`, `main` y `npx wrangler deploy`. Build `729fb21f-d1d9-4f2f-999e-7e6f8cbd47de` `success`, commit `79a2ba80b95022e90acb696c81ebaa610112fa55`. El origen Worker, ASSETS, DB y secretos se conservaron.
+6. **Protección de gasto por concurrencia:** se corrigió `src/research-control.mjs` para reservar cuota usando una única sentencia `INSERT OR IGNORE ... SELECT ... WHERE COUNT(*) < 4`, en lugar de dos operaciones con carrera. Consulta posterior diferencia duplicados HTTP 409 de límite diario HTTP 429. `tests/test_research_control.mjs` incorpora caso de dos peticiones simultáneas con un solo hueco; la prueba no dispara GH Actions real.
+7. **Calidad obligatoria en Cloudflare Builds:** se configuró el trigger de `main` para ejecutar `node --check` y `node --test` antes del deploy, bloqueando builds con test rojo. Build `720b0c1e-b0ac-4dda-92c3-4c7110f8f862` `success`, 21 tests JS aprobados, 0 fallidos y Worker publicado.
+8. **Nuevo diagnóstico interno del panel:** `src/system-readiness.mjs`, ruta autenticada `GET /api/system/status`, panel `public/index.html`/`public/app.js` y `tests/test_system_readiness.mjs`. Comprueba por lectura de sqlite_master cuatro tablas y muestra banderas de presencia de configuración GitHub, siempre sin exponer el valor de ningún token, sin contactar GitHub ni inferir autorización para publicar. HTTP 401 sin ADMIN_TOKEN, HTTP 405 con método POST; no modifica datos.
+9. **Despliegue final auditado:** Cloudflare build `17eaaf34-42eb-4427-859b-0f0b8d92b262`, `success`, commit `7ccc9d4e6cf224bbc22333722e0127c1f932b4e6` de `main`, **25 pruebas Node aprobadas y cero fallos**, 2 assets nuevos/modificados subidos, versión Worker `a7695b06-938e-402e-a4ba-809fc2f2ec02` activada al 100 %. Lectura remota posterior del bundle verificó la ruta `/api/system/status` y la reserva atómica; D1 volvió a responder con los mismos datos 1/8/0/0. El Worker mantiene `ADMIN_TOKEN`, `RENDERER_TOKEN`, `GITHUB_DISPATCH_TOKEN` y D1.
+10. **Monitoreo posterior al deploy:** `tools/production_smoke.py` y una comprobación no bloqueante añadida a `.github/workflows/check.yml` permiten vigilar HTML público, `/app.js`, `/health` y barrera de autenticación; esta comprobación **no se ha acreditado como ejecutada satisfactoriamente en la última versión**. No hay simulación de usuario autenticado por ChatGPT ni falsa afirmación de que se generó un documental nuevo.
+
+### Próximas tareas prioritarias
+
+1. Comprobar desde navegador del propietario que el panel actualizado abre, admite su token administrativo y muestra «Estado del sistema» y «Investigar con IA». Sin compartir secretos en chat.
+2. Disparar **una** investigación IA real desde el panel solo cuando el propietario indique el tema; cotejar Action vinculado, informe, fuentes y borrador. Los Qwen experimentales anteriores no son guiones completos y han mostrado alucinaciones factuales.
+3. Mejorar investigación primaria autónoma a PDFs oficiales/regulatorios y números con páginas, contraste entre fuentes y rechazo de contradicciones antes de narrar.
+4. Construir narración documental original de 8–14 min y montaje audiovisual dentro del presupuesto de GitHub Actions, con QA, verificación de derechos de voz/visual y autorización humana. Sin publicación automática en YouTube.
+
+**Estado final:** recuperación del conector, SQL D1 remota, dos despliegues, prueba de cuota y diagnóstico privado **COMPLETADOS Y VERIFICADOS**; uso autenticado real del panel, generación IA desde nuevo botón y documental completo **PENDIENTES**. Todo commit en `main`.
