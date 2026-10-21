@@ -34,7 +34,7 @@ export function validateDossier(dossier, manifest) {
   const sources = list(dossier.sources, "Fuentes", 2, 30);
   const claims = list(dossier.claims, "Afirmaciones", 1, 50);
   const assets = list(dossier.assets, "Recursos audiovisuales", 1, 40);
-  const sourceIds = new Set(), sourceUrls = new Set(), claimIds = new Set();
+  const sourceIds = new Set(), sourceUrls = new Set(), claimIds = new Set(), coveredSegments = new Set();
   for (const s of sources) {
     if (!s || typeof s !== "object") throw new Error("Fuente inválida");
     const sid = string(s.id, "ID de fuente", 3, 4);
@@ -62,6 +62,11 @@ export function validateDossier(dossier, manifest) {
     const cid = string(c.id, "ID de afirmación", 3, 4);
     if (!/^C\d{2,3}$/.test(cid) || claimIds.has(cid)) throw new Error("ID de afirmación duplicado o inválido");
     claimIds.add(cid);
+    if (manifest) {
+      if (!Number.isInteger(c.segment_index) || c.segment_index < 1 || c.segment_index > manifest.segments.length)
+        throw new Error("Cada afirmación requiere un índice de segmento del guion");
+      coveredSegments.add(c.segment_index);
+    }
     string(c.text, "Texto de afirmación", 20, 900);
     const evidence = list(c.evidence, "Evidencia por afirmación", 1, 5);
     const seen = new Set();
@@ -76,6 +81,8 @@ export function validateDossier(dossier, manifest) {
     if (evidence.every(e => e.status === "verificada") &&
         typeof c.reviewed_by === "string" && c.reviewed_by.trim().length >= 3) verifiedClaims++;
   }
+  if (manifest && coveredSegments.size !== manifest.segments.length)
+    throw new Error("Cada segmento del guion necesita al menos una afirmación con evidencia");
   let verifiedAssets = 0, voiceDeclared = false;
   for (const a of assets) {
     if (!a || !validAssetTypes.has(a.kind)) throw new Error("Tipo de recurso inválido");
