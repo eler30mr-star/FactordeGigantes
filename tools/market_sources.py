@@ -141,12 +141,7 @@ def collect_wikipedia(title, *, language="es", now=None, request=None):
         if not isinstance(entry,dict):
             continue
         try:
-            day=date.strptime(entry["timestamp"][:8],"%Y%m%d")
-        except AttributeError:
-            try:
-                day=datetime.strptime(entry["timestamp"][:8],"%Y%m%d").date()
-            except (ValueError,TypeError,KeyError):
-                continue
+            day=datetime.strptime(entry["timestamp"][:8],"%Y%m%d").date()
         except (ValueError,TypeError,KeyError):
             continue
         views=entry.get("views")
