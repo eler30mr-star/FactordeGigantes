@@ -316,3 +316,18 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] No publicar a YouTube ni contratar servicios; conservar rama `main` y documento `docs/AVANCE.md`.
 
 **Nota:** el montaje y la narración no se consideran terminados; avanzar en ellos depende de evidencias, derechos y prueba de audio aprobado. La laptop de 12 GB RAM no es un requisito de este hito.
+
+## Fase 2 — comparador financiero y expediente de revisión (2026-10-21)
+
+- [x] Implementar extracción XBRL SEC candidate-only para un emisor con tag, unidad USD, fechas exactas, tipo de periodo, filing y accession; validar host SEC, CIK y topes de descarga. **No hay recolección real confirmada todavía.**
+- [x] Comparar solo métricas y periodos homogéneos; señalar diferencias entre presentaciones del mismo periodo como **revisión humana**, nunca fraude/contradicción probada.
+- [x] Integrar en investigación Qwen manual un paso condicional de datos XBRL, tolerante a SEC bloqueada. Mantener borradores y conteo de hechos verificados igual a cero.
+- [x] Generar expedientes consolidados `EXPEDIENTE_EDITORIAL_PENDIENTE.json` y `EXPEDIENTE_PARA_REVISOR.md` con las carencias por afirmación, enlaces de fuentes, riesgos, cifras candidatas y bloqueos de derechos. No significa guion terminado.
+- [x] Extender `primary_source_discovery.py` para registrar enlaces **realmente presentes** a informes anuales y PDF desde páginas corporativas, distinguiendo hosts externos. Cero links inventados y ninguna descarga/autoría automática.
+- [x] Versionar chequeos de Cloudflare en `tools/production_preflight.sh`, evitando configuraciones de build difíciles de mantener. CI [39625136678](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39625136678) `success`.
+- [x] Ejecutar prueba pública controlada de SEC: [registros 39621724636](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39621724636), [XBRL 39624310668](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39624310668): ambos endpoints rechazaron acceso (`HTTPError`). **0 datos SEC financieros reales obtenidos.**
+- [ ] Validar una fuente financiera real accesible, con PDF/HTML, unidad/periodo/URL/página, y contrastar cifras de al menos dos documentos independientes.
+- [ ] Completar prosa documental de 8–14 minutos con verificación frase a frase, fuentes originales y narrador con derechos comerciales acreditados; generar una prueba reproducible de audio/MP4 antes de hablar de producto listo.
+- [ ] Verificar en el panel publicado el login privado y una solicitud manual real, sin exponer ADMIN_TOKEN ni activar publicación.
+- [ ] Desplegar y comprobar en producción el último commit del motor alternativo; no confundir CI con el build de Cloudflare.
+- [ ] Conservar publicación YouTube deshabilitada, códigos en `main` y el historial en `docs/AVANCE.md`.
