@@ -196,19 +196,36 @@ function researchRow(item) {
   const article=tag("div","research-item","");
   const state={"sent":"Enviado a GitHub","reserved":"Solicitud reservada","unknown":"Envío incierto: revisar Actions","rejected":"Rechazado por GitHub"}[item.state] || item.state;
   article.append(tag("strong","",item.topic),tag("span","muted",state));
+  if(item.run) {
+    const runStatus=item.run.status==="queued" ? "En cola" :
+      item.run.status==="in_progress" ? "Ejecutándose" :
+      item.run.conclusion==="success" ? "Completado correctamente" :
+      item.run.conclusion==="failure" ? "Finalizó con errores" :
+      "Finalizado: "+String(item.run.conclusion || "sin conclusión");
+    article.append(tag("span","muted","GitHub Actions: "+runStatus));
+    const link=tag("a","","Ver ejecución y artefactos");
+    link.href=item.run.url;
+    link.target="_blank";
+    link.rel="noopener noreferrer";
+    article.append(link);
+  } else if(item.state==="sent" || item.state==="unknown") {
+    article.append(tag("small","muted","Sin ejecución vinculada todavía; verifica Actions si no aparece."));
+  }
   article.append(tag("small","muted",item.created_at || ""));
   return article;
 }
-async function loadResearch() {
-  const data=await request("/api/research");
+async function loadResearch(includeRuns=false) {
+  const data=await request(includeRuns?"/api/research?runs=1":"/api/research");
   const container=$("research-history");
   container.replaceChildren();
   if(!data.requests.length) container.append(tag("p","muted","Sin investigaciones solicitadas aún."));
   for(const item of data.requests) container.append(researchRow(item));
   $("research-status").textContent="Solicitudes registradas: "+data.requests.length+
-    ". Revisa GitHub Actions para saber si finalizaron.";
+    (data.run_lookup==="checked" ? ". Estados consultados en GitHub Actions; los registros sin ejecución asociada siguen pendientes de comprobar." :
+    data.run_lookup==="unavailable" ? ". GitHub no respondió o faltan permisos de lectura; consulta Actions directamente." :
+    ". Pulsa «Actualizar» para consultar las ejecuciones.");
 }
-$("research-refresh").addEventListener("click",()=>loadResearch().catch(e=>{
+$("research-refresh").addEventListener("click",()=>loadResearch(true).catch(e=>{
   $("research-status").textContent=e.message;
 }));
 $("research-form").addEventListener("submit",async event=>{
@@ -223,7 +240,7 @@ $("research-form").addEventListener("submit",async event=>{
     $("research-status").textContent=result.notice;
     notice("GitHub aceptó la solicitud de investigación. Consulta los resultados en Actions.");
     $("research-form").reset();
-    await loadResearch();
+    await loadResearch(true);
   }catch(e){
     $("research-status").textContent=e.message;
     notice(e.message);
