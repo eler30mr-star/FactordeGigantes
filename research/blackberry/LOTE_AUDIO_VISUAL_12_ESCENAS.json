@@ -1,0 +1,546 @@
+{
+  "project": "Factor de Gigantes",
+  "episode": "BlackBerry",
+  "scene_count": 12,
+  "original_script": "research/blackberry/GUION_DOCUMENTAL_11MIN_NO_APROBADO.md",
+  "original_script_git_blob_sha": "93bd22e294ccb70832299b192669d13b92cfdd54",
+  "audio_canonical_reference_sha256": "78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d",
+  "planned_voice_parts": 56,
+  "audio_approved_for_commercial_use": false,
+  "final_video_complete": false,
+  "youtube_publication_authorized": false,
+  "evidence_scene01_audio": "https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684819",
+  "evidence_scene01_video": "https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39641357257",
+  "strategy": "one scene per controlled CPU run; voice and editorial review before final export",
+  "scenes": [
+    {
+      "scene_id": "S01",
+      "title": "La pregunta detrás del teléfono",
+      "planned_time": "00:00–00:55",
+      "source_ids": [
+        "H99",
+        "K25"
+      ],
+      "narration_word_count": 137,
+      "parts": [
+        {
+          "id": "S01_P01",
+          "text": "Durante mucho tiempo, bastaba con ver un teclado diminuto para reconocer a BlackBerry. No era solamente una marca de teléfonos. Para muchos profesionales, representaba la posibilidad de responder un mensaje importante sin regresar a una oficina.",
+          "characters": 245,
+          "status": "generated_not_audited"
+        },
+        {
+          "id": "S01_P02",
+          "text": "Esa imagen todavía domina el recuerdo colectivo. Pero hay una segunda historia que casi nunca aparece cuando pensamos en la empresa. ¿Qué ocurre cuando el producto que hizo famoso a un negocio deja de explicar su futuro?",
+          "characters": 220,
+          "status": "generated_not_audited"
+        },
+        {
+          "id": "S01_P03",
+          "text": "¿Se acaba la organización con aquel objeto? ¿O puede sobrevivir transformando aquello que realmente sabe hacer? Para responder, no vamos a buscar una moraleja rápida.",
+          "characters": 166,
+          "status": "generated_not_audited"
+        },
+        {
+          "id": "S01_P04",
+          "text": "Vamos a seguir documentos, decisiones y cifras que cuentan algo menos evidente: la trayectoria de una compañía que pasó de ser reconocida por un dispositivo a obtener ingresos de software y servicios que la mayoría de nosotros nunca ve.",
+          "characters": 236,
+          "status": "generated_not_audited"
+        }
+      ],
+      "audio_status": "four_clips_56_52sec_pending_listening",
+      "video_status": "preview_56_50sec_no_release",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S02",
+      "title": "Antes de los teléfonos",
+      "planned_time": "00:55–01:50",
+      "source_ids": [
+        "K25",
+        "H99"
+      ],
+      "narration_word_count": 133,
+      "parts": [
+        {
+          "id": "S02_P01",
+          "text": "La historia comienza mucho antes de que la palabra teléfono inteligente formara parte de nuestras conversaciones. BlackBerry señala mil novecientos ochenta y cuatro como el año de fundación de la compañía.",
+          "characters": 205,
+          "status": "not_generated"
+        },
+        {
+          "id": "S02_P02",
+          "text": "Era el tiempo de las comunicaciones inalámbricas que todavía buscaban su lugar en la vida cotidiana. Décadas después, el museo Smithsonian conserva uno de esos primeros dispositivos.",
+          "characters": 182,
+          "status": "not_generated"
+        },
+        {
+          "id": "S02_P03",
+          "text": "Su ficha describe la BlackBerry novecientos cincuenta y siete, fabricada por Research In Motion alrededor del año dos mil.",
+          "characters": 122,
+          "status": "not_generated"
+        },
+        {
+          "id": "S02_P04",
+          "text": "También recuerda que la primera BlackBerry apareció en mil novecientos noventa y nueve como un equipo de mensajería bidireccional, no como el teléfono moderno que imaginamos hoy.",
+          "characters": 178,
+          "status": "not_generated"
+        },
+        {
+          "id": "S02_P05",
+          "text": "El detalle importa: la propuesta inicial no consistía en ganar una guerra de cámaras, aplicaciones o pantallas gigantes. Consistía en llevar información y correo electrónico a un aparato portátil.",
+          "characters": 196,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S03",
+      "title": "El valor de estar conectado",
+      "planned_time": "01:50–02:50",
+      "source_ids": [
+        "H99",
+        "D16"
+      ],
+      "narration_word_count": 146,
+      "parts": [
+        {
+          "id": "S03_P01",
+          "text": "Hoy recibir correo en cualquier lugar parece una función demasiado sencilla como para llamar nuestra atención. Precisamente por eso cuesta imaginar lo diferente que resultaba cuando el correo dependía de un escritorio.",
+          "characters": 218,
+          "status": "not_generated"
+        },
+        {
+          "id": "S03_P02",
+          "text": "Los primeros dispositivos de BlackBerry pusieron una idea poderosa en la mano del usuario: los mensajes podían acompañarlo durante su jornada.",
+          "characters": 142,
+          "status": "not_generated"
+        },
+        {
+          "id": "S03_P03",
+          "text": "Esa utilidad explica parte del lugar que la marca llegó a ocupar en entornos profesionales. Para alguien que coordinaba reuniones, viajes o emergencias, disponer de la información a tiempo podía cambiar la forma de trabajar.",
+          "characters": 224,
+          "status": "not_generated"
+        },
+        {
+          "id": "S03_P04",
+          "text": "La ventaja no era únicamente un teclado. Era la promesa de estar disponible. Sin embargo, un producto exitoso puede crear una expectativa difícil de romper.",
+          "characters": 156,
+          "status": "not_generated"
+        },
+        {
+          "id": "S03_P05",
+          "text": "Cuando una empresa se vuelve sinónimo de una solución, el público comienza a pensar que esa solución es toda la empresa. Y esa confusión puede durar incluso después de que el negocio cambie.",
+          "characters": 190,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S04",
+      "title": "Cuando cambian las reglas",
+      "planned_time": "02:50–03:45",
+      "source_ids": [
+        "D16",
+        "R16"
+      ],
+      "narration_word_count": 132,
+      "parts": [
+        {
+          "id": "S04_P01",
+          "text": "La informática móvil no permaneció quieta. Llegaron nuevas formas de interactuar con los dispositivos y nuevas expectativas sobre lo que debía ofrecer un teléfono.",
+          "characters": 163,
+          "status": "not_generated"
+        },
+        {
+          "id": "S04_P02",
+          "text": "BlackBerry tuvo que tomar decisiones en un mercado que ya no se parecía al que había ayudado a construir. No hace falta inventar conversaciones de directivos ni atribuirles pensamientos para entender el problema.",
+          "characters": 212,
+          "status": "not_generated"
+        },
+        {
+          "id": "S04_P03",
+          "text": "Basta con mirar lo que la empresa terminó anunciando. En septiembre de dos mil dieciséis, BlackBerry comunicó un cambio fundamental: dejaría de desarrollar internamente el hardware de sus teléfonos y trasladaría esa función a socios externos.",
+          "characters": 242,
+          "status": "not_generated"
+        },
+        {
+          "id": "S04_P04",
+          "text": "No era la desaparición instantánea de todo lo relacionado con la marca. Era una decisión sobre qué parte del producto debía fabricar y dónde concentraría recursos. En lugar de sostener toda la cadena, buscaba reforzar software, seguridad y licencias.",
+          "characters": 250,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S05",
+      "title": "Lo que se decide conservar",
+      "planned_time": "03:45–04:40",
+      "source_ids": [
+        "D16",
+        "R16"
+      ],
+      "narration_word_count": 138,
+      "parts": [
+        {
+          "id": "S05_P01",
+          "text": "Un cambio empresarial suele describirse con una palabra seductora: reinvención. Pero detrás de ella hay compromisos concretos. BlackBerry reconocía en sus documentos que el desarrollo de dispositivos exigía inversión, organización y capacidad de respuesta.",
+          "characters": 256,
+          "status": "not_generated"
+        },
+        {
+          "id": "S05_P02",
+          "text": "Al trasladar el hardware a terceros, aspiraba a liberar recursos y poner el foco en actividades que consideraba más relevantes para su estrategia. Eso no demuestra por sí mismo que la decisión fuera correcta.",
+          "characters": 208,
+          "status": "not_generated"
+        },
+        {
+          "id": "S05_P03",
+          "text": "Tampoco permite asegurar que la transición resultara sencilla. Las declaraciones oficiales explican intenciones y acciones; los resultados requieren observación posterior.",
+          "characters": 171,
+          "status": "not_generated"
+        },
+        {
+          "id": "S05_P04",
+          "text": "Lo interesante es que BlackBerry no intentó conservar intacta la imagen del producto a cualquier costo. Empezó a separar la marca de la necesidad de construir físicamente cada equipo.",
+          "characters": 183,
+          "status": "not_generated"
+        },
+        {
+          "id": "S05_P05",
+          "text": "La pregunta dejó de ser cuántos teléfonos fabricaría y pasó a ser qué tecnología podía vender sin depender de ese teléfono.",
+          "characters": 123,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S06",
+      "title": "El negocio que casi nadie ve",
+      "planned_time": "04:40–05:40",
+      "source_ids": [
+        "K25",
+        "P25"
+      ],
+      "narration_word_count": 145,
+      "parts": [
+        {
+          "id": "S06_P01",
+          "text": "Los documentos más recientes del período que estamos estudiando muestran una empresa organizada alrededor de dos grandes divisiones: QNX y Secure Communications.",
+          "characters": 161,
+          "status": "not_generated"
+        },
+        {
+          "id": "S06_P02",
+          "text": "Son nombres que no tienen la misma presencia popular que tuvo el teléfono BlackBerry. Y, precisamente por eso, son centrales para entender la transformación. QNX desarrolla tecnología fundamental para sistemas integrados.",
+          "characters": 221,
+          "status": "not_generated"
+        },
+        {
+          "id": "S06_P03",
+          "text": "Son sistemas que trabajan dentro de dispositivos, máquinas y vehículos. Secure Communications agrupa soluciones orientadas a comunicaciones y seguridad de organizaciones.",
+          "characters": 170,
+          "status": "not_generated"
+        },
+        {
+          "id": "S06_P04",
+          "text": "No compiten necesariamente por aparecer en la pantalla principal de un consumidor. Su valor está en lo que permiten hacer a quienes los utilizan. Este cambio obliga a mirar BlackBerry con otra lente.",
+          "characters": 199,
+          "status": "not_generated"
+        },
+        {
+          "id": "S06_P05",
+          "text": "El usuario final puede no conocer el nombre del software que ayuda a funcionar a un sistema, pero para una empresa industrial o una organización que necesita comunicaciones seguras, ese software puede ser parte importante de su operación.",
+          "characters": 238,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S07",
+      "title": "QNX: la tecnología en segundo plano",
+      "planned_time": "05:40–06:35",
+      "source_ids": [
+        "K25",
+        "F25"
+      ],
+      "narration_word_count": 142,
+      "parts": [
+        {
+          "id": "S07_P01",
+          "text": "Pensemos en un automóvil actual. Lo más visible es su diseño, la pantalla y los controles. Pero detrás hay sistemas que coordinan funciones y tareas donde la confiabilidad importa. Es en ese mundo donde BlackBerry ubica su negocio QNX.",
+          "characters": 235,
+          "status": "not_generated"
+        },
+        {
+          "id": "S07_P02",
+          "text": "En el informe anual de dos mil veinticinco, la empresa presenta QNX como una división centrada en software para sistemas integrados y aplicaciones relacionadas. Esa descripción es mucho menos llamativa que el lanzamiento de un teléfono.",
+          "characters": 236,
+          "status": "not_generated"
+        },
+        {
+          "id": "S07_P03",
+          "text": "Sin embargo, revela una apuesta diferente: vender tecnología que sirve de fundamento para otras soluciones. Esto no significa que BlackBerry fabrique los automóviles ni que controle por completo lo que sucede dentro de ellos.",
+          "characters": 225,
+          "status": "not_generated"
+        },
+        {
+          "id": "S07_P04",
+          "text": "Significa que ofrece componentes de software que otros integran. La distinción es esencial para no exagerar su papel ni convertir una licencia tecnológica en un producto final que no pertenece a la compañía.",
+          "characters": 207,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S08",
+      "title": "Una cifra puede ocultar otra historia",
+      "planned_time": "06:35–07:35",
+      "source_ids": [
+        "F24"
+      ],
+      "narration_word_count": 140,
+      "parts": [
+        {
+          "id": "S08_P01",
+          "text": "Llegamos a abril de dos mil veinticuatro. BlackBerry presenta los resultados del ejercicio fiscal que acababa de cerrar. El comunicado registra ochocientos cincuenta y tres millones de dólares de ingresos totales.",
+          "characters": 213,
+          "status": "not_generated"
+        },
+        {
+          "id": "S08_P02",
+          "text": "Pero en la misma explicación hay un detalle decisivo: doscientos dieciocho millones están relacionados con una venta de cartera de patentes heredadas. Si mostramos solo el ingreso total, el espectador puede imaginar que todo procede de operaciones habituales.",
+          "characters": 259,
+          "status": "not_generated"
+        },
+        {
+          "id": "S08_P03",
+          "text": "Los propios documentos obligan a contar algo más preciso. Una venta de activos o derechos puede aumentar los ingresos de un período sin repetirse necesariamente en los siguientes.",
+          "characters": 179,
+          "status": "not_generated"
+        },
+        {
+          "id": "S08_P04",
+          "text": "Por eso una gráfica bien diseñada debe separar la cifra global del componente extraordinario y señalar la presentación contable del documento.",
+          "characters": 142,
+          "status": "not_generated"
+        },
+        {
+          "id": "S08_P05",
+          "text": "La historia no está solamente en el número más grande. Está en comprender qué hechos económicos lo produjeron y cuáles pueden repetirse.",
+          "characters": 136,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S09",
+      "title": "La venta que cambió el perímetro",
+      "planned_time": "07:35–08:40",
+      "source_ids": [
+        "K25",
+        "P25"
+      ],
+      "narration_word_count": 138,
+      "parts": [
+        {
+          "id": "S09_P01",
+          "text": "Mientras la empresa reorganizaba sus negocios, otra decisión alteró la forma de leer sus resultados. El tres de febrero de dos mil veinticinco, BlackBerry completó la venta de activos y pasivos relacionados con Cylance a Arctic Wolf.",
+          "characters": 233,
+          "status": "not_generated"
+        },
+        {
+          "id": "S09_P02",
+          "text": "Cylance estaba vinculado a soluciones de ciberseguridad. La venta no fue solo una operación aislada en una hoja de cálculo. También cambió qué actividades se incluían en la presentación de operaciones continuadas y cuáles aparecían como discontinuadas.",
+          "characters": 252,
+          "status": "not_generated"
+        },
+        {
+          "id": "S09_P03",
+          "text": "Esto es importante porque una cifra financiera nunca existe fuera de una definición. Si una compañía deja de incluir una actividad en un conjunto de resultados, comparar una tabla anterior con otra posterior puede producir una conclusión engañosa.",
+          "characters": 247,
+          "status": "not_generated"
+        },
+        {
+          "id": "S09_P04",
+          "text": "Aquí necesitamos mantener separadas las preguntas: ¿qué ocurrió con el negocio vendido?, ¿qué negocios permanecieron?, ¿y cómo se presentaron los períodos previos para permitir comparaciones razonables?",
+          "characters": 202,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S10",
+      "title": "Dos cifras para un mismo año",
+      "planned_time": "08:40–09:50",
+      "source_ids": [
+        "F24",
+        "F25",
+        "K25"
+      ],
+      "narration_word_count": 149,
+      "parts": [
+        {
+          "id": "S10_P01",
+          "text": "Este es el punto más delicado del episodio. En el comunicado de abril de dos mil veinticuatro, BlackBerry informó ochocientos cincuenta y tres millones de dólares de ingresos de aquel ejercicio.",
+          "characters": 194,
+          "status": "not_generated"
+        },
+        {
+          "id": "S10_P02",
+          "text": "Pero en su comunicación de resultados de dos mil veinticinco, la comparación del año anterior aparece con setecientos cincuenta y nueve coma uno millones. La tentación es restar ambos valores y anunciar que alguien se equivocó.",
+          "characters": 227,
+          "status": "not_generated"
+        },
+        {
+          "id": "S10_P03",
+          "text": "Esa conclusión sería precipitada. El informe anual explica la presentación de Cylance como operación discontinuada y la reformulación de comparativos anteriores cuando corresponde.",
+          "characters": 180,
+          "status": "not_generated"
+        },
+        {
+          "id": "S10_P04",
+          "text": "Los dos documentos no están describiendo necesariamente el mismo perímetro contable. La lección de esta escena es práctica: antes de dibujar una línea ascendente o descendente, hay que comprobar qué incluye cada período.",
+          "characters": 220,
+          "status": "not_generated"
+        },
+        {
+          "id": "S10_P05",
+          "text": "Una diferencia entre presentaciones no demuestra fraude, falsedad ni una variación económica por sí sola. Una buena investigación empieza precisamente cuando se niega a simplificar demasiado.",
+          "characters": 191,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S11",
+      "title": "Qué muestran los resultados de 2025",
+      "planned_time": "09:50–10:55",
+      "source_ids": [
+        "F25"
+      ],
+      "narration_word_count": 145,
+      "parts": [
+        {
+          "id": "S11_P01",
+          "text": "En abril de dos mil veinticinco, BlackBerry comunica los resultados de su nuevo ejercicio anual. Los ingresos totales fueron de quinientos treinta y cuatro coma nueve millones de dólares.",
+          "characters": 187,
+          "status": "not_generated"
+        },
+        {
+          "id": "S11_P02",
+          "text": "El desglose muestra dos negocios principales y una línea de licencias. QNX aportó doscientos treinta y seis millones. Secure Communications registró doscientos setenta y dos coma seis millones.",
+          "characters": 193,
+          "status": "not_generated"
+        },
+        {
+          "id": "S11_P03",
+          "text": "Licensing sumó veintiséis coma tres millones. La suma permite observar de qué actividades procedían los ingresos presentados, pero todavía no responde si la transformación había alcanzado todos sus objetivos.",
+          "characters": 208,
+          "status": "not_generated"
+        },
+        {
+          "id": "S11_P04",
+          "text": "Para entenderlo haría falta estudiar la rentabilidad de cada división, la evolución de clientes, la competencia y una secuencia de varios años construida con bases comparables.",
+          "characters": 176,
+          "status": "not_generated"
+        },
+        {
+          "id": "S11_P05",
+          "text": "Aun así, estas cifras son una fotografía concreta de la empresa después de su cambio estratégico: un negocio cuyo centro ya no es un teléfono de teclado, sino tecnología que otras organizaciones utilizan.",
+          "characters": 204,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    },
+    {
+      "scene_id": "S12",
+      "title": "La pregunta que deja BlackBerry",
+      "planned_time": "10:55–11:50",
+      "source_ids": [
+        "H99",
+        "D16",
+        "K25",
+        "F25"
+      ],
+      "narration_word_count": 146,
+      "parts": [
+        {
+          "id": "S12_P01",
+          "text": "Volvamos al principio. Una empresa que ayudó a popularizar el correo móvil terminó presentando sus resultados alrededor de software integrado, comunicaciones seguras y licencias.",
+          "characters": 178,
+          "status": "not_generated"
+        },
+        {
+          "id": "S12_P02",
+          "text": "Por el camino hubo productos que dejaron de ocupar el centro, decisiones de externalización y operaciones de venta que cambiaron la manera de leer sus cuentas. Sería cómodo resumirlo como una historia de triunfo o fracaso.",
+          "characters": 222,
+          "status": "not_generated"
+        },
+        {
+          "id": "S12_P03",
+          "text": "Pero ese juicio necesita más que nostalgia o un número aislado. Los documentos muestran una transformación real; su éxito a largo plazo exige seguimiento y comparación rigurosa.",
+          "characters": 177,
+          "status": "not_generated"
+        },
+        {
+          "id": "S12_P04",
+          "text": "Quizás la pregunta más interesante no sea por qué desapareció aquel teléfono de nuestras manos. Quizás sea qué parte de la compañía podía sobrevivir cuando el objeto dejó de ser imprescindible.",
+          "characters": 193,
+          "status": "not_generated"
+        },
+        {
+          "id": "S12_P05",
+          "text": "Porque una marca puede perder el lugar que ocupaba en la vida cotidiana y, aun así, seguir buscando su sitio en tecnologías que trabajan silenciosamente detrás de ella.",
+          "characters": 168,
+          "status": "not_generated"
+        }
+      ],
+      "audio_status": "not_generated",
+      "video_status": "not_rendered",
+      "commercial_license_verified": false,
+      "fact_review": "pending"
+    }
+  ]
+}
