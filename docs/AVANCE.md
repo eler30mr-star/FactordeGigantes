@@ -506,3 +506,12 @@ Se ha guardado en `main` la estructura inicial del motor:
 4. En paralelo medir viabilidad de narración local de varios minutos y optimizar el Qwen CPU sin cambiar la voz aprobada ni sobrepasar cuotas.
 
 **Estado al terminar este avance:** commits y pruebas CI **realizados**, migración y despliegue remoto **pendientes**, calidad vocal de 43,296 s **aprobada previamente** por el propietario, comercialización/publicación **no autorizadas**.
+
+
+### Cierre técnico del control por escenas — revisión del avance editorial (2026-10-20)
+
+- Se reforzó `src/editorial.mjs`: **cada segmento del guion debe figurar en al menos una afirmación documentada** mediante `segment_index` (base 1). Fuentes, localizadores, estados de revisión y licencias de voz no desaparecen al ampliar el guion.
+- El formulario de expediente en `public/app.js` ahora crea automáticamente afirmaciones **pendientes** por cada escena, evitando un único registro insuficiente. No genera ni declara como verificadas las fuentes de forma automática.
+- `src/worker.js`: expedientes obsoletos por cambio de fuentes o escenas se devuelven con `validation_error` y nunca se acreditan; el panel permite corregirlos sin devolver error HTTP 500. La falta de tabla `editorial_dossiers` retorna HTTP 503 antes de mutar el borrador.
+- `tests/test_editorial_gate.mjs` añadió cobertura de índices inexistentes, escenas sin evidencia, migración ausente y revocación por cambios. CI de [run 39522588126](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39522588126) completada **`success`** en commit `1a14039e`; dos ejecuciones intermedias fallaron mientras el contrato y los tests se adaptaban, pero se corrigieron y la batería final volvió a verde. `docs/FLUJO_VERIFICACION.md` refleja el contrato de escena y revisión.
+- **Sin despliegue validado**. Sigue siendo el principal bloqueo práctico: aplicar D1 0002 en la cuenta Cloudflare correcta, verificar la tabla y probar panel/Worker reales; las herramientas de Cloudflare conectadas no pudieron completar esa operación aquí.
