@@ -22,7 +22,7 @@ class OfficialSourceTests(unittest.TestCase):
                 {"mainsnak":{"datavalue":{"value":"https://127.0.0.1/internal"}}}
             ]}}}}).encode(), url, "application/json"
         if url=="https://www.blackberry.com/en":
-            return b"<html><body><p>BlackBerry is a secure software and systems company for industries worldwide.</p></body></html>",url,"text/html"
+            return b'<html><body><p>BlackBerry is a secure software and systems company for industries worldwide.</p><a href="/investors/annual-report-2025.pdf">Annual Report 2025</a></body></html>',url,"text/html"
         raise AssertionError("unexpected URL: "+url)
 
     def test_discovers_official_p856_without_certifying_truth(self):
@@ -34,6 +34,11 @@ class OfficialSourceTests(unittest.TestCase):
         self.assertEqual(result["sources"][0]["site_url"],"https://www.blackberry.com/en")
         self.assertEqual(result["sources"][0]["wikidata_item"],"Q1234")
         self.assertGreater(result["sources"][0]["readable_blocks"],0)
+        links=result["sources"][0]["linked_document_candidates"]
+        self.assertEqual(len(links),1)
+        self.assertEqual(links[0]["url"],"https://www.blackberry.com/investors/annual-report-2025.pdf")
+        self.assertFalse(links[0]["document_fetched"])
+        self.assertFalse(links[0]["ownership_verified"])
         self.assertFalse(result["sources"][0]["confirmed_primary"])
         self.assertTrue(result["needs_independent_sources"])
 
