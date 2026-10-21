@@ -787,3 +787,24 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - `.github/workflows/blackberry-guion-qa.yml` volvió a **`workflow_dispatch` exclusivamente manual** inmediatamente después de la prueba; no se instaló un pipeline de publicación.
 - En una consulta administrativa posterior a la prueba, la integración Cloudflare devolvió un bloqueo del servicio de herramientas; **no se afirmó haber comprobado o redeplegado una versión nueva del Worker desde ese conector**. La comprobación de GitHub y los commits a `main` sí son reales y están confirmados.
 - Pendiente crítico: comprobación humana del texto íntegro y de la atribución de cada afirmación, validación de licencia de la voz canónica, creación de visuales de uso lícito y generación de audio + MP4 de prueba sin YouTube. Un QA estructural `success` no equivale a documental listo.
+
+## 2026-10-21 · Primera previsual MP4 reproducible — BlackBerry, 12 escenas
+
+**Meta de esta iteración:** obtener un archivo audiovisual real y comprobar su duración y codec, sin comprar APIs, usar la laptop descargada ni publicar contenido no aprobado.
+
+### Código y archivos realmente producidos en `main`
+
+- `tools/render_blackberry_animatic.py` lee el guion y la EDL verificable de doce escenas; dibuja 12 tarjetas originales de estilo documental mediante Pillow (fondo, rejilla, símbolos geométricos, títulos y progreso). No utiliza imágenes de archivo ni descargadas, no incluye música ni locución y mantiene rótulos visibles de uso interno. Empaqueta el resultado en H.264 MP4 sin audio con FFmpeg. Emite `ESTADO_PREVISUAL.json`.
+- `.github/workflows/blackberry-previsual-mp4.yml` instala `Pillow==11.3.0` y `imageio-ffmpeg==0.6.0`, comprueba las siete pruebas de estructura/EDL, produce MP4, extrae sus metadatos y sube MP4+informes a GitHub Actions. La tarea queda `workflow_dispatch` manual, no vigilancia ni publicación recurrente.
+- **Primera corrida [39635497277](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39635497277) fallida:** el runner no tenía `ffmpeg`. Se corrigió mediante FFmpeg empaquetado `imageio-ffmpeg` y un ejecutable accesible desde PATH, sin modificar el equipo físico.
+- **Segunda corrida [39635649958](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39635649958) EXITOSA:** doce escenas convertidas en `BLACKBERRY_PREVISUAL_30S_SIN_VOZ.mp4`. Confirmación real: 30,04 segundos, 1280×720, codec H.264, 204.427 bytes; banderas `audio_present=false`, `youtube_publication_authorized=false`. El ZIP de [artefacto 12360967934](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39635649958/artifacts/12360967934) contiene MP4, `ESTADO_PREVISUAL.json` y `METADATOS_VIDEO.json`; caduca según política de Actions. Se descargó y se verificó con `ffprobe` local. El usuario recibió enlace de reproducción a la copia temporal de la conversación en `/mnt/data/blackberry_previsual/BLACKBERRY_PREVISUAL_30S_SIN_VOZ.mp4`.
+- No se modificó D1, Cloudflare, secretos ni voz canónica; la integración Cloudflare no permitió verificar una compilación adicional en esta etapa. El pipeline de video funciona desde GitHub Actions en CPU, sin depender de la GPU/RAM de la laptop.
+
+### Alcance preciso y próximos pasos
+
+- **Hecho:** existe un MP4 real de previsualización **de 30 segundos** sobre la estructura de 12 escenas; gráficos originales con fondo, títulos y fuentes. **No** contiene la historia narrada ni sus escenas cinematográficas desarrolladas.
+- **Pendiente:** confirmar/licenciar voz comercial, pasar narración de 1.691 palabras a audio, validar el ritmo real, producir visuales/animaciones originales por escena (sin copiar fotos de archivo), sincronizar 11:50 de montaje y generar MP4 completo de 8–14 minutos.
+- **Pendiente:** auditoría factual de afirmaciones, evaluación editorial de materiales y aprobación de propietario antes de cualquier publicación en YouTube.
+- Todo commit sigue en `main`, y el despliegue/pipeline automático de YouTube sigue deshabilitado.
+
+**Resultado del turno:** GUION LARGO ✅ | FUENTES REGISTRADAS ✅ | QA + EDL ✅ | MP4 CORTO DE PRUEBA ✅ | AUDIO LICENCIADO ❌ | VIDEO DOCUMENTAL LARGO ❌ | PUBLICACIÓN YOUTUBE ❌.
