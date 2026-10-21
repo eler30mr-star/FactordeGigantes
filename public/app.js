@@ -53,12 +53,12 @@ function blankDossier(job) {
     thesis:(job.manifest.angle.length >= 25 ? job.manifest.angle : "Enfoque de investigación: "+job.manifest.angle),
     publication_authorized:false,
     sources,
-    claims:[{
-      id:"C01",
-      text:job.manifest.segments[0].voiceover,
+    claims:job.manifest.segments.map((segment,i)=>({
+      id:"C"+String(i+1).padStart(2,"0"),segment_index:i+1,
+      text:segment.voiceover,
       evidence:[{source_id:"S01",locator:"Sección y página por identificar",status:"pendiente"}],
       reviewed_by:""
-    }],
+    })),
     assets:[{kind:"voz",description:"Voz del documental: derechos comerciales por comprobar",
       rights_status:"pendiente"}]
   };
