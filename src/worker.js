@@ -1,3 +1,4 @@
+import {readMarketRadar} from "./market-radar.mjs";
 import {validateDossier} from "./editorial.mjs";
 import {launchResearch,listResearchRequests} from "./research-control.mjs";
 import {systemReadiness} from "./system-readiness.mjs";
@@ -109,6 +110,11 @@ async function handle(request,env) {
   const renderer=parts[1] === "renderer";
   if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) return err("Acceso no autorizado",401);
   if (!env.DB) return err("D1 no configurado",503);
+  if (!renderer && url.pathname === "/api/market/radar") {
+    if (method !== "GET") return err("Método no admitido",405);
+    const radar=await readMarketRadar(env,url);
+    return radar.error ? err(radar.error,radar.status) : json(radar);
+  }
   // Diagnóstico de solo lectura; disponible exclusivamente para ADMIN_TOKEN.
   if (!renderer && url.pathname === "/api/system/status") {
     if (method !== "GET") return err("Método no admitido",405);
