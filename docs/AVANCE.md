@@ -475,3 +475,34 @@ Se ha guardado en `main` la estructura inicial del motor:
 **Alcance exacto de la aprobación:** la narración continua corta puede tomarse como referencia de calidad de este ensayo. No supone que cada futura generación vaya a conservar la identidad ni convierte las muestras en sustitutas de la **única voz canónica**, `assets/voice/approved/narrador_documental_aprobado.mp3`, SHA-256 `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`. Tampoco verifica términos comerciales, permisos de las salidas, calidad de un documental completo o autorización de publicar.
 
 **Siguiente hito conforme al plan maestro, Fase 2:** pasar a mejoras reproducibles del motor para narración segmentada de varios minutos con controles de memoria, tiempos y límites gratuitos; trabajar investigación factual y derechos por afirmación, conectar después estos controles al panel y a D1, y únicamente con validación editorial/legal evaluar el primer documental de 8–14 min. Mantener cero pagos, `main` exclusivamente y sin subir a YouTube.
+
+
+## 2026-10-20 · Fase 2: expediente editorial conectado al panel, Worker y esquema D1
+
+**Objetivo realizado:** pasar de pruebas aisladas de validación de fuentes a un flujo de investigación administrable por cada documental. Trabajo exclusivamente sobre **`main`** del repositorio `eler30mr-star/FactordeGigantes`, sin ramas secundarias.
+
+### Código implementado y confirmado en GitHub
+
+- `src/editorial.mjs`: validador de expedientes con fuentes HTTPS, IDs únicos, documentos asociados a afirmaciones, `locator` de evidencia y estado, persona revisora, recursos y derechos (la voz es obligatoria). Los URL de fuentes del guion deben figurar en el expediente. **No** afirma haber comprobado contenido real en sitios externos.
+- `migrations/0002_editorial_dossiers.sql`: nueva tabla vinculada a `jobs` que guarda expediente JSON, revisión humana, identidad del revisor y fechas, sin alterar `0001_initial.sql`.
+- `src/worker.js`: nuevas rutas autenticadas `GET/PUT /api/jobs/:id/dossier` y `POST /api/jobs/:id/dossier/attest`; el editor acredita únicamente durante `review`, cuando todas las afirmaciones y licencias declaradas han sido revisadas. **Bloqueo efectivo en código** de `approve` y `dispatch` si el expediente está ausente, incompleto o no acreditado. Cambiar guion, expediente o pedir cambios invalida la acreditación previa. Si falta la tabla D1 remota, HTTP **503**, y el guardado del guion no muta datos antes de detectar el bloqueo.
+- `public/index.html` y `public/app.js`: nuevo panel «Fuentes y licencias», edición JSON de expediente por trabajo, visualización de conteos, guardado y confirmación expresa del revisor; administración sin persistir `ADMIN_TOKEN` en almacenamiento del navegador.
+- `tests/test_editorial_gate.mjs`: pruebas de autenticación, fuentes, bloqueo antes de revisión, revocación por cambios, despacho y comportamiento seguro sin migración. `tests/test_editorial_migration.py`: restricciones SQL/foráneas con D1 emulada en SQLite local.
+- `.github/workflows/check.yml`: ejecuta los tests del Worker y contrato editorial con Node `--test`, además de la batería Python y chequeos anteriores.
+- `docs/DESPLIEGUE.md` y `docs/FLUJO_VERIFICACION.md`: instrucciones concretas de migración remota, despliegue seguro y operación del nuevo panel.
+
+### Pruebas y estado real
+
+- [CI GitHub Actions 39521914410](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39521914410) — **`success`**, incluye `node --test tests/test_editorial_gate.mjs`, `python -m unittest discover -s tests -v`, sintaxis Worker y panel, manifest de ejemplo; diagnósticos HTTP a Cloudflare no bloqueantes. Verificaciones incrementales posteriores sobre protección ante migración ausente también completadas correctamente en GitHub.
+- El conector Cloudflare no respondió correctamente al intentar consultar el estado de la base; **NO se ha aplicado la migración 0002 en D1 remota desde esta sesión**. **NO se ha confirmado un nuevo despliegue del Worker ni del panel**. El código funciona en las pruebas de integración simuladas, pero la funcionalidad todavía **no debe declararse operativa en la instancia Cloudflare**.
+- Ningún vídeo se publicó; no se introdujeron servicios de pago, claves, OAuth ni se modificó la identidad canónica del narrador, su checksum o `render.yml`.
+- Un editor que marque manualmente una afirmación `verificada` sigue siendo responsable de comprobar el documento real. La aplicación verifica estructura y trazabilidad declarada, **no garantiza verdad material ni derechos legales por una marca en el expediente**.
+
+### Próximo paso prioritario verificable
+
+1. En Cloudflare, aplicar `npx wrangler d1 migrations apply factor-de-gigantes-db --remote` tras validar cuenta y hacer respaldo; comprobar `editorial_dossiers` en D1. El primer esquema fue aplicado originalmente por API y es idempotente.
+2. Desplegar Worker y assets desde `main`, verificar acceso autenticado, guardar expediente de prueba, comprobar `attest`, y que `approve`/`dispatch` respondan 409 cuando falten fuentes/validaciones. No ejecutar vídeo comercial.
+3. Incorporar investigación real con fuentes primarias, metraje/música/imágenes originales con derechos, aprobación humana y guion documental. Mantener bloqueo de publicación y revisión pendiente de licencia comercial de la referencia vocal hasta evidencia concluyente.
+4. En paralelo medir viabilidad de narración local de varios minutos y optimizar el Qwen CPU sin cambiar la voz aprobada ni sobrepasar cuotas.
+
+**Estado al terminar este avance:** commits y pruebas CI **realizados**, migración y despliegue remoto **pendientes**, calidad vocal de 43,296 s **aprobada previamente** por el propietario, comercialización/publicación **no autorizadas**.
