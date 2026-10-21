@@ -302,3 +302,17 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Preparar narración comercial autorizada y visuales con licencia; respetar el narrador aprobado y no subir nada a YouTube automáticamente.
 
 **Criterio de estado:** D1 y Worker en producción confirmados; browser login, workflow real de investigación desde el panel, contenido documental completo y publicación siguen pendientes.
+
+## Hito de motor editorial 2026-10-21 — auditoría y documentos SEC
+
+- [x] Incluir auditoría conservadora en cada investigación: falta de pasajes, falta de contraste en segundo dominio, dependencia de Wikipedia, números/años que no coinciden y nunca concluir automáticamente que una afirmación sea verdadera o falsa. `tools/editorial_audit.py`, `AUDITORIA_EDITORIAL.json`.
+- [x] Producir primera **escaleta estructurada de 10:00** (12 bloques con duración conocida e identificadores de evidencias), sin redactar narración falsa ni aprobar voz/imagen o publicación. `ESCALETA_DOCUMENTAL_10MIN_NO_APROBADA.md`.
+- [x] Descubrir metadatos candidatos de documentos corporativos originales de SEC EDGAR a partir del tema sin API paga: Wikidata P5531 → CIK → SEC `submissions/CIK*.json`. Admitir rechazos y datos incompletos sin inventar archivos, cifras ni referencias. `tools/edgar_discovery.py` integrado al workflow manual `research-ai-cpu.yml`.
+- [x] Añadir tests para seguridad del identificador, URL y filtro de documentos, SEC inaccesible, cifras discordantes, falta de evidencia y cuota. Compilación Cloudflare `c6bfd5a1-3cd9-4201-b945-8d653f58f5a3`: **25 tests JS + 11 tests Python, 0 fallos**, desplegado el commit `cc90a481878d9e2c7ddca7c75dd1a28a09b73d71` de `main`. Cloudflare Builds requiere pasar pruebas Python además de las del Worker antes de publicar.
+- [ ] Verificar resultado del smoke real `edgar-smoke.yml` para Apple Inc.; la existencia de un documento en SEC **no** se da por probada por una simulación offline. Dejar este workflow solo manual después de la ejecución de prueba.
+- [ ] Descargar documentos regulatorios concretos con límites legales/técnicos y analizar contexto, periodo, moneda, unidades y tablas. Comparar contradicciones reales con fuentes múltiples antes de escribir la voz.
+- [ ] Completar texto narrativo de 8–14 minutos, evidencia de cada escena, edición visual y locución comercial con licencia verificada. El bloque actual entrega una escaleta, NO un episodio terminado.
+- [ ] Probar una investigación iniciada y revisada desde el panel de producción con `ADMIN_TOKEN` solo cuando el propietario elija el tema. No asumir permisos externos por la mera presencia del secreto.
+- [ ] No publicar a YouTube ni contratar servicios; conservar rama `main` y documento `docs/AVANCE.md`.
+
+**Nota:** el montaje y la narración no se consideran terminados; avanzar en ellos depende de evidencias, derechos y prueba de audio aprobado. La laptop de 12 GB RAM no es un requisito de este hito.
