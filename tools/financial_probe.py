@@ -42,6 +42,8 @@ def probe_candidates(edgar_report, *, fetcher=None):
     except (HTTPError,URLError,ValueError,OSError,TimeoutError,UnicodeError,json.JSONDecodeError) as exc:
         result["status"]="sec_unavailable_or_unreadable"
         result["error_type"]=type(exc).__name__
+        if isinstance(exc,HTTPError):
+            result["http_status"]=exc.code
     return result
 
 
