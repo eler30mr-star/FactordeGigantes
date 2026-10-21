@@ -1,11 +1,6 @@
 name: Factor de Gigantes - investigador IA local CPU
 on:
   workflow_dispatch:
-  # Trigger acotado de una sola corrida autorizada en este avance; retirar al lanzarse.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/research-ai-cpu.yml'
 permissions:
   contents: read
 concurrency:
