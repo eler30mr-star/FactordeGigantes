@@ -26,4 +26,6 @@ python3 -m tools.blackberry_edl --out dist/blackberry-script
 python3 -m unittest discover -s tests -p 'test_research_providers.py' -v
 python3 -m unittest discover -s tests -p 'test_market_radar.py' -v
 python3 -m unittest discover -s tests -p 'test_market_sources.py' -v
+python3 -m unittest discover -s tests -p 'test_topic_discovery.py' -v
+python3 -m unittest discover -s tests -p 'test_market_persistence.py' -v
 echo "Factor de Gigantes: pruebas previas al despliegue SUPERADAS"
