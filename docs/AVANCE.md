@@ -779,3 +779,11 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 4. Mantener el desarrollo en `main`, acompañar todo avance con esta bitácora y seguir dejando pendientes las pruebas reales de panel administrativo e investigación voluntaria.
 
 **Estado:** existe un manuscrito narrativo de largo documental y una EDL preliminar estructurada. NO existe todavía MP4 final de 11:50, voz comercial validada ni visto bueno factual/licencias.
+
+### Verificación final del guion y montaje — 2026-10-21
+
+- **QA real GitHub Actions:** [39634858858](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39634858858), `success`. Se ejecutaron **5 pruebas de texto/citas + 2 de línea de tiempo**, cero fallos. El informe confirmó `ESCENAS=12`, `PALABRAS=1691`, `DURACION_SEGUNDOS=710`, `ALERTAS_ESTRUCTURALES=[]` y `AUTORIZACION_YOUTUBE=false`.
+- Se generaron y archivaron **dos artefactos de control**: `QA_ESTRUCTURAL_GUION.json` y `EDL_PREVIA_12_ESCENAS.json`, disponibles en [artefacto 12359629466](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39634858858/artifacts/12359629466), sujeto a caducidad normal de GitHub Actions.
+- `.github/workflows/blackberry-guion-qa.yml` volvió a **`workflow_dispatch` exclusivamente manual** inmediatamente después de la prueba; no se instaló un pipeline de publicación.
+- En una consulta administrativa posterior a la prueba, la integración Cloudflare devolvió un bloqueo del servicio de herramientas; **no se afirmó haber comprobado o redeplegado una versión nueva del Worker desde ese conector**. La comprobación de GitHub y los commits a `main` sí son reales y están confirmados.
+- Pendiente crítico: comprobación humana del texto íntegro y de la atribución de cada afirmación, validación de licencia de la voz canónica, creación de visuales de uso lícito y generación de audio + MP4 de prueba sin YouTube. Un QA estructural `success` no equivale a documental listo.
