@@ -329,5 +329,5 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Validar una fuente financiera real accesible, con PDF/HTML, unidad/periodo/URL/página, y contrastar cifras de al menos dos documentos independientes.
 - [ ] Completar prosa documental de 8–14 minutos con verificación frase a frase, fuentes originales y narrador con derechos comerciales acreditados; generar una prueba reproducible de audio/MP4 antes de hablar de producto listo.
 - [ ] Verificar en el panel publicado el login privado y una solicitud manual real, sin exponer ADMIN_TOKEN ni activar publicación.
-- [ ] Desplegar y comprobar en producción el último commit del motor alternativo; no confundir CI con el build de Cloudflare.
+- [x] Desplegar y comprobar la versión del motor alternativo en Cloudflare. Build `18d882b5-39f5-4524-aa13-1db876e3ebdb` (`success`), commit `cb54813a158c957e4f3b57651c211fb57e53a572` de `main`, 25 pruebas JS + 34 Python aprobadas, versión Worker `1489175a-38ca-403a-9477-a2a466f39b4c` al 100 %. La D1 conserva 1 trabajo y 8 eventos; tablas editoriales e investigación siguen vacías.
 - [ ] Conservar publicación YouTube deshabilitada, códigos en `main` y el historial en `docs/AVANCE.md`.
