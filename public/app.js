@@ -246,6 +246,41 @@ async function loadResearch(includeRuns=false) {
     ". Pulsa «Actualizar» para consultar las ejecuciones.");
 }
 // Visualizar exclusivamente observaciones D1 con su procedencia; sin declarar ganador.
+async function loadOfficialEvidence() {
+  const data=await request("/api/market/official?limit=20");
+  if(!Array.isArray(data.runs)||!Array.isArray(data.items))
+    throw Error("Fuentes corporativas inválidas");
+  const root=$("official-results");
+  root.replaceChildren();
+  $("official-status").textContent="Páginas candidatas registradas: "+data.items.length+
+    " · hechos aprobados automáticamente: 0.";
+  if(!data.items.length){
+    root.append(tag("p","empty","El sistema todavía no ha recuperado páginas corporativas candidatas."));
+    return;
+  }
+  for(const source of data.items){
+    const card=tag("article","job","");
+    const heading=tag("div","jobtop","");
+    heading.append(tag("strong","",String(source.company||source.wikidata_id)),
+      tag("span","tag","Fuente sin verificar"));
+    card.append(heading);
+    card.append(tag("p","muted","Estado: "+String(source.status)+
+      " · bloques legibles: "+String(source.readable_blocks)+
+      " · hash SHA-256: "+String(source.content_sha256||"Sin lectura")));
+    try{
+      const u=new URL(String(source.website_candidate||""));
+      if(u.protocol==="https:"){
+        const link=tag("a","news-link","Consultar sitio corporativo candidato");
+        link.href=u.href;link.target="_blank";link.rel="noopener noreferrer";
+        card.append(link);
+      }
+    }catch{/* No vincular URL inválida */}
+    root.append(card);
+  }
+}
+$("official-refresh").addEventListener("click",()=>loadOfficialEvidence().catch(e=>{
+  $("official-status").textContent=e.message;
+}));
 async function loadOpportunities() {
   const data=await request("/api/market/opportunities?limit=25");
   if(!Array.isArray(data.candidates)||!Array.isArray(data.runs))
@@ -470,6 +505,7 @@ $("connect").addEventListener("click",async () => {
     loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
     loadOpportunities().catch(e=>{$("opportunities-status").textContent=e.message;});
+    loadOfficialEvidence().catch(e=>{$("official-status").textContent=e.message;});
     loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
     loadYoutubeMarket().catch(e=>{$("youtube-status").textContent=e.message;});
     loadCrossSignals().catch(e=>{$("cross-status").textContent=e.message;});
