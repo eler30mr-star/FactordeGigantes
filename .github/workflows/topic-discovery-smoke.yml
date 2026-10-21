@@ -1,13 +1,15 @@
 name: FDG - descubrir empresas por señales Wikimedia
 on:
   workflow_dispatch:
-  # Repetición acotada después de ampliar el límite de respuesta Wikimedia; retirar trigger al completar.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/topic-discovery-smoke.yml'
+  schedule:
+    # Wikimedia publica rankings diarios con retraso; 1 chequeo al día
+    # evita consumo redundante. No hay IA pagada ni subida a YouTube.
+    - cron: '17 10 * * *'
 permissions:
   contents: read
+concurrency:
+  group: fdg-topic-discovery-wikimedia
+  cancel-in-progress: false
 jobs:
   topic-discovery:
     runs-on: ubuntu-latest
