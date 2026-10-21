@@ -1,5 +1,6 @@
 import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {storeNewsEntities} from "./news-entity-ingest.mjs";
+import {storeOfficialEvidence,readOfficialEvidence} from "./market-official-ingest.mjs";
 import {assessMarketFromD1,readMarketAssessments} from "./market-assessment.mjs";
 import {persistYoutubeStudy,readYoutubeMarket} from "./youtube-market.mjs";
 import {storeEntityNewsJoin,readEntityNewsJoin} from "./market-cross-signals.mjs";
@@ -121,8 +122,9 @@ async function handle(request,env) {
   const ingestCross=parts[1] === "market" && parts[2] === "cross" && parts[3] === "ingest" && parts.length===4;
   const ingestNewsEntities=parts[1]==="market" && parts[2]==="entities" && parts[3]==="ingest" && parts.length===4;
   const runAssessment=parts[1]==="market" && parts[2]==="assess" && parts[3]==="run" && parts.length===4;
+  const ingestOfficial=parts[1]==="market" && parts[2]==="official" && parts[3]==="ingest" && parts.length===4;
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
-  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment) {
+  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
   } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
     return err("Acceso no autorizado",401);
@@ -177,6 +179,21 @@ async function handle(request,env) {
     if(method!=="GET")return err("Método no admitido",405);
     const out=await readEntityNewsJoin(env.DB,url);
     return out.error?err(out.error,out.status):json(out);
+  }
+  if(ingestOfficial){
+    if(method!=="POST")return err("Método no admitido",405);
+    try{return json(await storeOfficialEvidence(env.DB,await parseBody(request)),201);}
+    catch(e){
+      if(e instanceof RangeError)return err("Evidencia corporativa rechazada: "+e.message,400);
+      if(/no such table:\s*market_official_/i.test(String(e?.message||"")))
+        return err("D1 necesita migración 0009_official_evidence.sql",503);
+      throw e;
+    }
+  }
+  if(!renderer && url.pathname==="/api/market/official"){
+    if(method!=="GET")return err("Método no admitido",405);
+    const result=await readOfficialEvidence(env.DB,url);
+    return result.error?err(result.error,result.status):json(result);
   }
   if (ingestNewsEntities) {
     if(method!=="POST")return err("Método no admitido",405);
