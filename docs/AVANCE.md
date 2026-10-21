@@ -850,3 +850,20 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 3. Completar auditoría editorial y licencias; ampliar paso a paso a las 12 escenas sin sobrepasar cuotas CPU, generar audio/visual original y MP4 final de 8–14 min. No hay publicación automática ni derecho comercial confirmado.
 
 **Estado de esta entrega:** nueva generación de voz y nuevo compositor implementados; CI de contratos verde; render del primer capítulo y aceptación vocal todavía en ejecución/pendientes. Todo en `main`.
+
+### Resultado real Qwen para BlackBerry escena 01 — 2026-10-21, 17:10 UTC
+
+- La generación con Qwen3-TTS Base 1.7B en CPU **sí concluyó**: [workflow 39639684819](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684819), `success`.
+- Cuatro archivos MP3 generados **desde frases literales del manuscrito**, condicionados por la referencia vocal oficial **sin modificarla**:
+  - `01_teclado.mp3`: **15,840 s** (245 caracteres).
+  - `02_segunda_historia.mp3`: **13,632 s** (220 caracteres).
+  - `03_pregunta.mp3`: **11,448 s** (166 caracteres).
+  - `04_seguiremos.mp3`: **14,568 s** (236 caracteres).
+- Unión `05_escena01_unida.mp3` de **56,520 s**; comprobado tanto por el reporte Qwen como con FFprobe tras descargar ZIP a la sesión. [Artefacto temporal 12365895069](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39639684819/artifacts/12365895069). Incluye 4 MP3, unión, copia del MP3 canónico y manifest de control. El SHA canónico sigue siendo `78d872509f5401c097ee04fcad009337fa65a2a7752aabdcd46a9ed9ed465d4d`; los audios nuevos **no están aprobados auditivamente por el propietario**.
+- Consumo observado: memoria máxima `11978384 KiB` (~11,42 GiB) en GitHub runner; generación desde aprox. 17:01 hasta 17:10 UTC. No se contrató API de pago ni se utilizó laptop propia.
+- El propietario recibió enlace directo en conversación para escuchar `/mnt/data/BlackBerry_Escena01_Audio/05_escena01_unida.mp3`; el archivo fue descargado del artefacto, no inventado.
+- Se inició automáticamente el render del tramo sincronizado [39641357257](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39641357257) tras concluir Qwen, respetando la verificación del estado `success`; al redactar este asiento el video estaba codificándose y no se afirmaba todavía MP4 finalizado.
+- Añadido además `tools/blackberry_voice_schedule.py` y `tests/test_blackberry_voice_schedule.py` para planificar **12 escenas enteras** con división por oraciones/cláusulas y preservación textual; se conservan banderas de `generated_voice_clips=0` para el resto de escenas. Este planificador no sintetiza audio ni dispara cargas Qwen de otras escenas; está cubierto por CI `Comprobar base`.
+- `.github/workflows/blackberry-scene01-voice.yml` volvió a modo `workflow_dispatch` **manual**, sin nueva generación pesada por push. El workflow de montaje quedará también solo manual después de comprobar la primera prueba.
+
+**Conclusión del audio:** por primera vez existe casi un minuto de narración nueva del texto real de BlackBerry con referencia al timbre canónico; falta aceptación auditiva humana y licencia comercial. No aprobar ni publicar automáticamente.
