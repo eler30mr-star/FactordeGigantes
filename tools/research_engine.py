@@ -390,6 +390,9 @@ def save_report(report: dict, output_dir: Path):
                   "No se modifica el expediente aprobado ni se produce video o publicación.", ""])
     (output_dir / "LECTURA_PRELIMINAR.md").write_text("\n".join(lines), encoding="utf-8")
     (output_dir / "evidencia_para_ia.txt").write_text(assemble_ai_evidence(report), encoding="utf-8")
+    # Registrar auditoría y escaleta en TODOS los modos (tema libre y expediente).
+    from tools.editorial_audit import save_audit
+    save_audit(report, output_dir)
 
 
 def main():
