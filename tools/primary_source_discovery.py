@@ -122,6 +122,7 @@ def discover_official(topic, fetcher=fetch_public, *, max_entities=2):
         "method": "mediawiki_to_wikidata_p856",
         "sources": results,
         "official_candidates": sum(r["site_url"] is not None for r in results),
+        "linked_document_candidates": sum(len(r.get("linked_document_candidates",[])) for r in results),
         "automatic_fact_verification": False,
         "automatic_rights_verification": False,
         "needs_independent_sources": True,
@@ -145,7 +146,8 @@ def main():
     dest = opts.out / "fuentes_oficiales_candidatas.json"
     dest.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("FUENTES_OFICIALES:", result["official_candidates"], "/",
-          len(result["sources"]), "candidatas, 0 hechos aprobados", flush=True)
+          len(result["sources"]), "candidatas;",
+          result["linked_document_candidates"], "enlaces a documentos; 0 hechos aprobados", flush=True)
 
 
 if __name__ == "__main__":
