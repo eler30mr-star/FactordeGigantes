@@ -12,6 +12,7 @@ on:
 permissions:
   contents: read
   id-token: write
+# Prueba E2E RSS: credenciales OIDC efímeras, sin publicación
 concurrency:
   group: fdg-topic-discovery-market
   cancel-in-progress: false
