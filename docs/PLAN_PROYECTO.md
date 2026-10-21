@@ -284,3 +284,21 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Migración D1 0002/0003 y despliegue remoto Cloudflare siguen **pendientes**: el conector continúa con error interno, así que la mejora está en `main` y probada en GitHub, **no** confirmada en el panel web publicado.
 
 **Decisión:** priorizar una cadena de investigación documental realmente reproducible y sus evidencias antes de ampliar modelos IA o instalar generadores locales de video. Las tareas de PDF y síntesis usan CPU en GitHub Actions, no dependen de la laptop.
+
+## Hito 2026-10-21 — Cloudflare real, límites transaccionales y diagnóstico del panel
+
+**Despliegue de fase 2 en la infraestructura real, verificado por API de Cloudflare:**
+
+- [x] Recuperar conexión Cloudflare seleccionando explícitamente `Factor`, no `Primary`; cuenta y Worker correctos confirmados.
+- [x] Preservar 1 trabajo y 8 eventos; generar exportación previa en Cloudflare y bookmark Time Travel. Aplicar **0002 editorial** y **0003 research** en D1 REMOTA por SQL API con archivos originales de `main`. Verificar tablas, índices y claves foráneas, sin borrar datos; nuevas tablas vacías (0 expedientes, 0 solicitudes). Los scripts se aplicaron por API y no generaron historial `d1_migrations` de Wrangler: revisar con cuidado cualquier reaplicación futura.
+- [x] Desplegar desde `main` el Worker actualizado mediante el build conectado a GitHub y `npx wrangler deploy`. Ejecución `729fb21f-d1d9-4f2f-999e-7e6f8cbd47de`, `success`, commit `79a2ba80b95022e90acb696c81ebaa610112fa55`.
+- [x] Endurecer la cuota diaria del investigador: reemplazar comprobación y reserva separadas por **un solo INSERT condicional atómico** en D1, con discriminación de duplicado HTTP 409 y cuota llena HTTP 429. Agregar prueba de solicitudes concurrentes.
+- [x] Configurar Cloudflare Builds para ejecutar tests JavaScript antes de desplegar. Build `720b0c1e-b0ac-4dda-92c3-4c7110f8f862`: 21 pruebas aprobadas, 0 fallos, código desplegado.
+- [x] Incorporar `GET /api/system/status` con `ADMIN_TOKEN`: presenta diagnóstico privado de tablas y requisitos de investigación sin exponer secretos ni asumir validez del token externo. Añadir sección «Estado del sistema» al panel y 4 pruebas de acceso y estado.
+- [x] **Validación de versión final:** build `17eaaf34-42eb-4427-859b-0f0b8d92b262` (`success`), **25 pruebas Node, 0 fallos**, commit `7ccc9d4e6cf224bbc22333722e0127c1f932b4e6`; 2 assets de panel actualizados; Worker publicado versión `a7695b06-938e-402e-a4ba-809fc2f2ec02` con el 100% del tráfico. API de Cloudflare confirmó el código nuevo desplegado y D1 con 1 trabajo + 8 eventos intactos.
+- [ ] **Prueba autenticada real desde navegador:** entrar al panel con ADMIN_TOKEN propio, revisar «Estado del sistema», consultar expedientes y lista de investigaciones. No usar tokens en chats ni registrar capturas sensibles.
+- [ ] **Primer despacho real del investigador desde el panel actualizado:** únicamente tras solicitud explícita del propietario con tema concreto y cuota disponible; inspeccionar workflow, artifact y estado. Ninguna prueba técnica actual consumió ejecución pesada de Qwen.
+- [ ] Desarrollar investigación de fuentes primarias independiente, contraste automático de contradicciones, y guion respaldado de 8–14 minutos con revisión factual y derechos editoriales. Las mejoras de infraestructura **NO** completan el motor de producción documental.
+- [ ] Preparar narración comercial autorizada y visuales con licencia; respetar el narrador aprobado y no subir nada a YouTube automáticamente.
+
+**Criterio de estado:** D1 y Worker en producción confirmados; browser login, workflow real de investigación desde el panel, contenido documental completo y publicación siguen pendientes.
