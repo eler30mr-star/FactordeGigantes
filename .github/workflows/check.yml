@@ -18,8 +18,8 @@ jobs:
           node --check src/system-readiness.mjs
           node --check public/app.js
           node --check public/dossier-editor.js
-      - name: Motor de documentos PDF (extracción sin OCR)
-        run: python -m pip install 'pypdf==5.9.0'
+      - name: Dependencias de pruebas PDF y animación local
+        run: python -m pip install 'pypdf==5.9.0' 'Pillow==11.3.0'
       - name: Pruebas de contratos del renderizador
         run: python -m unittest discover -s tests -v
       - name: Verificar seguridad editorial en API Worker y contrato D1
