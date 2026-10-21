@@ -997,3 +997,26 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - Mantener decisiones explicables, cuotas y logs; evitar IA de pago no autorizada y no atribuir al motor una investigación completa que todavía no realiza.
 
 **Estado:** radar de descubrimiento real y primer almacenamiento SQLite verificados; persistencia D1 remota, selección de mejor tema YouTube y productora end-to-end pendientes.
+
+
+## 2026-10-21 · API administrativa del radar de mercado (continuación)
+
+### Código implementado en main
+- Nuevo `src/market-radar.mjs`: consulta limitada y exclusivamente de lectura de `market_runs`, `market_entities` y `market_interest_windows`. No realiza escrituras, ni decisiones editoriales, ni publica videos.
+- `src/worker.js`: ruta `GET /api/market/radar?limit=30`, ubicada después del guard de `ADMIN_TOKEN`. El token del renderizador no autoriza el endpoint; respuesta 405 para otros métodos, 400 para límites fuera de 1-100 y 503 si falta migración 0004.
+- `tests/test_market_radar_api.mjs`: contratos de consultas de solo lectura, límites, banderas fail-closed y migración ausente.
+- `.github/workflows/check.yml`: nueva prueba incluida en CI de rama main.
+
+### Distinción de estados y riesgos
+- Los cambios de código han sido enviados a GitHub en `main`; **no se ha aplicado migración 0004 en D1 remoto ni desplegado este nuevo Worker desde este avance**.
+- El endpoint solo presentará filas reales cuando se configure persistencia remota; datos SQLite generados en runners siguen siendo efímeros.
+- Una observación Wikimedia nunca equivale a demanda YouTube; `market_study_complete`, `youtube_data_verified` y `automatic_publication_allowed` permanecen falsos.
+- Antes de aplicar D1 0004: identificar cuenta/DB real, revisar respaldo, confirmar conservación de tablas y filas antiguas y realizar migración aditiva controlada.
+
+### Próximas tareas prioritarias
+1. Confirmar CI incluido `tests/test_market_radar_api.mjs`.
+2. Identificar cuenta Cloudflare Factor y respaldo D1, aplicar migración 0004 en la DB correcta y verificar las tablas sin alterar `jobs`, `events` ni expedientes.
+3. Implementar ingesta autenticada con idempotencia y trazabilidad de procedencia desde workflow diario a D1; nunca incluir tokens en artifacts/logs.
+4. Añadir proveedor de noticias y señales YouTube reales para comparar múltiples temas antes de cualquier selección.
+5. Conectar selección fundamentada con investigación Gemini/Qwen, fact-check, guion, voz, visuales, QA y subida a YouTube solo tras aprobación.
+
