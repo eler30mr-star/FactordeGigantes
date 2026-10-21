@@ -35,9 +35,15 @@
     <div class="heading"><h2>Fuentes, afirmaciones y derechos</h2><button class="secondary" id="dossier-close" type="button">Cerrar</button></div>
     <p id="dossier-heading" class="muted"></p>
     <p class="muted">Una fuente URL no verifica una afirmación por sí sola. Registra el documento, la página o sección, identifica a quien revisó cada afirmación y acredita derechos de imágenes, música y voz. No marques «verificada» sin revisar la evidencia real.</p>
-    <label for="dossier-json">Expediente editorial (JSON)</label>
-    <textarea id="dossier-json" rows="17" spellcheck="false" aria-describedby="dossier-note"></textarea>
-    <p id="dossier-note" class="muted micro">Los textos iniciales son un borrador de estructura, nunca datos contrastados. Guarda el expediente, envía el guion a revisión y solo entonces acredita la verificación.</p>
+    <div id="dossier-form" class="dossier-form" aria-label="Editor guiado de investigación"></div>
+    <details class="editorial-advanced">
+      <summary>Edición avanzada · JSON del expediente</summary>
+      <p class="muted micro">El formulario visual es el modo recomendado. Si cambias el JSON, pulsa «Importar JSON al formulario» antes de guardar; no se acreditará ningún dato por importarlo.</p>
+      <label for="dossier-json">Datos JSON del expediente</label>
+      <textarea id="dossier-json" rows="12" spellcheck="false"></textarea>
+      <button id="dossier-import-json" type="button" class="secondary">Importar JSON al formulario</button>
+    </details>
+    <p id="dossier-note" class="muted micro">Los valores iniciales están pendientes de contrastar. Verifica los documentos, registra quién revisó cada afirmación y guarda antes de solicitar acreditación.</p>
     <p id="dossier-status" role="status" class="muted"></p>
     <div class="actions">
       <button id="dossier-save" type="button">Guardar expediente</button>
