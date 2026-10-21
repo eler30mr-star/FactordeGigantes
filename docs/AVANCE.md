@@ -752,3 +752,30 @@ Continuar el motor de Factor de Gigantes mientras la laptop HP de 12 GB está de
 - Demostrar una investigación voluntaria desde el panel publicado, autenticada por el propietario; no consumir acciones pesadas sin su decisión explícita.
 
 **Estado preciso:** dos documentos primarios efectivamente descargados y cinco pasajes localizados; primer bloque narrativo escrito y guardado en `main`; documental largo, grabación, render final y publicación todavía pendientes.
+
+## 2026-10-21 · Primer guion documental LARGO BlackBerry y cronograma de 12 escenas (main)
+
+### Objetivo de esta ejecución
+El propietario pidió continuar el avance hacia un documental terminado, sin más pruebas aisladas de infraestructura. Se trabajó directamente en `main`, sin generar rama ni PR, sin ejecutar Qwen pesado, sin compras y sin publicar en YouTube.
+
+### Entregables guardados en GitHub
+- `research/blackberry/FUENTES_GUION_10MIN.json`: siete referencias directas/museísticas a los hechos narrados, con URL y alcance: Smithsonian sobre dispositivos tempranos, comunicados de 2016 de externalización de hardware, resultados FY2024/FY2025 de BlackBerry, 10-K FY2025 y circular corporativa FY2025. Una URL no acredita licencia audiovisual.
+- `research/blackberry/GUION_DOCUMENTAL_11MIN_NO_APROBADO.md`: **12 escenas, 1.691 palabras de voz en off original y objetivo de montaje 11:50 (710 s)**. Desarrolla el origen y correo móvil, estrategia hardware 2016, QNX, Cylance y cuentas FY2024/FY2025. Utiliza identificadores de las siete fuentes al final de cada escena y propone visuales originales. La estimación de locución a 145 palabras/min es aprox. 11,7 min sin pausas; necesita medición de voz real y ajuste de escenas. No se presenta como audio grabado ni como video exportado.
+- `tools/blackberry_script_quality.py` + `tests/test_blackberry_script_quality.py`: validación automática de 12 escenas, ritmo y tiempos contiguos, presencia de fuentes válidas y avisos de no aprobación. El reporte `QA_ESTRUCTURAL_GUION.json` marca explícitamente `factual_gate_passed=false`, `commercial_voice_license_verified=false` y `youtube_publication_authorized=false`.
+- `tools/blackberry_edl.py` + `tests/test_blackberry_edl.py`: exporta `EDL_PREVIA_12_ESCENAS.json` con inicio, fin, duración, fuentes y propuesta de imágenes de cada escena. **No contiene pistas de voz, música ni imágenes**; `render_allowed=false` para todas las escenas. Sirve para planear el primer montaje futuro.
+- `tools/production_preflight.sh` incluye los nuevos grupos de pruebas Python y la generación de ambos reportes de QA/EDL, de modo que una versión mal formada no pase al despliegue.
+- El bloque financiero ya validado en [39630703040](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39630703040) aportó dos comunicados PDF verdaderamente descargados y cinco datos ubicados por página. El manuscrito conserva la advertencia esencial: **FY2024 US$853m reportado en 2024 ≠ FY2024 US$759,1m reformulado en 2025 para fines de comparación automática**.
+
+### Estado de verificación
+- CI del nuevo QA en GitHub [39634135450](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39634135450): `success`.
+- CI del nuevo EDL en GitHub [39634462696](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39634462696): `success`.
+- Al redactar este registro, el nuevo commit de actualización del plan `af604759` se había enviado a GitHub y su CI estaba en cola. **No confundir pruebas estáticas aprobadas con aprobación editorial, voz definitiva o MP4 verificado.**
+- No se realizó una prueba de locución humana ni se cambió la voz canónica. No se verificaron derechos de imágenes/música, ni se modificaron tokens o D1. No se disparó una investigación pesada desde el panel.
+
+### Siguientes prioridades de producción
+1. Auditar escena por escena el manuscrito contra las fuentes, enfatizando historia de dispositivos, anuncio 2016, descripción QNX y reexpresión por Cylance; eliminar o reformular cualquier afirmación débil.
+2. Crear visuales cinematográficos **originales y licenciables**, no copiar fotos del museo o capturas completas de documentos. Preparar assets versionados e identificación de permisos.
+3. Acreditar derechos comerciales de narración aprobada. Producir un **audio real**, medir ritmo/duración, ajustar la EDL y generar un MP4 reproducible de prueba, **sin publicar automáticamente**.
+4. Mantener el desarrollo en `main`, acompañar todo avance con esta bitácora y seguir dejando pendientes las pruebas reales de panel administrativo e investigación voluntaria.
+
+**Estado:** existe un manuscrito narrativo de largo documental y una EDL preliminar estructurada. NO existe todavía MP4 final de 11:50, voz comercial validada ni visto bueno factual/licencias.
