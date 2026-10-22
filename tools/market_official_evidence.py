@@ -63,6 +63,13 @@ def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
             if not isinstance(body,bytes) or len(body)>2_000_000:
                 raise ValueError("Contenido oficial supera límite")
             blocks=extract_blocks(body,mime)
+            # El primer bloque suele ser navegación/aviso de cookies (60–72 caracteres
+            # en la captura real). Elegir el primer pasaje sustantivo, sin copiar
+            # la página ni construir afirmaciones con texto que no existe.
+            candidates=[" ".join(b.split()) for b in blocks
+                        if isinstance(b,str) and 90<=len(" ".join(b.split()))<=5000]
+            selected_excerpt=candidates[0][:300] if candidates else (
+                blocks[0][:300] if blocks else None)
             links=find_official_document_links(resolved,body,mime=mime)
             result.update({"status":"candidate_page_readable" if blocks else "candidate_page_unreadable",
                 "content_sha256":hashlib.sha256(body).hexdigest(),
@@ -70,7 +77,7 @@ def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
                 "document_link_candidates":[{
                    "url":p["url"],"document_fetched":False,"ownership_verified":False
                 } for p in links[:DOC_LIMIT]],
-                "short_excerpt":blocks[0][:300] if blocks else None})
+                "short_excerpt":selected_excerpt})
         except (OSError,TimeoutError,ValueError,OverflowError,UnicodeError,KeyError,TypeError) as exc:
             result["fetch_error_type"]=type(exc).__name__
         evidence.append(result)
