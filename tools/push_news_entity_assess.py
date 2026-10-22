@@ -10,7 +10,7 @@ from urllib.error import HTTPError,URLError
 from urllib.parse import urlsplit
 from tools.push_market_radar import HOST,github_oidc_token
 
-PATHS={"entities":"/api/market/entities/ingest","official":"/api/market/official/ingest","pdf":"/api/market/pdf/ingest","assess":"/api/market/assess/run"}
+PATHS={"entities":"/api/market/entities/ingest","official":"/api/market/official/ingest","pdf":"/api/market/pdf/ingest","research":"/api/market/research/ingest","assess":"/api/market/assess/run"}
 
 def post_report(*,mode,base_url,token,report=None,opener=urlopen):
     if mode not in PATHS:raise ValueError("Operación no permitida")
@@ -21,11 +21,20 @@ def post_report(*,mode,base_url,token,report=None,opener=urlopen):
         raise ValueError("Solo Worker Factor permitido")
     if not isinstance(token,str) or len(token)<40 or token.count(".")!=2:
         raise ValueError("GitHub OIDC ausente")
-    if mode in ("entities","official","pdf"):
-        expected={"entities":"wikidata_news_company_resolution_v1","official":"wikidata_p856_safe_official_fetch_v1","pdf":"official_pdf_evidence_v1"}[mode]
-        if not isinstance(report,dict) or report.get("provider")!=expected or \
-            ((report.get("research_ready") is not False or report.get("publication_authorized") is not False) if mode=="pdf" \
-             else (report.get("market_study_complete") is not False or report.get("ready_for_youtube") is not False)):
+    if mode in ("entities","official","pdf","research"):
+        expected={"entities":"wikidata_news_company_resolution_v1","official":"wikidata_p856_safe_official_fetch_v1","pdf":"official_pdf_evidence_v1","research":"market_official_and_pdf_v1"}[mode]
+        if mode=="research":
+            denied=(report.get("ready_for_script") is not False or
+                    report.get("publication_authorized") is not False or
+                    report.get("facts_verified_automatically") != 0)
+            matches_provider=report.get("source_provider")==expected
+        else:
+            denied=((report.get("research_ready") is not False or
+                      report.get("publication_authorized") is not False) if mode=="pdf"
+                     else (report.get("market_study_complete") is not False or
+                           report.get("ready_for_youtube") is not False))
+            matches_provider=report.get("provider")==expected
+        if not isinstance(report,dict) or not matches_provider or denied:
             raise ValueError("Evidencia sin procedencia")
         body=json.dumps(report,ensure_ascii=False,separators=(",",":")).encode("utf-8")
         if len(body)>250000:raise ValueError("Reporte fuera de límite")
@@ -56,14 +65,19 @@ def main():
     p.add_argument("--mode",choices=list(PATHS),required=True)
     p.add_argument("--input",type=Path)
     a=p.parse_args()
-    if a.mode in ("entities","official","pdf") and not a.input:p.error("Se requiere --input")
-    data=json.loads(a.input.read_text(encoding="utf-8")) if a.mode in ("entities","official","pdf") else None
+    if a.mode in ("entities","official","pdf","research") and not a.input:p.error("Se requiere --input")
+    data=json.loads(a.input.read_text(encoding="utf-8")) if a.mode in ("entities","official","pdf","research") else None
     result=post_report(mode=a.mode,report=data,
       base_url=os.getenv("API_BASE_URL",""),token=github_oidc_token())
     if a.mode=="assess":
         print("EVALUACIONES_D1:",result["candidates_evaluated"],
           "SELECCION_AUTOMATICA:",result["selected_wikidata_id"],
           "DOCUMENTALES_AUTORIZADOS:",result["automatic_publication_allowed"])
+    elif a.mode=="research":
+        print("EXPEDIENTES_IA_D1:",result["run_id"],"ESTADO:",result["status"],
+          "EVIDENCIAS:",result["evidence_count"],
+          "AFIRMACIONES_CANDIDATAS:",result["candidate_claim_count"],
+          "HECHOS_VERIFICADOS:",result["verified_claim_count"])
     elif a.mode=="pdf":
         print("PDF_PERSISTIDOS_D1:",result["documents"],
           "CITAS_LOCALIZADAS:",result["fragments"],
