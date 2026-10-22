@@ -50,6 +50,16 @@ class ResearchFreshness(unittest.TestCase):
         self.assertEqual(status["reason"],"unchanged_documentary_sources")
         self.assertEqual(status["new_unique_passages"],0)
 
+    def test_different_paragraph_same_document_does_not_burn_tokens(self):
+        old=example(1)
+        changed={**old,"id":"E002",
+                 "excerpt":"Otro fragmento del mismo fichero descargado y mismo hash no aporta una fuente independiente para volver a consultar al modelo."}
+        context,status=gate_duplicate_research(
+            {"prior_evidence_manifest":[old]},[changed])
+        self.assertEqual(context,[])
+        self.assertEqual(status["new_unique_passages"],0)
+        self.assertEqual(status["reason"],"unchanged_documentary_sources")
+
     def test_any_new_verified_hash_or_source_allows_new_analysis_candidate(self):
         a=example(1)
         b=example(2,url="https://other.example.org/new")
