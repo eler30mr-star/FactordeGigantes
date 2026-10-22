@@ -106,5 +106,37 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(next(d for d in result['source_documents'] if d['url']==target)['discovered_by'],'tavily')
         validate_report_locally(source_report(result))
 
+    def test_wikipedia_from_search_history_or_redirect_never_becomes_evidence(self):
+        class Search:
+            def search(self,provider,query):
+                if provider!='tavily':raise ProviderError('missing_key')
+                return [{'url':u,'discovered_by':'tavily'} for u in
+                        ['https://es.wikipedia.org/wiki/Empresa','https://reporter.example/redirect']]
+        old={'wikidata_id':'Q100','company':'Empresa Ejemplo','url':'https://en.wikipedia.org/wiki/Empresa',
+             'document_sha256':'a'*64,'excerpt':TEXT,'source_class':'public_document_candidate','page':None}
+        calls=[]
+        def fetch(url,**_):
+            calls.append(url)
+            return ('<p>'+TEXT+'</p>').encode(),'https://es.wikipedia.org/wiki/Empresa','text/html'
+        with patch('tools.ai_source_discovery.wikipedia_links',return_value=[]):
+            result=discover_sources({**SELECTION,'prior_evidence_manifest':[old]},clients=Search(),document_fetcher=fetch)
+        self.assertEqual(calls,['https://reporter.example/redirect'])
+        self.assertEqual(result['evidence_manifest'],[])
+        validate_report_locally(source_report(result))
+
+    def test_ten_passage_cap_keeps_history_and_represents_all_new_documents(self):
+        old=[{'wikidata_id':'Q100','company':'Empresa Ejemplo','url':f'https://old{i}.example/article',
+              'document_sha256':'a'*64,'excerpt':TEXT,'source_class':'public_document_candidate','page':None}
+             for i in range(4)]
+        urls=[f'https://new{i}.example/article' for i in range(4)]
+        def fetch(url,**_):
+            return ''.join('<p>'+TEXT+f' Pasaje {i}.</p>' for i in range(3)).encode(),url,'text/html'
+        with patch('tools.ai_source_discovery.wikipedia_links',return_value=[{'url':u} for u in urls]):
+            result=discover_sources({**SELECTION,'prior_evidence_manifest':old},clients=self.clients(),document_fetcher=fetch)
+        self.assertEqual(result['retrieval_budget']['new_fragments'],12)
+        self.assertEqual(len(result['evidence_manifest']),10)
+        self.assertEqual({e['url'] for e in result['evidence_manifest']},set(urls+[e['url'] for e in old]))
+        validate_report_locally(source_report(result))
+
 
 if __name__=='__main__':unittest.main()

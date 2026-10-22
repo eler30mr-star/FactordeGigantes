@@ -28,6 +28,12 @@ REGULATORY_HOSTS = frozenset(json.loads(
     (Path(__file__).resolve().parents[1] / "src/regulatory-authorities.json").read_text(encoding="utf-8")))
 
 
+def discovery_only_host(host):
+    host=(host or '').lower().rstrip('.')
+    return any(host==domain or host.endswith('.'+domain)
+               for domain in ('wikipedia.org','wikimedia.org','wikidata.org'))
+
+
 def regulatory_host(host):
     """Autoridad candidata conocida; un repositorio .gov no es un regulador."""
     host = (host or "").lower().rstrip(".")
@@ -212,6 +218,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                      "public_authority_candidate","public_document_candidate"}):
             raise ValueError("Fuente histórica D1 sin procedencia admitida")
         validate_url(passage["url"])
+        if discovery_only_host(urlsplit(passage['url']).hostname):
+            continue  # Históricos intactos; no reutilizar enciclopedias como prueba.
         if passage["source_class"] == "public_authority_candidate" and not regulatory_host(urlsplit(passage["url"]).hostname):
             passage = {**passage, "source_class": "public_document_candidate"}
         preserved.append(passage)
@@ -261,6 +269,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             validate_url(url)
             # URL completa observada, sin fragmentos y sin credenciales.
             url = url.split("#", 1)[0]
+            if discovery_only_host(urlsplit(url).hostname):
+                continue
             if url in seen:
                 # La misma URL puede aparecer antes en Wikipedia. Conservar la
                 # pista dirigida para que no pierda prioridad por deduplicación.
@@ -332,6 +342,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         try:
             raw, resolved, mime = document_fetcher(lead["url"], timeout=12)
             validate_url(resolved)
+            if discovery_only_host(urlsplit(resolved).hostname):
+                raise ValueError('Enciclopedia reservada a descubrimiento')
             if primary_host(host) and not primary_host(urlsplit(resolved).hostname):
                 raise ValueError("Redirección fuera de autoridad pública")
             analysis = analyze_document(raw, mime, pdf_max_pages=350, pdf_scan_pages=12)
@@ -412,15 +424,25 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     # Conservar citas viejas para comparar sólo si una nueva lectura real
     # amplió la base informativa. Nunca recircular el mismo dossier a Gemini.
     if new_fragments:
-        keys={(e["url"],e["document_sha256"],e.get("page"),e["excerpt"])
-              for e in new_fragments}
+        # Reservar espacio a las citas anteriores: sin ellas la continuación
+        # pierde precisamente el documento que debe contrastar. Evitar duplicar
+        # un mismo texto por hashes de HTML dinámico y repartir los nuevos
+        # pasajes entre documentos antes de tomar su segundo/tercer fragmento.
+        new_urls={e['url'] for e in new_fragments}
+        historical=[];old_keys=set()
         for old in preserved:
-            key=(old["url"],old["document_sha256"],old.get("page"),old["excerpt"])
-            if key not in keys:
-                keys.add(key)
-                new_fragments.append(old)
-            if len(new_fragments)>=MAX_EVIDENCE:
-                break
+            key=(old['url'],old.get('page'),old['excerpt'])
+            if old['url'] not in new_urls and key not in old_keys:
+                old_keys.add(key);historical.append(old)
+        buckets={}
+        for e in new_fragments:
+            buckets.setdefault(e['url'],deque()).append(e)
+        balanced=[]
+        while any(buckets.values()) and len(balanced)<MAX_EVIDENCE-len(historical):
+            for bucket in buckets.values():
+                if bucket and len(balanced)<MAX_EVIDENCE-len(historical):
+                    balanced.append(bucket.popleft())
+        new_fragments=balanced+historical
     out["retrieval_budget"]["new_fragments"]=new_count
     out["stages"].append({"provider":"document_citations","role":"discover",
                           "status":"success" if followed else "empty","result_count":len(followed)})
