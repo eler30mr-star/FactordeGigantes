@@ -1,7 +1,7 @@
 // Solo OIDC de radar para escritura. D1 conserva reservas y resultados sin aprobación.
 export const AI_CAPS=Object.freeze({tavily:[8,200],exa:[4,60],gemini:[4,100],
  groq:[4,100],mistral:[2,40],openrouter:[2,40],cloudflare:[4,100]});
-const PROVIDERS=new Set([...Object.keys(AI_CAPS),'qwen','wikipedia']);
+const PROVIDERS=new Set([...Object.keys(AI_CAPS),'qwen','wikipedia','gdelt','d1_history']);
 const FLAGS=['facts_verified_automatically','ready_for_script','ready_for_youtube','publication_authorized'];
 const SHA=/^[a-f0-9]{64}$/,QID=/^Q[1-9][0-9]*$/;
 const CF_MODEL='@cf/meta/llama-3.1-8b-instruct';
@@ -74,6 +74,16 @@ export function validateAiReport(r,now=new Date()){
   publicUrl(e.url);known.add(e.id);
  }
  validateClaims(r.candidate_claims,known);validateClaims(r.preliminary_claims,known);
+ if(r.research_freshness!==undefined&&r.research_freshness!==null){
+  const f=r.research_freshness;
+  if(!f||!['first_observation_or_missing_history','new_documentary_sources',
+      'unchanged_documentary_sources'].includes(f.reason)||
+     !Number.isSafeInteger(f.new_unique_passages)||f.new_unique_passages<0||f.new_unique_passages>10||
+     (f.reason==='unchanged_documentary_sources'&&
+      (f.new_unique_passages!==0||r.evidence_manifest.length!==0))||
+     (f.reason==='new_documentary_sources'&&f.new_unique_passages===0))
+   throw new RangeError('Auditoría de fuentes nuevas incoherente');
+ }
  if(r.retrieval_budget!==undefined&&r.retrieval_budget!==null){
   const b=r.retrieval_budget;
   const fresh=r.source_documents.filter(d=>d.status==='text_extracted'&&d.resolved_url);
@@ -96,7 +106,7 @@ export function validateAiReport(r,now=new Date()){
      b.public_authority_domains_with_text<0||
      b.public_authority_domains_with_text>hosts.size||
      !Number.isSafeInteger(b.new_fragments)||b.new_fragments<0||
-     b.new_fragments>r.evidence_manifest.length||
+     b.new_fragments>b.attempted*3||b.new_fragments<documents.size||
      b.budget_exhausted!==(b.attempted===8))
     throw new RangeError('Presupuesto de recuperación no coincide con fuentes observadas');
  }
@@ -154,7 +164,10 @@ export function validateAiReport(r,now=new Date()){
    throw new RangeError('Analista no permitido');
  for(const stage of r.stages){
   if(!stage||!PROVIDERS.has(stage.provider)||typeof stage.role!=='string'||
-    !['discover','classify','extract','analyze','review','fallback'].includes(stage.role)||
+    !['discover','classify','extract','analyze','review','fallback','avoid_duplicate_sources'].includes(stage.role)||
+    (stage.provider==='gdelt'&&stage.role!=='discover')||
+    (stage.provider==='d1_history'&&stage.role!=='avoid_duplicate_sources')||
+    (stage.role==='avoid_duplicate_sources'&&stage.provider!=='d1_history')||
     typeof stage.status!=='string'||!/^[a-z_]{3,70}$/.test(stage.status))
       throw new RangeError('Etapa IA inválida');
  }

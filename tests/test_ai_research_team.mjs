@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
 import {reserveAiBudget,validateAiReport,storeAiReport,readAiReports,classifyWithCloudflare} from '../src/ai-research-team.mjs';
 import worker from '../src/worker.js';
 
@@ -28,6 +29,34 @@ function report(){return {schema:'fdg_ai_pipeline_v1',collected_on:now.toISOStri
  preliminary_claims:[],reviews:[],classification:[],source_documents:[],missing_questions:[],
  stages:[{provider:'qwen',role:'extract',status:'success'}],facts_verified_automatically:0,
  ready_for_script:false,ready_for_youtube:false,publication_authorized:false};}
+
+test('descubridor Python y análisis reales atraviesan contrato JS y SQLite sin inferencia remota',async()=>{
+ const code=`import runpy,json
+from tools.ai_research_pipeline import analyze_sources
+ns=runpy.run_path('tests/test_ai_pipeline_contract.py')
+sources,clients=ns['PipelineContractTests']().discover()
+text=json.dumps({'claims':[{'statement':'Empresa Ejemplo comunicó una investigación de sus operaciones.','evidence_ids':['E001','E002']}],'missing_questions':[]})
+report=analyze_sources(sources,clients=clients,local_generate=lambda _:text)
+print(json.dumps(report,ensure_ascii=False))`;
+ const process=spawnSync('python',['-c',code],{cwd:new URL('../',import.meta.url),encoding:'utf8',timeout:20000,
+  env:{...globalThis.process.env,PYTHONIOENCODING:'utf-8'}});
+ assert.equal(process.status,0,process.stderr);
+ const r=JSON.parse(process.stdout),{db,raw}=setup();
+ const saved=await storeAiReport(db,r);
+ assert.equal(saved.queue_state,'researching');
+ const read=await readAiReports(db);
+ assert.equal(read.runs[0].report.research_freshness.reason,'first_observation_or_missing_history');
+ assert.equal(read.runs[0].report.evidence_manifest.length,2);
+ assert.equal(read.runs[0].report.publication_authorized,false);
+ assert.equal(raw.prepare('SELECT COUNT(*) AS n FROM ai_budget_reservations').get().n,0);
+ assert.equal(raw.prepare('PRAGMA foreign_key_check').all().length,0);
+ for(const provider of ['gdelt','d1_history']){
+  const invalid=structuredClone(r);
+  invalid.stages.find(s=>s.provider===provider).role='analyze';
+  assert.throws(()=>validateAiReport(invalid),RangeError);
+  await assert.rejects(reserveAiBudget(db,provider,'metadata-not-a-model'),RangeError);
+ }
+});
 
 test('reservas D1 tienen límite diario, mensual y no pueden reutilizarse',async()=>{
  const {db}=setup(),day=new Date('2026-10-22T12:00:00Z');

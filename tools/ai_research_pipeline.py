@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 
 from tools.ai_clients import FreeClients, MODELS, ProviderError, readiness
 from tools.ai_control import ControlClient
@@ -120,17 +121,45 @@ def evidence_gaps(evidence, claims):
             "all_claims_verified":False,"ready_for_script":False}
 
 
-def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
+def source_report(sources):
     evidence = sources["evidence_manifest"]
-    report = {"schema": "fdg_ai_pipeline_v1", "collected_on": sources["collected_on"],
+    return {"schema": "fdg_ai_pipeline_v1", "collected_on": sources["collected_on"],
               "selected_wikidata_id": sources["selected_wikidata_id"], "company": sources["company"],
               "evidence_manifest": evidence, "source_documents": sources["source_documents"],
               "retrieval_budget": sources.get("retrieval_budget"),
+              "research_freshness": sources.get("research_freshness"),
               "stages": list(sources["stages"]), "candidate_claims": [], "missing_questions": [],
               "reviews": [], "classification": [], "preliminary_claims": [],
               "source_quality": evidence_gaps(evidence, []),
               "analysis_provider": None, "facts_verified_automatically": 0,
+              "status": "sources_only" if evidence else "skipped_no_documentary_evidence",
               "ready_for_script": False, "ready_for_youtube": False, "publication_authorized": False}
+
+
+def validate_report_locally(report):
+    """Ejecutar el contrato real del Worker antes de gastar IA o enviar a D1.
+
+    JSON por stdin; nunca imprimir contenido, prompts o credenciales en errores.
+    Un fallo de contrato detiene la corrida sin reservas ni reintentos.
+    """
+    root = Path(__file__).resolve().parents[1]
+    check = (
+        "import {readFileSync} from 'node:fs';"
+        "import {validateAiReport} from './src/ai-research-team.mjs';"
+        "try {validateAiReport(JSON.parse(readFileSync(0,'utf8')));}"
+        "catch {process.exitCode=1;}"
+    )
+    result = subprocess.run(["node", "--input-type=module", "-e", check],
+                            input=json.dumps(report, ensure_ascii=False),
+                            text=True, encoding="utf-8", capture_output=True,
+                            cwd=root, timeout=20)
+    if result.returncode:
+        raise ValueError("Expediente incompatible con el contrato local del Worker")
+
+
+def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
+    evidence = sources["evidence_manifest"]
+    report = source_report(sources)
     if not evidence:
         for p, role in (("cloudflare", "classify"), ("qwen", "extract"), ("gemini", "analyze"),
                         ("mistral", "fallback"), ("openrouter", "fallback"), ("groq", "review")):
@@ -275,7 +304,10 @@ def main():
     else:
         if not a.sources:
             p.error("Se requieren fuentes")
-        result = analyze_sources(read(a.sources), clients=clients, classifier=control.classify)
+        sources = read(a.sources)
+        validate_report_locally(source_report(sources))
+        result = analyze_sources(sources, clients=clients, classifier=control.classify)
+        validate_report_locally(result)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     # Informe local se conserva incluso si D1 no confirma la ingesta.

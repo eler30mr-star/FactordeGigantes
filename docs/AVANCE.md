@@ -1462,3 +1462,36 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - **Siguiente trabajo inmediato:** verificar una corrida E2E `[radar-e2e]` de la nueva búsqueda libre + acumulación D1 + puertas anti-gasto, corregir los resultados que fallen; si hay varias fuentes primarias, contrastar el contenido, generar propuesta original de guion 8–14 min, enlazar la voz canónica y producción audiovisual con controles de derechos. Si GDELT no devuelve artículos, no inventar lecturas ni cuotas consumidas.
 
 **Estado final honesto:** desarrollo conectado a radar diario y pruebas en `main`, pendiente verificación E2E de sus últimas revisiones; no se confunde el avance del código con un documental autónomo final.
+
+## 2026-10-22 · Vía local Wrangler tras fallo OAuth del conector
+
+- Wrangler 4.152.0 instalado localmente mediante npm, sin cambiar package.json ni generar package-lock. Instalación: 37 paquetes, auditoría sin vulnerabilidades reportadas.
+- `wrangler whoami` ejecutado: no existe una sesión local autenticada. No se desplegó el Worker ni se modificó D1.
+- Intento de abrir OAuth con almacén seguro de Windows y scopes `account:read`, `user:read`, `workers:write`, `d1:write`, `offline_access` bloqueado por revisión automática antes de ejecutar: requiere autorización expresa del propietario para escritura y sesión persistente. No se eludió el bloqueo ni se obtuvieron credenciales.
+- Próximo paso: obtener esa autorización concreta, iniciar login oficial en navegador y verificar cuenta/Worker/D1 antes de cualquier despliegue. Este registro es local; no se creó commit ni se sincronizó con GitHub en esta intervención.
+
+### Autorización del propietario y login Wrangler iniciado
+- El propietario autorizó expresamente el acceso a Cloudflare en el chat. Se instaló `@napi-rs/keyring@1.3.0`, complemento requerido por Wrangler para el almacén seguro de Windows.
+- Se corrigió la invocación: `offline_access` no es un argumento admitido por `--scopes` en Wrangler 4.152.0. Se inició OAuth con `account:read`, `user:read`, `workers:write`, `d1:write` y `--use-keyring`.
+- Wrangler abrió el enlace de autorización en navegador y espera el consentimiento allí. No consta aún login exitoso ni verificación de cuenta, Worker o D1. No se ejecutó despliegue.
+
+### Wrangler autenticado y D1 remoto verificado
+- OAuth de Wrangler finalizó `Successfully logged in`; `whoami` confirmó la cuenta del propietario y credenciales cifradas con clave en Windows Credential Manager. No se copiaron tokens al repositorio.
+- `d1 info factor-de-gigantes-db` funcionó: base existente con 34 tablas. SELECT remoto de la cola confirmó Theranos Q16956307 en `awaiting_sources`, `script_authorized=0`, `publication_authorized=0`; consulta con cero filas escritas.
+- `deployments list` fue rechazado por acceso insuficiente a Workers. La sesión inicial tiene `workers:write` pero no el permiso granular `workers_scripts:write`. Se inició una nueva autorización oficial añadiendo ese permiso, dentro del acceso expresamente autorizado. Pendiente consentimiento del navegador y nueva comprobación del Worker. No se ejecutó despliegue ni cambio de datos.
+
+### Conexión Wrangler completa verificada
+- La espera OAuth adicional venció; se abrió un enlace nuevo y Wrangler confirmó `Successfully logged in` tras el consentimiento del propietario.
+- `wrangler deployments list` ahora finalizó correctamente y devolvió el historial del Worker `factor-de-gigantes`, incluida la versión `51211b17-7176-4dea-9f9b-9dad1192fb17` (despliegue 2026-10-22T19:05:17.210Z). Acceso al Worker confirmado mediante consulta real.
+- D1 remoto ya fue verificado por `info` y SELECT sin escrituras en la comprobación anterior. Vía local de administración operativa independientemente del conector MCP. No se desplegó código en este bloque.
+- Próximo paso: contrastar la versión remota con main, corregir y probar el contrato entre descubridor e ingesta IA, conservar bindings y secretos, y verificar E2E antes de acreditar avance documental.
+
+## 2026-10-22 · Corrección local del contrato integral de investigación
+
+- Causa reproducida: `ai_source_discovery.py` emite `gdelt/discover` y `d1_history/avoid_duplicate_sources`, pero el validador JS rechazaba ambos. Se admiten esas etapas con roles restringidos; no se habilitan nuevos proveedores de inferencia ni reservas.
+- `tools/ai_research_pipeline.py` ejecuta ahora el validador real JS antes de cargar Qwen/reservar APIs y otra vez antes de persistir. El JSON viaja por stdin y los errores no imprimen contenido remoto ni credenciales. Conserva `research_freshness` en el informe final.
+- El validador comprueba la auditoría de fuentes nuevas. La cantidad de fragmentos extraídos se limita al presupuesto HTTP real (tres por documento), sin confundirla con los diez pasajes finales ni rechazar una corrida que descartó documentos repetidos antes de inferir.
+- Regresiones nuevas: descubrimiento Python -> análisis local simulado -> contrato JS -> SQLite real; metadatos de búsqueda no pueden actuar como analistas ni reservar inferencias; corrida repetida sin carga del modelo; CLI rechaza contrato inválido antes de análisis/persistencia.
+- Pruebas locales: 249 Python y 81 Node aprobadas; sintaxis Worker/panel y manifest de ejemplo correctos. La suite Python usa pypdf 5.9.0 en `.cache/python`, temporales dentro del proyecto y sustitución de fuentes del sistema sólo en el proceso de pruebas Windows (Arial); no se cambió el render ni la voz. La primera ejecución completa falló por temporales del sandbox; la ejecución ajustada pasó.
+- `.cache/` excluido de Git. Carpeta local sin `.git`: sincronización mediante API GitHub sobre el HEAD de main, preservando el árbol remoto y sin crear ramas. Comparación de hashes src/public/tools/migrations/workflows contra main: únicamente difieren los dos módulos modificados en esta entrega.
+- Pendiente al escribir este bloque: commit remoto, CI, despliegue del Worker y una ejecución E2E real. P1 factual continúa abierta; no hay documental final ni autorización de publicación.
