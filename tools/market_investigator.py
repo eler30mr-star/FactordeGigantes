@@ -37,7 +37,8 @@ def prepare_evidence(pdf_report, official_report=None):
               "url":url,"page":page,
               "excerpt":snippet[:320],
               "document_sha256":doc["sha256"],
-              "wikidata_id":doc["wikidata_id"],"company":doc["company"]})
+              "wikidata_id":doc["wikidata_id"],"company":doc["company"],
+              "source_class":"potential_official_pdf"})
             if len(items)>=MAX_EVIDENCE:break
         if len(items)>=MAX_EVIDENCE:break
     if official_report is not None:
@@ -65,16 +66,18 @@ def prepare_evidence(pdf_report, official_report=None):
 def run_investigation(pdf_report,*,official_report=None,free_confirmed=False,api_key=None,model="gemini-2.5-flash-lite",
                       runner=run_gemini_free):
     evidence=prepare_evidence(pdf_report,official_report=official_report)
+    # Manifiesto documental con pasajes breves para D1, incluso sin LLM.
+    # Todo extracto es público, no equivale a confirmación de hechos.
+    base={"source_report_day":pdf_report.get("collected_on"),
+      "source_provider":"market_official_and_pdf_v1",
+      "evidence_manifest":evidence,"evidence_count":len(evidence),
+      "candidate_claims":[],"missing_questions":[],
+      "facts_verified_automatically":0,"ready_for_script":False,
+      "ready_for_youtube":False,"publication_authorized":False}
     if not evidence:
-        return {"status":"skipped_no_documentary_evidence","provider":None,
-          "evidence_count":0,"candidate_claims":[],
-          "facts_verified_automatically":0,"ready_for_script":False,
-          "publication_authorized":False}
+        return {**base,"status":"skipped_no_documentary_evidence","provider":None}
     if not free_confirmed or not isinstance(api_key,str) or len(api_key)<15:
-        return {"status":"skipped_free_tier_not_authorized","provider":None,
-          "evidence_count":len(evidence),"candidate_claims":[],
-          "facts_verified_automatically":0,"ready_for_script":False,
-          "publication_authorized":False}
+        return {**base,"status":"skipped_free_tier_not_authorized","provider":None}
     # Tema deducido de entidades encontradas, no proporcionado por ChatGPT.
     topic=", ".join(dict.fromkeys(item["company"] for item in evidence))[:130]
     result=runner(topic,evidence,api_key=api_key,model=model,free_tier_confirmed=True)
@@ -82,9 +85,8 @@ def run_investigation(pdf_report,*,official_report=None,free_confirmed=False,api
         result.get("ready_for_script") is not False or
         result.get("ready_for_youtube") is not False):
         raise ValueError("Investigador intentó declarar hechos o contenido listo")
-    return {**result,"status":"candidate_claims_generated",
-      "origin":"official_pdf_evidence_v1",
-      "input_evidence":[{k:v for k,v in e.items() if k not in ("excerpt",)} for e in evidence],
+    return {**base,**result,"status":"candidate_claims_generated",
+      "origin":"market_official_and_pdf_v1",
       "publication_authorized":False}
 
 def main():
@@ -101,9 +103,13 @@ def main():
         out=run_investigation(input_data,official_report=official_data,free_confirmed=authorized,api_key=key)
     except (OSError,ValueError,RuntimeError,KeyError,TypeError) as exc:
         # Nunca registrar cuerpo remoto, token de cabecera o prompt sin consentimiento.
+        evidence=prepare_evidence(input_data,official_report=official_data)
         out={"status":"research_provider_failure","error_type":type(exc).__name__,
-             "candidate_claims":[],"facts_verified_automatically":0,
-             "ready_for_script":False,"publication_authorized":False}
+             "source_report_day":input_data.get("collected_on"),
+             "source_provider":"market_official_and_pdf_v1","evidence_manifest":evidence,
+             "evidence_count":len(evidence),"candidate_claims":[],"missing_questions":[],
+             "facts_verified_automatically":0,"ready_for_script":False,
+             "ready_for_youtube":False,"publication_authorized":False}
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(out,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("INVESTIGADOR:",out["status"],
