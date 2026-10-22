@@ -156,16 +156,16 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     except (OSError, ValueError, TypeError, KeyError):
         out["stages"].append({"provider": "wikipedia", "role": "discover",
                               "status": "source_unavailable"})
-    # Oportunidades actuales: una fuente abierta adicional, sin facturación ni
-    # claves. Si GDELT aplica rate-limit, continuar con Wikipedia y resto.
-    try:
-        fresh=gdelt_articles(title,fetcher=gdelt_fetcher)
-        leads.extend(fresh)
-        out["stages"].append({"provider":"gdelt","role":"discover",
-                              "status":"success","result_count":len(fresh)})
-    except (OSError,ValueError,TypeError,KeyError,TimeoutError):
-        out["stages"].append({"provider":"gdelt","role":"discover",
-                              "status":"source_unavailable"})
+    # Fuente abierta adicional; ninguna solicitud en fixtures aislados.
+    if gdelt_fetcher is not None:
+        try:
+            fresh=gdelt_articles(title,fetcher=gdelt_fetcher)
+            leads.extend(fresh)
+            out["stages"].append({"provider":"gdelt","role":"discover",
+                                  "status":"success","result_count":len(fresh)})
+        except (OSError,ValueError,TypeError,KeyError,TimeoutError):
+            out["stages"].append({"provider":"gdelt","role":"discover",
+                                  "status":"source_unavailable"})
     queries = [f'"{title}" regulator court complaint financial statements',
                f'"{title}" history annual report investigation original documents']
     for provider in ("tavily", "exa"):
