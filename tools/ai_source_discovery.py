@@ -155,7 +155,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         return normalized(title) in normalized(text) or any(w in tokens for w in words)
     def rank(lead):
         parsed = urlsplit(lead["url"])
-        path = normalized(parsed.path + " " + (lead.get("title") or ""))
+        path = normalized(parsed.path + " " + (lead.get("title") if isinstance(lead.get("title"), str) else ""))
         relevant = any(w in path for w in words)
         # La URL archivada puede terminar en CAPTCHA/HTML y consumir presupuesto
         # sin poder abrir el documento original. Probar primero el editor original.
