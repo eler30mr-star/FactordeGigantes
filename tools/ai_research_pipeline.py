@@ -51,7 +51,7 @@ def review_prompt(evidence, claims):
             "Que una cita exista no prueba la afirmación. Busca cifras inventadas, contradicciones, "
             "atribuciones perdidas y confusión entre acusación, sentencia y opinión. Responde JSON "
             '{"reviews":[{"claim_index":1,"assessment":"supported_by_excerpt|contradicted_by_excerpt|insufficient_context",'
-            '"evidence_ids":["E001"],"reason":"explicación breve"}]}. '
+            '"evidence_ids":["E001"],"reason":"explicación breve en español latinoamericano"}]}. '
             "Una evaluación no autoriza guion ni publicación.\n" +
             json.dumps({"evidence": evidence, "claims": claims}, ensure_ascii=False))
 
