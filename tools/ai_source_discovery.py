@@ -127,14 +127,22 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         relevant = any(w in normalized(parsed.path) for w in words)
         return (-int(primary_host(parsed.hostname)), -int(relevant),
                 -int(parsed.path.lower().endswith(".pdf")), lead["url"])
-    per_host = Counter()
-    for lead in sorted(eligible, key=rank):
+    per_host, per_kind = Counter(), Counter()
+    ordered = sorted(eligible, key=rank)
+    # Reservar espacio para contexto independiente: cuatro portales oficiales
+    # bloqueados o interactivos no deben consumir todo el presupuesto.
+    have_primary = any(primary_host(urlsplit(x["url"]).hostname) for x in ordered)
+    have_secondary = any(not primary_host(urlsplit(x["url"]).hostname) for x in ordered)
+    mixed = have_primary and have_secondary
+    for lead in ordered:
         if len(out["source_documents"]) >= MAX_DOCUMENTS:
             break
         host = urlsplit(lead["url"]).hostname
-        if per_host[host] >= 2:
+        kind = "primary" if primary_host(host) else "secondary"
+        if per_host[host] >= 1 or mixed and per_kind[kind] >= 2:
             continue
         per_host[host] += 1
+        per_kind[kind] += 1
         record = {**lead, "status": "fetch_failed"}
         try:
             raw, resolved, mime = document_fetcher(lead["url"], timeout=12)
@@ -171,7 +179,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             record.update({"status": "text_extracted" if fragments else "no_relevant_passages",
                            "resolved_url": resolved, "sha256": digest,
                            "pages_total": analysis["total_pages"],
-                           "full_document_text_read": analysis["type"] != "pdf" or analysis["total_pages"] <= 12})
+                           "full_document_text_read": bool(fragments) and
+                               (analysis["type"] != "pdf" or analysis["total_pages"] <= 12)})
             out["evidence_manifest"].extend(fragments)
         except (OSError, ValueError, TypeError, KeyError, ImportError, RuntimeError) as exc:
             record["status"] = "fetch_failed"

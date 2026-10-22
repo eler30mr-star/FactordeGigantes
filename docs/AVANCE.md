@@ -1347,3 +1347,10 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - Mayor robustez frente a JSON de proveedor malformado (commit `2e5028e18e69ce67250e0e0dc7bf5b35981cff73`) y errores locales sanitizados por tipo. Validación local actual: **219 Python** y 76 Node previos sin cambios de JS en esta corrección.
 - Build Cloudflare `2395af30-9db0-4097-ad96-29600619287a` terminó `success` para `4e9f39e24be254da89e94c40fa63f3d329ac7670`: backend y assets del nuevo panel publicados por el build. No se declara revisión visual autenticada.
 - Segunda ejecución acotada para validar la corrección de cobertura: pendiente.
+
+
+### Recuperación real: bloqueo de contenido y diversidad de fuentes
+
+- Segunda corrida [39812041195](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39812041195) localizó las referencias SEC/Justice antes perdidas, pero conservó cero pasajes (`ai-83d6cb8a8e64ef831a5b2a5c86d0`). Tercera corrida diagnóstica [39812615865](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39812615865) guardó `ai-007c49484aafa3bdec6bf42a7a04`: respuesta Justice de solo 2554 bytes, cero bloques legibles; PDF FDA de cuatro páginas con texto extraído sin pasajes de entidad utilizables; SEC rechazó HTTP. Sin inferencias ni reservas externas. No se sortean desafíos de acceso ni se declara leído el artículo por recibir HTTP 200.
+- Diagnóstico persiste únicamente longitud, MIME, primeros cuatro bytes en hexadecimal, conteo de bloques y vista breve de texto público; nunca cabeceras de autenticación. Se limita a dos autoridades y dos fuentes independientes cuando ambas clases existen, máximo una por hostname y cuatro descargas totales. La cobertura oficial bloqueada ya no agota todos los intentos. `full_document_text_read` es falso cuando no se extrajeron pasajes relevantes.
+- Regresión de diversidad: dos autoridades devuelven un HTML sin contenido y la fuente independiente todavía se descarga. Suite Python actual: **220 pruebas**, sin fallos. No cambió JS respecto a los 76 casos verificados.

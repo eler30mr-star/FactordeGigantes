@@ -25,7 +25,7 @@ falta de contexto y confusión entre acusación/sentencia/opinión, pero **no ac
 corroboración independiente** por sí misma. La calidad del modelo pequeño sigue
 sujeta a evaluación; una salida JSON válida no prueba calidad documental.
 
-El recolector descarga como máximo cuatro documentos originales con el
+El recolector descarga como máximo cuatro documentos originales (hasta dos autoridades y dos fuentes independientes cuando ambas clases existen; máximo uno por hostname) con el
 descargador existente: HTTPS público, DNS y redirecciones controladas, límite
 de bytes, extracción HTML o primera docena de páginas PDF (máximo 350 páginas
 físicas). Solo admite texto que mencione la entidad seleccionada, conserva hash,

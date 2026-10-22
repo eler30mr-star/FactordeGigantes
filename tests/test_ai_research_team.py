@@ -162,6 +162,22 @@ class DiscoveryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             selection_identity({**SELECTION, "research_queue": {"wikidata_id": "Q200", "title": TITLE}})
 
+    def test_blocked_authorities_do_not_exhaust_all_document_slots(self):
+        links = [f"https://agency{i}.gov/empresa-ejemplo" for i in range(6)] + ["https://reporter.example/empresa-ejemplo"]
+        def wiki(*args, **kwargs):
+            return json.dumps({"parse": {"externallinks": links}}).encode(), "https://en.wikipedia.org/w/api.php", "application/json"
+        fetched = []
+        def document(url, **kwargs):
+            fetched.append(url)
+            if ".gov/" in url:
+                return b"<!DOCTYPE html><html>Access challenge</html>", url, "text/html"
+            return ("<p>" + TEXT + "</p>").encode(), url, "text/html"
+        out = discover_sources(SELECTION, clients=self.clients(), wiki_fetcher=wiki, document_fetcher=document)
+        self.assertIn("https://reporter.example/empresa-ejemplo", fetched)
+        self.assertEqual(sum(".gov/" in u for u in fetched), 2)
+        self.assertTrue(out["evidence_manifest"])
+        self.assertFalse(out["source_documents"][0]["full_document_text_read"])
+
     def test_cross_company_evidence_is_not_reused(self):
         s = sources()
         s["evidence_manifest"].append({**evidence()[0], "wikidata_id": "Q200"})
