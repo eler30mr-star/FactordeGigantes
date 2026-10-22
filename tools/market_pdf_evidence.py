@@ -22,7 +22,7 @@ def select_pdf_candidates(official,primary_pages=None):
         raise ValueError("Se requiere evidencia oficial del radar")
     if official.get("primary_facts_verified")!=0 or official.get("ready_for_youtube") is not False:
         raise ValueError("El radar no ha verificado fuentes")
-    rows=list(official.get("evidence",[])[:3])
+    rows=list(official.get("evidence",[])[:6])
     if primary_pages is not None:
         if (primary_pages.get("provider")!="official_investor_pages_v1" or
             primary_pages.get("collected_on")!=official.get("collected_on") or
@@ -80,7 +80,9 @@ def extract_document_evidence(official, *,primary_pages=None,fetcher=fetch_docum
             validate_url(resolved)
             if mime!="application/pdf" or urlsplit(resolved).hostname!=urlsplit(item["source_page"]).hostname:
                 raise ValueError("Informe PDF fuera de dominio permitido")
-            info=analyze_document(payload,mime)
+            # Un informe anual puede exceder 35 páginas. Leer solo las primeras
+            # doce dentro del presupuesto; conservar el total físico real.
+            info=analyze_document(payload,mime,pdf_max_pages=MAX_PAGES,pdf_scan_pages=12)
             if info["type"]!="pdf" or info["total_pages"] is None or \
                     info["total_pages"]>MAX_PAGES:raise ValueError("PDF fuera de límites")
             options=[]
@@ -95,6 +97,8 @@ def extract_document_evidence(official, *,primary_pages=None,fetcher=fetch_docum
             record.update({"state":"text_extracted" if options else "pdf_without_usable_text",
               "resolved_url":resolved,"sha256":hashlib.sha256(payload).hexdigest(),
               "pages_total":info["total_pages"],"fragments":options})
+            record["text_scan_page_limit"]=12
+            record["full_document_text_read"]=info["total_pages"]<=12
         except (OSError,TimeoutError,ValueError,TypeError,UnicodeError,KeyError,ImportError,RuntimeError) as exc:
             record["error_type"]=type(exc).__name__
         documents.append(record)

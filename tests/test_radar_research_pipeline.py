@@ -103,6 +103,63 @@ class RadarResearchPipeline(unittest.TestCase):
         self.assertEqual(documentary_excerpts(['Accept cookies to read the annual report in 2024. '*4]),[])
         self.assertEqual(len(documentary_excerpts([TEXT,TEXT,OTHER])),2)
 
+    def test_investor_links_use_observed_label_or_ir_path(self):
+        from tools.market_primary_pages import eligible_pages
+        official,_,_=documents()
+        for candidate in [
+            {'url':'https://example.org/en/ir/'},
+            {'url':'https://example.org/corporate/library',
+             'category':'financial_report_link_candidate'}]:
+            candidate.update(document_fetched=False,ownership_verified=False)
+            official['evidence'][0]['document_link_candidates']=[candidate]
+            self.assertEqual(len(eligible_pages(official)),1)
+
+    def test_annual_pdf_preserves_total_without_extracting_every_page(self):
+        from io import BytesIO
+        from pypdf import PdfWriter
+        from tools.pdf_sources import pdf_page_blocks
+        writer=PdfWriter()
+        for i in range(40):writer.add_blank_page(width=200,height=200)
+        stream=BytesIO();writer.write(stream)
+        with self.assertRaisesRegex(ValueError,'páginas'):
+            pdf_page_blocks(stream.getvalue())
+        blocks,pages,total=pdf_page_blocks(stream.getvalue(),max_pages=350,scan_pages=12)
+        self.assertEqual(total,40)
+        self.assertEqual(blocks,[])
+        self.assertEqual(pages,[])
+
+    def test_fallback_tries_different_discovered_hosts_and_preserves_two_batches(self):
+        from tools.market_official_evidence import combine_batches
+        wiki={'method':'wikimedia_wikidata_company_discovery_v1','collected_on':DAY,
+              'candidates':[{'wikidata_id':f'Q{i+100}','topic':f'Empresa sintética {i}',
+                  'official_website_candidate':f'https://company{i}.example.org/'} for i in range(6)]}
+        news={'provider':'wikidata_news_company_resolution_v1','collected_on':DAY,'candidates':[]}
+        calls=[]
+        def fetch(url,**kwargs):
+            calls.append(url)
+            if len(calls)<=3:raise TimeoutError('fixture')
+            return f'<p>{TEXT}</p>'.encode(),url,'text/html'
+        first=collect_official_evidence(wiki,news,fetcher=fetch)
+        second=collect_official_evidence(wiki,news,fetcher=fetch,previous_report=first)
+        self.assertEqual(len(calls),6)
+        self.assertEqual(len(set(calls)),6)
+        self.assertEqual(second['readable'],3)
+        merged=combine_batches(first,second)
+        self.assertEqual(merged['attempted'],6)
+        self.assertTrue(merged['local_consolidation_only'])
+        def forbidden(*args,**kwargs):self.fail('No further requests')
+        skipped=collect_official_evidence(wiki,news,fetcher=forbidden,previous_report=second)
+        self.assertEqual(skipped['skip_reason'],'initial_context_available')
+
+    def test_fallback_never_revisits_a_shared_company_website(self):
+        from tools.market_official_evidence import candidates_from_reports
+        wiki={'method':'wikimedia_wikidata_company_discovery_v1','collected_on':DAY,
+              'candidates':[{'wikidata_id':f'Q{i+100}','topic':f'Empresa sintética {i}',
+                  'official_website_candidate':'https://same.example.org/'} for i in range(5)]}
+        news={'provider':'wikidata_news_company_resolution_v1','collected_on':DAY,'candidates':[]}
+        self.assertEqual(len(candidates_from_reports(wiki,news)),1)
+        self.assertEqual(candidates_from_reports(wiki,news,exclude_hosts={'same.example.org'}),[])
+
     def test_json_cleanup_accepts_one_fence_but_rejects_prose_and_thought(self):
         obj={'claims':[],'missing_questions':[]}
         self.assertEqual(json.loads(json_payload('```json\n'+json.dumps(obj)+'\n```')),obj)

@@ -61,12 +61,16 @@ def fetch_document_public(url: str, *, timeout: int = 14):
         return raw, final_url, mime
 
 
-def pdf_page_blocks(raw: bytes) -> tuple[list[str], list[int], int]:
+def pdf_page_blocks(raw: bytes, *, max_pages=None, scan_pages=None) -> tuple[list[str], list[int], int]:
     """Lista de bloques textuales, página real (base 1) y total de páginas."""
     if not isinstance(raw, bytes) or not raw.startswith(b"%PDF-"):
         raise ValueError("No es un documento PDF válido")
     if len(raw) > MAX_PDF_BYTES:
         raise ValueError("PDF excede el límite de tamaño")
+    if max_pages is None:max_pages=MAX_PDF_PAGES
+    if (type(max_pages) is not int or not 1<=max_pages<=350 or
+        scan_pages is not None and (type(scan_pages) is not int or not 1<=scan_pages<=35)):
+        raise ValueError("Presupuesto de páginas inválido")
     from pypdf import PdfReader
 
     try:
@@ -74,11 +78,12 @@ def pdf_page_blocks(raw: bytes) -> tuple[list[str], list[int], int]:
         if reader.is_encrypted:
             raise ValueError("PDF cifrado: no procesar")
         page_count = len(reader.pages)
-        if not 1 <= page_count <= MAX_PDF_PAGES:
+        if not 1 <= page_count <= max_pages:
             raise ValueError("Cantidad de páginas PDF fuera del presupuesto")
         blocks, pages = [], []
         text_total = 0
         for page_number, page in enumerate(reader.pages, 1):
+            if scan_pages is not None and page_number>scan_pages:break
             page_text = page.extract_text() or ""
             # Rechazar un documento que sobrepasa límites antes de almacenar texto.
             if len(page_text) > MAX_PAGE_TEXT:
@@ -104,10 +109,10 @@ def pdf_page_blocks(raw: bytes) -> tuple[list[str], list[int], int]:
     return blocks, pages, page_count
 
 
-def analyze_document(raw: bytes, mime: str):
+def analyze_document(raw: bytes, mime: str, *, pdf_max_pages=None, pdf_scan_pages=None):
     """Contrato uniforme para HTML y PDF: bloques, páginas por bloque, total."""
     if mime.split(";", 1)[0].strip().lower() == "application/pdf":
-        blocks, page_map, total = pdf_page_blocks(raw)
+        blocks, page_map, total = pdf_page_blocks(raw,max_pages=pdf_max_pages,scan_pages=pdf_scan_pages)
         return {"blocks": blocks, "page_map": page_map,
                 "total_pages": total, "type": "pdf", "text_only": True}
     from tools.research_engine import extract_blocks
@@ -127,3 +132,4 @@ def page_cited_matches(claim_text: str, analysis: dict, *, matcher):
                         "page": page,
                         "locator": f"PDF página {page}" if page is not None else f"Bloque web {block_index + 1}"})
     return results
+

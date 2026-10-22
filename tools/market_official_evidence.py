@@ -17,13 +17,13 @@ QID=re.compile(r"^Q[1-9][0-9]*$")
 LIMIT=3
 DOC_LIMIT=4
 
-def candidates_from_reports(wiki,entities):
+def candidates_from_reports(wiki,entities,*,exclude_ids=(),exclude_hosts=()):
     if wiki.get("method")!="wikimedia_wikidata_company_discovery_v1" or \
        entities.get("provider")!="wikidata_news_company_resolution_v1":
         raise ValueError("Se requieren fuentes de empresas verificables por Wikidata")
     if wiki.get("collected_on")!=entities.get("collected_on"):
         raise ValueError("Fuentes observadas en días diferentes")
-    seen=set();ordered=[]
+    seen=set(exclude_ids);hosts=set(exclude_hosts);ordered=[]
     # Priorizar candidatas nacidas de noticias, luego Wikipedia.
     source_sets=[(entities.get("candidates",[]),"news"),(wiki.get("candidates",[]),"wiki")]
     for rows,origin in source_sets:
@@ -40,7 +40,10 @@ def candidates_from_reports(wiki,entities):
             try:
                 valid_site=validate_url(site)
             except (ValueError,OverflowError):continue
+            host=urlsplit(valid_site).hostname
+            if host in hosts:continue
             seen.add(qid)
+            hosts.add(host)
             ordered.append({"wikidata_id":qid,"company":name,"official_website_candidate":valid_site,
               "identified_by":"wikidata_p856_via_"+origin})
             if len(ordered)>=LIMIT:return ordered
@@ -103,8 +106,22 @@ def select_documentary_excerpt(blocks):
     best=max(ranked)
     return best[2][:300],"generic_candidate"
 
-def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
-    companies=candidates_from_reports(wiki,entities)
+def collect_official_evidence(wiki,entities,*,fetcher=fetch_public,previous_report=None):
+    excluded_ids=[];excluded_hosts=[]
+    if previous_report is not None:
+        validate_batch(previous_report,wiki.get("collected_on"))
+        # No repetir IA ni rastreo si ya hay contexto o un informe enlazado
+        # que el siguiente paso puede recuperar dentro del mismo hostname.
+        for page in previous_report["evidence"]:
+            excluded_ids.append(page["wikidata_id"])
+            excluded_hosts.append(urlsplit(page["official_website_candidate"]).hostname)
+            useful=page.get("excerpt_quality")=="documentary_candidate"
+            same_host_link=any(urlsplit(d.get("url","")).hostname==
+                urlsplit(page.get("resolved_url") or page["official_website_candidate"]).hostname
+                for d in page.get("document_link_candidates",[]))
+            if useful or same_host_link:
+                return empty_batch(wiki["collected_on"],"initial_context_available")
+    companies=candidates_from_reports(wiki,entities,exclude_ids=excluded_ids,exclude_hosts=excluded_hosts)
     collected=wiki["collected_on"]
     evidence=[]
     for company in companies:
@@ -126,7 +143,8 @@ def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
                 "content_sha256":hashlib.sha256(body).hexdigest(),
                 "resolved_url":resolved,"readable_blocks":len(blocks),
                 "document_link_candidates":[{
-                   "url":p["url"],"document_fetched":False,"ownership_verified":False
+                   "url":p["url"],"category":p["category"],
+                   "document_fetched":False,"ownership_verified":False
                 } for p in links[:DOC_LIMIT]],
                 "short_excerpt":selected_excerpt,"excerpt_quality":excerpt_quality,
                 "excerpt_candidates":documentary_excerpts(blocks)})
@@ -141,15 +159,52 @@ def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
       "ready_for_script":False,"ready_for_youtube":False,
       "warning":"Fuente oficial potencial: una página accesible o su hash NO certifican hechos, dominio, licencias o identidad."}
 
+
+def validate_batch(report,day):
+    if (not isinstance(report,dict) or
+        report.get("provider")!="wikidata_p856_safe_official_fetch_v1" or
+        report.get("collected_on")!=day or report.get("primary_facts_verified")!=0 or
+        report.get("ready_for_youtube") is not False or
+        not isinstance(report.get("evidence"),list) or len(report["evidence"])>3):
+        raise ValueError("Tanda corporativa incompatible")
+
+
+def empty_batch(day,reason):
+    return {"provider":"wikidata_p856_safe_official_fetch_v1","collected_on":day,
+        "attempted":0,"readable":0,"evidence":[],"primary_facts_verified":0,
+        "market_study_complete":False,"research_automatic":False,
+        "ready_for_script":False,"ready_for_youtube":False,"skip_reason":reason}
+
+
+def combine_batches(first,second):
+    day=first.get("collected_on")
+    for batch in (first,second):validate_batch(batch,day)
+    combined={**first,"evidence":first["evidence"]+second["evidence"]}
+    ids=[p["wikidata_id"] for p in combined["evidence"]]
+    if len(ids)!=len(set(ids)):raise ValueError("Empresa repetida entre tandas")
+    combined["attempted"]=len(ids)
+    combined["readable"]=sum(p["status"]=="candidate_page_readable" for p in combined["evidence"])
+    combined["local_consolidation_only"]=True
+    combined["source_batch_sha256"]=[hashlib.sha256(json.dumps(b,sort_keys=True).encode()).hexdigest()
+                                       for b in (first,second)]
+    return combined
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--companies",required=True,type=Path)
     p.add_argument("--news-entities",required=True,type=Path)
     p.add_argument("--out",required=True,type=Path)
+    p.add_argument("--previous-report",type=Path)
+    p.add_argument("--combine-report",type=Path)
     a=p.parse_args()
-    r=collect_official_evidence(
-      json.loads(a.companies.read_text(encoding="utf-8")),
-      json.loads(a.news_entities.read_text(encoding="utf-8")))
+    previous=json.loads(a.previous_report.read_text(encoding="utf-8")) if a.previous_report else None
+    if a.combine_report:
+        if previous is None:raise ValueError("Falta primera tanda")
+        r=combine_batches(previous,json.loads(a.combine_report.read_text(encoding="utf-8")))
+    else:
+        r=collect_official_evidence(
+          json.loads(a.companies.read_text(encoding="utf-8")),
+          json.loads(a.news_entities.read_text(encoding="utf-8")),previous_report=previous)
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(r,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("SITIOS_CORPORATIVOS_EXAMINADOS:",r["attempted"],

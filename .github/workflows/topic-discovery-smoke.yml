@@ -126,15 +126,37 @@ jobs:
             --input dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json
       - name: Recuperar páginas de informes e inversores sin adivinar URLs
         run: |
+          # Una única segunda tanda si las tres primeras portadas no dieron
+          # contexto ni enlaces del mismo dominio. Cada tanda se persiste con
+          # el contrato existente de hasta tres sitios; no se amplía D1.
+          timeout -k 5s 75s python -m tools.market_official_evidence \
+            --companies dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
+            --news-entities dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json \
+            --previous-report dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
+            --out dist/radar/PAGINAS_OFICIALES_SEGUNDA_TANDA.json
+      - name: Persistir segunda tanda y consolidar contexto local sin alterar contratos D1
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m tools.push_news_entity_assess --mode official \
+            --input dist/radar/PAGINAS_OFICIALES_SEGUNDA_TANDA.json
+          python -m tools.market_official_evidence \
+            --companies dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
+            --news-entities dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json \
+            --previous-report dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
+            --combine-report dist/radar/PAGINAS_OFICIALES_SEGUNDA_TANDA.json \
+            --out dist/radar/PAGINAS_OFICIALES_CONTEXTO_LOCAL.json
+      - name: Recuperar informes e inversores desde ambas tandas
+        run: |
           python -m unittest discover -s tests -p test_market_primary_pages.py -v
           timeout -k 5s 65s python -m tools.market_primary_pages \
-            --official dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
+            --official dist/radar/PAGINAS_OFICIALES_CONTEXTO_LOCAL.json \
             --out dist/radar/PAGINAS_INVERSORES_NO_CORROBORADAS.json
       - name: Extraer evidencia paginada de informes PDF corporativos
         run: |
           python -m unittest discover -s tests -p test_market_pdf_evidence.py -v
           timeout -k 5s 65s python -m tools.market_pdf_evidence \
-            --official dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
+            --official dist/radar/PAGINAS_OFICIALES_CONTEXTO_LOCAL.json \
             --primary-pages dist/radar/PAGINAS_INVERSORES_NO_CORROBORADAS.json \
             --out dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json
       - name: Guardar páginas y citas textuales de informes en D1 vía OIDC
@@ -154,7 +176,7 @@ jobs:
               return json.loads((Path('dist/radar')/name).read_text(encoding='utf-8'))
           evidence,_=select_one_company(prepare_evidence(
               read('PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json'),
-              read('PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json'),
+              read('PAGINAS_OFICIALES_CONTEXTO_LOCAL.json'),
               read('PAGINAS_INVERSORES_NO_CORROBORADAS.json')))
           provider=os.environ['RESEARCH_PROVIDER']
           assert provider in {'qwen_local','gemini_free','disabled'}
@@ -175,7 +197,7 @@ jobs:
           python -m unittest discover -s tests -p test_market_investigator.py -v
           timeout -k 10s 420s python -m tools.market_investigator \
             --pdf-report dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json \
-            --official-report dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
+            --official-report dist/radar/PAGINAS_OFICIALES_CONTEXTO_LOCAL.json \
             --primary-pages-report dist/radar/PAGINAS_INVERSORES_NO_CORROBORADAS.json \
             --out dist/radar/INVESTIGACION_IA_NO_APROBADA.json
           python - <<'PY'

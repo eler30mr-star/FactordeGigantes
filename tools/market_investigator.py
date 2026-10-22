@@ -48,7 +48,7 @@ def prepare_evidence(pdf_report, official_report=None, primary_pages_report=None
            (official_report.get("collected_on") is not None and pdf_report.get("collected_on") is not None and
             official_report.get("collected_on")!=pdf_report.get("collected_on")):
             raise ValueError("Fuentes web no corroboradas del radar requeridas")
-        for doc in official_report.get("evidence",[])[:3]:
+        for doc in official_report.get("evidence",[])[:6]:
             if len(items)>=MAX_EVIDENCE:break
             if doc.get("status")!="candidate_page_readable":continue
             if doc.get("excerpt_quality") in ("generic_candidate","insufficient_context"):
@@ -100,7 +100,7 @@ def prepare_evidence(pdf_report, official_report=None, primary_pages_report=None
     # Ampliar solo documentos ya admitidos: los índices remiten al HTML
     # cuyo hash está conservado, sin inventar pasajes ni mezclar compañías.
     documents=[]
-    if official_report:documents.extend(official_report.get("evidence",[])[:3])
+    if official_report:documents.extend(official_report.get("evidence",[])[:6])
     if primary_pages_report:documents.extend(primary_pages_report.get("pages",[])[:3])
     expanded=[]
     seen=set()

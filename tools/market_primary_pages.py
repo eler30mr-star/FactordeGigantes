@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -29,7 +30,7 @@ def eligible_pages(report):
         raise ValueError("Solo enlaces corporativos detectados por el radar")
     selected = []
     seen = set()
-    for company in report.get("evidence", [])[:3]:
+    for company in report.get("evidence", [])[:6]:
         if not isinstance(company, dict) or company.get("status") != "candidate_page_readable":
             continue
         origin = company.get("resolved_url")
@@ -47,9 +48,13 @@ def eligible_pages(report):
             try:
                 validate_url(u)
                 parsed = urlsplit(u)
+                informative=(candidate.get("category") in
+                    {"financial_report_link_candidate","investor_information_page_candidate"} or
+                    bool(re.search(r"/ir(?:/|$)",parsed.path.lower())) or
+                    any(x in parsed.path.lower() for x in
+                        ("invest", "financ", "result", "report", "informe", "annual")))
                 if (parsed.hostname != host or parsed.path.lower().endswith(".pdf") or
-                        not any(x in parsed.path.lower() for x in
-                                ("invest", "financ", "result", "report", "informe", "annual")) or
+                        not informative or
                         u == origin or u in seen):
                     continue
             except (ValueError,TypeError):
