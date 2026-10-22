@@ -127,8 +127,9 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
         report["stages"].append({"provider": "qwen", "role": "extract", "status": "success",
                                  "model": "Qwen/Qwen3-0.6B", "paid_api_calls": 0,
                                  "metrics": getattr(local_generate, "metrics", {})})
-    except (OSError, ValueError, RuntimeError, ImportError, KeyError, TypeError):
-        report["stages"].append({"provider": "qwen", "role": "extract", "status": "local_failure"})
+    except (OSError, ValueError, RuntimeError, ImportError, KeyError, TypeError) as exc:
+        report["stages"].append({"provider": "qwen", "role": "extract", "status": "local_failure",
+                                 "error_type": type(exc).__name__})
     result, chosen = None, None
     prompt = request_document(topic, evidence)
     for provider in ("gemini", "mistral", "openrouter"):

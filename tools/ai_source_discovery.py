@@ -64,7 +64,9 @@ def wikipedia_links(title, *, fetcher=fetch_public):
     return [{"url": link if isinstance(link, str) else link.get("*"),
              "title": "Referencia externa observada en Wikipedia",
              "discovered_by": "wikipedia_external_links"}
-            for link in links[:160] if isinstance(link, (str, dict))]
+            # Parse devuelve enlaces ordenados por URL. Cortar antes de ordenar
+            # por relevancia puede excluir autoridades situadas al final.
+            for link in links[:800] if isinstance(link, (str, dict))]
 
 
 def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
@@ -166,8 +168,9 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                            "pages_total": analysis["total_pages"],
                            "full_document_text_read": analysis["type"] != "pdf" or analysis["total_pages"] <= 12})
             out["evidence_manifest"].extend(fragments)
-        except (OSError, ValueError, TypeError, KeyError, ImportError, RuntimeError):
+        except (OSError, ValueError, TypeError, KeyError, ImportError, RuntimeError) as exc:
             record["status"] = "fetch_failed"
+            record["error_type"] = type(exc).__name__
         out["source_documents"].append(record)
     out["evidence_manifest"] = [{**e, "id": f"E{i+1:03d}"}
                                 for i, e in enumerate(out["evidence_manifest"][:MAX_EVIDENCE])]

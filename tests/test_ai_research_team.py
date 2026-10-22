@@ -142,6 +142,19 @@ class DiscoveryTests(unittest.TestCase):
         self.assertEqual(out["evidence_manifest"], [])
         self.assertEqual(out["status"], "skipped_no_documentary_evidence")
 
+    def test_authority_link_after_160_results_is_not_lost_before_ranking(self):
+        links = [f"https://example.com/story/{i}" for i in range(200)] + ["https://www.justice.gov/empresa-ejemplo"]
+        def wiki(*args, **kwargs):
+            return json.dumps({"parse": {"externallinks": links}}).encode(), "https://en.wikipedia.org/w/api.php", "application/json"
+        fetched = []
+        def document(url, **kwargs):
+            fetched.append(url)
+            return ("<p>" + TEXT + "</p>").encode(), url, "text/html"
+        out = discover_sources(SELECTION, clients=self.clients(), wiki_fetcher=wiki, document_fetcher=document)
+        self.assertEqual(fetched[0], "https://www.justice.gov/empresa-ejemplo")
+        self.assertLessEqual(len(fetched), 4)
+        self.assertTrue(out["evidence_manifest"])
+
     def test_no_selection_does_not_call_any_provider(self):
         result = discover_sources({"selected_wikidata_id": None}, clients=self.clients(),
                                   wiki_fetcher=lambda *_: self.fail("sin selección"))

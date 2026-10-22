@@ -1337,3 +1337,13 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - Build automático Cloudflare `2395af30-9db0-4097-ad96-29600619287a` seguía en inicialización; se publicó el backend mediante API Cloudflare con los 18 módulos del commit probado. Despliegue directo `e08cdec754064b5799f8bc9138655654`, HTTP 200. Se conservan assets previos mientras finaliza el build automático, por lo que todavía no se declara panel nuevo publicado.
 - Migración 0013 confirmada posteriormente: ambas tablas nuevas existen; `jobs=1`, `events=8` y sin violaciones FK. Ninguna inferencia externa nueva activada.
 - Se solicita una única ejecución manual real del radar con el disparador operacional existente `[radar-e2e]`, para comprobar fuentes y Qwen con las credenciales disponibles. Resultado pendiente.
+
+
+### Primer radar real del equipo y corrección de cobertura
+
+- [Radar 39811587987](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39811587987), commit `16a82db6f15abcedfff7ec1b0e31de29b2a026b9`, terminó exitoso. OIDC e ingesta del nuevo informe en D1 confirmados independientemente: `ai-e6ff2a9f092e760a41f851098473`, Theranos Q16956307, **cero pasajes, cero inferencias, cero afirmaciones y cero reservas externas**. No se presenta el estado success del workflow como éxito de investigación.
+- Se intentaron cuatro documentos; un PDF FDA fue descargado, pero sin texto relevante extraíble, y tres páginas no se recuperaron. Tavily/Exa reportaron `missing_key`; las inferencias se omitieron por falta de evidencia.
+- Diagnóstico: se recortaban los enlaces externos a 160 **antes** de priorizar autoridades. La página posee referencias regulatorias posteriores. Se amplía la lectura de la lista a 800 enlaces dentro del mismo límite de bytes; se conservan cuatro descargas y diez pasajes máximos. Regresión nueva con una referencia pública después del enlace 200; no se agregan rutas de Theranos al código.
+- Mayor robustez frente a JSON de proveedor malformado (commit `2e5028e18e69ce67250e0e0dc7bf5b35981cff73`) y errores locales sanitizados por tipo. Validación local actual: **219 Python** y 76 Node previos sin cambios de JS en esta corrección.
+- Build Cloudflare `2395af30-9db0-4097-ad96-29600619287a` terminó `success` para `4e9f39e24be254da89e94c40fa63f3d329ac7670`: backend y assets del nuevo panel publicados por el build. No se declara revisión visual autenticada.
+- Segunda ejecución acotada para validar la corrección de cobertura: pendiente.
