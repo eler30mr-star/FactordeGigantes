@@ -247,6 +247,13 @@ jobs:
           timeout -k 10s 540s python -m tools.ai_research_pipeline analyze \
             --sources dist/radar/FUENTES_EQUIPO_IA.json \
             --out dist/radar/EQUIPO_IA_NO_APROBADO.json
+      - name: Preparar plan documental desde investigación propia, sin fabricar guion
+        run: |
+          python -m unittest discover -s tests -p test_documentary_blueprint.py -v
+          python -m tools.documentary_blueprint \
+            --research dist/radar/EQUIPO_IA_NO_APROBADO.json \
+            --selection dist/radar/SELECCION_INVESTIGACION_D1.json \
+            --out dist/radar/PLAN_DOCUMENTAL_NO_APROBADO.json
       - name: Relacionar empresas y titulares como hipótesis verificables
         run: |
           python -m unittest discover -s tests -p test_market_news_join.py -v
