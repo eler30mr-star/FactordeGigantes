@@ -49,6 +49,23 @@ test('ingesta conserva citas e impide aprobación, mezclas e inventar referencia
   const r=report();mutate(r);assert.throws(()=>validateAiReport(r),RangeError);
  }
 });
+test('corroboración por fuente única no puede indicar verificación factual',()=>{
+ const r=report();
+ r.source_quality={
+  unique_documents:1,independent_domains:1,regulatory_primary_domains:1,
+  claims_requiring_review:1,all_claims_verified:false,ready_for_script:false,
+  claim_gaps:[{claim_index:1,cited_documents:1,independent_domains:1,
+   regulatory_primary_cited:true,gaps:['only_one_document','no_independent_domain'],
+   verification_state:'requires_corroboration'}]
+ };
+ assert.doesNotThrow(()=>validateAiReport(r));
+ r.source_quality.all_claims_verified=true;
+ assert.throws(()=>validateAiReport(r),RangeError);
+ r.source_quality.all_claims_verified=false;
+ r.source_quality.claim_gaps[0].cited_documents=2;
+ assert.throws(()=>validateAiReport(r),RangeError);
+});
+
 test('historial SQLite real idempotente, alerta numérica y puertas SQL cerradas',async()=>{
  const {db,raw}=setup();const first=await storeAiReport(db,report()),second=await storeAiReport(db,report());
  assert.equal(first.run_id,second.run_id);
