@@ -1328,3 +1328,12 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 **Validación local realizada:** 218 pruebas Python exitosas; 76 casos Node ejecutados individualmente con `--test-isolation=none` para obtener conteo real en este entorno; sintaxis JS, YAML y diff sin errores. Pruebas nuevas usan transportes simulados y SQLite real con todas las migraciones: no equivalen a llamadas reales de Gemini/Groq/Tavily/Exa/Mistral/OpenRouter/Cloudflare ni prueban calidad documental.
 
 **Pendiente en esta entrega:** commit remoto, CI, build Cloudflare y un radar real con las credenciales disponibles; registrar sus resultados y bloqueos. No se ha generado un documental completo ni iniciado publicación. La identidad vocal canónica permanece íntegra.
+
+
+### Aceptación técnica remota inicial del equipo IA
+
+- Código remoto `4e9f39e24be254da89e94c40fa63f3d329ac7670` en `main`.
+- CI [39811165131](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39811165131) exitoso: 218 Python y 76 Node; health/archivos públicos/autenticación del renderer comprobados por CI (esto no prueba investigación).
+- Build automático Cloudflare `2395af30-9db0-4097-ad96-29600619287a` seguía en inicialización; se publicó el backend mediante API Cloudflare con los 18 módulos del commit probado. Despliegue directo `e08cdec754064b5799f8bc9138655654`, HTTP 200. Se conservan assets previos mientras finaliza el build automático, por lo que todavía no se declara panel nuevo publicado.
+- Migración 0013 confirmada posteriormente: ambas tablas nuevas existen; `jobs=1`, `events=8` y sin violaciones FK. Ninguna inferencia externa nueva activada.
+- Se solicita una única ejecución manual real del radar con el disparador operacional existente `[radar-e2e]`, para comprobar fuentes y Qwen con las credenciales disponibles. Resultado pendiente.
