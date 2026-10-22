@@ -51,7 +51,7 @@ export function validateAiReport(r,now=new Date()){
     !['skipped_no_documentary_evidence','sources_only','candidate_claims_generated'].includes(r.status)||
     !Array.isArray(r.evidence_manifest)||r.evidence_manifest.length>10||
     !Array.isArray(r.stages)||r.stages.length>12||
-    !Array.isArray(r.source_documents)||r.source_documents.length>4||
+    !Array.isArray(r.source_documents)||r.source_documents.length>8||
     !Array.isArray(r.classification)||r.classification.length>10||
     !Array.isArray(r.missing_questions)||r.missing_questions.length>8||
     !Array.isArray(r.reviews)||r.reviews.length>8)
