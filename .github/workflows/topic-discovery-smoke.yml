@@ -235,8 +235,12 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          GEMINI_RESEARCH_FREE_CONFIRMED: ${{ vars.GEMINI_RESEARCH_FREE_CONFIRMED }}
-          GROQ_RESEARCH_FREE_CONFIRMED: ${{ vars.GROQ_RESEARCH_FREE_CONFIRMED }}
+          # Propietario confirmó Nivel gratuito de AI Studio (22 oct 2026).
+          # El valor explícito 0 en Variables de Actions siempre desactiva.
+          GEMINI_RESEARCH_FREE_CONFIRMED: ${{ vars.GEMINI_RESEARCH_FREE_CONFIRMED || '1' }}
+          # Captura GroqCloud: plan Gratis ($0), 22 oct 2026.
+          # La revisión no confirma hechos ni autoriza producción.
+          GROQ_RESEARCH_FREE_CONFIRMED: ${{ vars.GROQ_RESEARCH_FREE_CONFIRMED || '1' }}
           MISTRAL_RESEARCH_FREE_CONFIRMED: ${{ vars.MISTRAL_RESEARCH_FREE_CONFIRMED }}
           OPENROUTER_RESEARCH_FREE_CONFIRMED: ${{ vars.OPENROUTER_RESEARCH_FREE_CONFIRMED }}
         run: |
