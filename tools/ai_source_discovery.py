@@ -112,7 +112,7 @@ def gdelt_articles(title, *, fetcher=fetch_public):
 
 
 def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
-                     document_fetcher=fetch_document_public,gdelt_fetcher=fetch_public):
+                     document_fetcher=fetch_document_public,gdelt_fetcher=None):
     qid, title = selection_identity(selection)
     day = datetime.now(timezone.utc).date().isoformat()
     out = {"schema": "fdg_ai_sources_v1", "collected_on": day,
