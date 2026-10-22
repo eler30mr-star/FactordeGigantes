@@ -55,6 +55,25 @@ class InvestigatorTests(unittest.TestCase):
         self.assertEqual(result["status"],"skipped_free_tier_not_authorized")
         self.assertFalse(called)
 
+    def test_researches_one_company_without_mixing_topics(self):
+        pdf=report()
+        pdf["documents"].append({"wikidata_id":"Q221062","company":"Otra empresa",
+          "state":"text_extracted","resolved_url":"https://example.org/other.pdf",
+          "sha256":"b"*64,
+          "fragments":[{"page":1,"verification_state":"uncorroborated",
+            "excerpt":"An original-looking synthetic annual operations narrative for a different company, which must not be attributed to the other company."}]})
+        from tools.market_investigator import select_one_company
+        all_sources=prepare_evidence(pdf)
+        selected,deferred=select_one_company(all_sources)
+        self.assertEqual({e["wikidata_id"] for e in selected},{"Q221062"})
+        self.assertEqual(deferred,["Q53268"])
+        self.assertEqual(selected[0]["id"],"E001")
+        def no_external(*args,**kwargs):self.fail("Paid or unauthorized model")
+        outcome=run_investigation(pdf,free_confirmed=False,runner=no_external)
+        self.assertEqual(outcome["selected_wikidata_id"],"Q221062")
+        self.assertEqual(outcome["deferred_wikidata_ids"],["Q53268"])
+        self.assertEqual(len(outcome["evidence_manifest"]),1)
+
     def test_valid_candidate_output_propagates_only_unverified_statements(self):
         def model(topic,evidence,**kw):
             self.assertEqual(topic,"Empresa de prueba")
