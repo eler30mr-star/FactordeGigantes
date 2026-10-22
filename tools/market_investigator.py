@@ -44,7 +44,9 @@ def prepare_evidence(pdf_report, official_report=None, primary_pages_report=None
         if len(items)>=MAX_EVIDENCE:break
     if official_report is not None:
         if not isinstance(official_report,dict) or official_report.get("provider")!="wikidata_p856_safe_official_fetch_v1" or \
-           official_report.get("primary_facts_verified")!=0 or official_report.get("ready_for_youtube") is not False:
+           official_report.get("primary_facts_verified")!=0 or official_report.get("ready_for_youtube") is not False or \
+           (official_report.get("collected_on") is not None and pdf_report.get("collected_on") is not None and
+            official_report.get("collected_on")!=pdf_report.get("collected_on")):
             raise ValueError("Fuentes web no corroboradas del radar requeridas")
         for doc in official_report.get("evidence",[])[:3]:
             if len(items)>=MAX_EVIDENCE:break
