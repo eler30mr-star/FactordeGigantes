@@ -107,7 +107,8 @@ test('selección D1 entrega histórico de URLs agotadas y pasajes para la siguie
  const out=await selectResearchFromD1(adapter(raw),new Date(day+'T12:00:00Z'));
  assert.equal(out.selected_wikidata_id,'Q100');
  assert.deepEqual(out.prior_attempted_urls,
-   ['https://www.justice.gov/doc-restricted','https://site.example/original']);
+   ['https://www.justice.gov/doc-restricted','https://site.example/original',
+    'https://third.example/locked']);
  assert.equal(out.prior_evidence_manifest.length,1);
  assert.equal(out.prior_evidence_manifest[0].document_sha256,'a'.repeat(64));
  assert.equal(out.script_authorized,false);
