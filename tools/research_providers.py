@@ -12,7 +12,7 @@ import re
 from urllib.request import Request, urlopen
 
 ENDPOINT="https://generativelanguage.googleapis.com/v1beta/models/"
-MODELS={"gemini-2.5-flash","gemini-2.5-flash-lite"}
+MODELS={"gemini-2.5-flash","gemini-2.5-flash-lite","gemini-3.8-flash","gemini-3.5-flash-lite"}
 MAX_EVIDENCE=24
 MAX_RESPONSE=120_000
 MAX_STATEMENT=650
@@ -103,7 +103,7 @@ def parse_candidate_output(response_text,evidence,provider):
     }
 
 
-def run_gemini_free(topic,evidence,*,api_key=None,model="gemini-2.5-flash",free_tier_confirmed=False,transport=None):
+def run_gemini_free(topic,evidence,*,api_key=None,model="gemini-3.8-flash",free_tier_confirmed=False,transport=None):
     if model not in MODELS:
         raise ValueError("Modelo Gemini no permitido en perfil sin costo")
     if not free_tier_confirmed:

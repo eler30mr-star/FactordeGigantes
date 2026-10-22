@@ -51,7 +51,7 @@ class ProviderTests(unittest.TestCase):
             "missing_questions":[]
         })
         def mock_request(url,body,headers):
-            self.assertEqual(url,p.ENDPOINT+"gemini-2.5-flash:generateContent")
+            self.assertEqual(url,p.ENDPOINT+"gemini-3.8-flash:generateContent")
             self.assertEqual(headers["x-goog-api-key"],"a"*24)
             self.assertEqual(body["generationConfig"]["responseMimeType"],"application/json")
             self.assertIn("BlackBerry",body["contents"][0]["parts"][0]["text"])
@@ -72,3 +72,4 @@ class ProviderTests(unittest.TestCase):
 
 if __name__=="__main__":
     unittest.main()
+

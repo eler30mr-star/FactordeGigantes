@@ -246,6 +246,53 @@ async function loadResearch(includeRuns=false) {
     ". Pulsa «Actualizar» para consultar las ejecuciones.");
 }
 // Visualizar exclusivamente observaciones D1 con su procedencia; sin declarar ganador.
+async function loadAiTeam(){
+  const data=await request('/api/market/ai-pipeline');
+  if(!Array.isArray(data.runs))throw Error('No se pudo consultar el equipo de investigación');
+  const root=$('ai-team-results');root.replaceChildren();
+  const latest=data.runs[0],report=latest?.report;
+  $('ai-team-status').textContent=report?
+    `${report.company||'Sin selección'} · pasajes: ${report.evidence_manifest.length} · afirmaciones candidatas: ${report.candidate_claims.length} · revisiones: ${report.reviews.length} · hechos aprobados: 0`:
+    'Todavía no hay una ejecución registrada del equipo.';
+  if(!report)return;
+  const statuses={success:'Ejecutado',missing_key:'Falta configurar la clave',
+    free_mode_unconfirmed:'Falta confirmar modalidad gratuita',not_needed:'Alternativa no necesaria',
+    not_selected:'No seleccionado',not_configured:'Sin configurar',budget_denied:'Límite de uso alcanzado',
+    quota_exhausted:'Cuota del proveedor agotada',credentials_rejected:'El proveedor rechazó el acceso',
+    source_unavailable:'Fuente no disponible',no_evidence:'Sin pasajes documentales',no_claims:'Sin afirmaciones para revisar',
+    no_candidate_claims:'Sin afirmaciones útiles',invalid_output:'Respuesta no válida',local_failure:'Falló la extracción local',
+    provider_failure:'Falló el proveedor',network_failure:'Fallo de conexión',disabled:'Desactivado'};
+  const roles={discover:'Descubrimiento',classify:'Clasificación',extract:'Extracción local',
+    analyze:'Análisis',review:'Revisión',fallback:'Alternativa'};
+  for(const stage of report.stages){
+    const row=tag('article','job','');
+    row.append(tag('strong','',`${stage.provider} · ${roles[stage.role]||stage.role}`),
+      tag('p','muted',statuses[stage.status]||stage.status));root.append(row);
+  }
+  for(const e of report.evidence_manifest){
+    const row=tag('article','job','');
+    row.append(tag('strong','',`Fuente ${e.id}${e.page?' · página '+e.page:''}`),tag('p','muted',e.excerpt));
+    try{const u=new URL(e.url);if(u.protocol==='https:'){
+      const link=tag('a','news-link','Abrir documento original');link.href=u.href;
+      link.target='_blank';link.rel='noopener noreferrer';row.append(link);
+    }}catch{/* el servidor también valida la URL */}
+    root.append(row);
+  }
+  for(const [index,c] of report.candidate_claims.entries()){
+    const row=tag('article','job','');
+    row.append(tag('strong','',`Afirmación candidata ${index+1}`),tag('p','muted',c.statement),
+      tag('small','',`Citas: ${c.evidence_ids.join(', ')} · pendiente de verificación`));
+    const review=report.reviews.find(r=>r.claim_index===index+1);
+    if(review)row.append(tag('p','muted','Observación del revisor: '+review.reason));
+    root.append(row);
+  }
+  if(data.budgets?.length)root.append(tag('p','muted','Reservas de uso del mes: '+
+    data.budgets.map(b=>`${b.provider}: ${b.reserved_requests}`).join(' · ')+
+    '. Incluyen intentos fallidos; no acreditan la facturación de la cuenta.'));
+}
+$('ai-team-refresh').addEventListener('click',()=>loadAiTeam().catch(e=>{
+  $('ai-team-status').textContent=e.message;
+}));
 async function loadMarketResearch() {
   const data=await request("/api/market/research?limit=20");
   if(!Array.isArray(data.runs)||!Array.isArray(data.evidence)||
@@ -642,6 +689,7 @@ $("connect").addEventListener("click",async () => {
     loadOfficialEvidence().catch(e=>{$("official-status").textContent=e.message;});
     loadPdfEvidence().catch(e=>{$("pdf-status").textContent=e.message;});
     loadMarketResearch().catch(e=>{$("market-research-status").textContent=e.message;});
+    loadAiTeam().catch(e=>{$('ai-team-status').textContent=e.message;});
     loadResearchQueue().catch(e=>{$('research-queue-status').textContent=e.message;});
     loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
     loadYoutubeMarket().catch(e=>{$("youtube-status").textContent=e.message;});

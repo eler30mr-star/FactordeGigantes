@@ -1,5 +1,7 @@
 # Plan maestro — Factor de Gigantes
 
+> **Equipo IA 2026-10-22:** se implementa descubrimiento Tavily/Exa + documentos públicos, extracción Qwen, análisis Gemini, alternativas Mistral/OpenRouter, revisión Groq y clasificación Cloudflare. Las APIs requieren claves y modalidad gratuita confirmada; el propietario solo confirmó la clave YouTube. Cuotas persistentes D1 en migración 0013. Código/pruebas no acreditan activación de cuentas ni documental final. Configuración y funciones: [`CONFIGURACION_EQUIPO_IA.md`](CONFIGURACION_EQUIPO_IA.md); aceptación real en AVANCE.
+
 > **Estado de implementación 2026-10-22:** se conecta el investigador Qwen de texto local al radar como alternativa sin clave Gemini, y se amplía recuperación de informes y contexto con varios fragmentos. Esta entrega debe validarse con ejecución real y persistencia D1; no acredita todavía selección de mercado YouTube, contraste factual ni documental autónomo completo. Detalles y resultados en `docs/AVANCE.md`.
 
 > **Actualización posterior 2026-10-22:** clave YouTube probada en Actions y primer estudio persistido (cuatro muestras, cuarenta observaciones). Se incorpora una cola de **investigación** calculada desde muestras públicas y ventanas Wikimedia. La selección inicia búsqueda/contraste; no exige que los hechos ya estén aprobados antes de investigarlos y tampoco acredita guion, render o publicación. Mantener separadas estas puertas. Aceptación E2E y bloqueos en `docs/AVANCE.md`.

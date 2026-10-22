@@ -1,4 +1,5 @@
 import {verifyMarketOIDC} from "./github-oidc.mjs";
+import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare} from "./ai-research-team.mjs";
 import {selectResearchFromD1,readResearchQueue} from "./market-research-selection.mjs";
 import {storeNewsEntities} from "./news-entity-ingest.mjs";
 import {storeOfficialEvidence,readOfficialEvidence} from "./market-official-ingest.mjs";
@@ -26,8 +27,18 @@ function guard(req, env, kind = "ADMIN_TOKEN") {
 }
 async function parseBody(request) {
   if (Number(request.headers.get("content-length") || 0) > 250000) throw Error("Solicitud demasiado grande");
-  const text = await request.text();
-  if (text.length > 250000) throw Error("Solicitud demasiado grande");
+  const reader=request.body?.getReader();
+  if(!reader)throw new RangeError("Falta cuerpo JSON");
+  const chunks=[];let size=0;
+  while(true){
+    const {done,value}=await reader.read();if(done)break;
+    size+=value.byteLength;
+    if(size>250000){await reader.cancel();throw new RangeError("Solicitud demasiado grande");}
+    chunks.push(value);
+  }
+  const bytes=new Uint8Array(size);let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  const text=new TextDecoder().decode(bytes);
   return JSON.parse(text);
 }
 function validateManifest(m) {
@@ -129,13 +140,31 @@ async function handle(request,env) {
   const ingestPdf=parts[1]==="market" && parts[2]==="pdf" && parts[3]==="ingest" && parts.length===4;
   const ingestResearch=parts[1]==="market" && parts[2]==="research" && parts[3]==="ingest" && parts.length===4;
   const runResearchSelection=url.pathname==='/api/market/research-selection/run';
+  const aiWrite=['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest'].includes(url.pathname);
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
-  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection) {
+  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection || aiWrite) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
   } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  if(aiWrite||url.pathname==='/api/market/ai-pipeline'){
+    if(method!==(aiWrite?'POST':'GET'))return err('Método no admitido',405);
+    try{
+      if(!aiWrite)return json(await readAiReports(env.DB));
+      const body=await parseBody(request);
+      if(url.pathname==='/api/market/ai-budget/reserve')
+        return json(await reserveAiBudget(env.DB,body.provider,body.request_id));
+      if(url.pathname==='/api/market/ai-classify')return json(await classifyWithCloudflare(env,body));
+      return json(await storeAiReport(env.DB,body),201);
+    }catch(e){
+      if(e instanceof RangeError||e instanceof SyntaxError||e instanceof TypeError)
+        return err('Informe o solicitud de IA inválida',400);
+      if(/no such table:\s*(ai_budget_|market_ai_)/i.test(String(e?.message||'')))
+        return err('Falta migración 0013_ai_research_team.sql',503);
+      throw e;
+    }
+  }
   if(runResearchSelection){
     if(method!=='POST')return err('Método no admitido',405);
     return json(await selectResearchFromD1(env.DB),201);

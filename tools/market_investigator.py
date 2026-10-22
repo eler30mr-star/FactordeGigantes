@@ -160,7 +160,7 @@ def select_one_company(evidence,selected_qid=None):
     return ordered,deferred
 
 
-def run_investigation(pdf_report,*,official_report=None,primary_pages_report=None,free_confirmed=False,api_key=None,model="gemini-2.5-flash-lite",
+def run_investigation(pdf_report,*,official_report=None,primary_pages_report=None,free_confirmed=False,api_key=None,model="gemini-3.8-flash",
                       runner=run_gemini_free,provider="gemini_free",local_generate=None,selected_qid=None):
     if provider not in {"gemini_free","qwen_local","disabled"}:
         raise ValueError("Proveedor investigador no permitido")

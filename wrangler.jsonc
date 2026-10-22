@@ -3,6 +3,7 @@
   "name": "factor-de-gigantes",
   "main": "src/worker.js",
   "compatibility_date": "2026-10-20",
+  "ai": { "binding": "AI" },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -18,6 +19,7 @@
   ],
   "vars": {
     "GITHUB_REPO": "eler30mr-star/FactordeGigantes",
-    "GITHUB_WORKFLOW": "render.yml"
+    "GITHUB_WORKFLOW": "render.yml",
+    "CLOUDFLARE_AI_FREE_CONFIRMED": "0"
   }
 }

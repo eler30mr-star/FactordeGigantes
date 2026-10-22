@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 22
     env:
-      RESEARCH_PROVIDER: ${{ vars.RESEARCH_PROVIDER || 'qwen_local' }}
+      RESEARCH_PROVIDER: ${{ vars.RESEARCH_PROVIDER || 'team' }}
       HF_HOME: /tmp/fdg-radar-model
       HF_HUB_DISABLE_TELEMETRY: '1'
       HF_HUB_DISABLE_XET: '1'
@@ -197,58 +197,52 @@ jobs:
         run: |
           python -m tools.push_news_entity_assess --mode pdf \
             --input dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json
-      - name: Comprobar evidencia antes de descargar un modelo
+      - name: Descubrir documentos originales con buscadores gratuitos y referencias públicas
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          TAVILY_RESEARCH_FREE_CONFIRMED: ${{ vars.TAVILY_RESEARCH_FREE_CONFIRMED }}
+          EXA_RESEARCH_FREE_CONFIRMED: ${{ vars.EXA_RESEARCH_FREE_CONFIRMED }}
+        run: |
+          timeout -k 5s 180s python -m tools.ai_research_pipeline discover \
+            --selection dist/radar/SELECCION_INVESTIGACION_D1.json \
+            --pdf dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json \
+            --official dist/radar/PAGINAS_OFICIALES_CONTEXTO_LOCAL.json \
+            --primary dist/radar/PAGINAS_INVERSORES_NO_CORROBORADAS.json \
+            --out dist/radar/FUENTES_EQUIPO_IA.json
+      - name: Comprobar evidencia antes de descargar Qwen
         id: research-plan
         run: |
-          python - <<'PY'
+          python - <<'PYPLAN'
           import json,os
           from pathlib import Path
-          from tools.market_investigator import prepare_evidence,select_one_company
-          def read(name):
-              return json.loads((Path('dist/radar')/name).read_text(encoding='utf-8'))
-          evidence,_=select_one_company(prepare_evidence(
-              read('PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json'),
-              read('PAGINAS_OFICIALES_CONTEXTO_LOCAL.json'),
-              read('PAGINAS_INVERSORES_NO_CORROBORADAS.json')),
-              read('SELECCION_INVESTIGACION_D1.json').get('selected_wikidata_id'))
-          provider=os.environ['RESEARCH_PROVIDER']
-          assert provider in {'qwen_local','gemini_free','disabled'}
+          report=json.loads(Path('dist/radar/FUENTES_EQUIPO_IA.json').read_text())
+          needed=bool(report['evidence_manifest']) and os.getenv('RESEARCH_PROVIDER')!='disabled'
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
-              out.write(f"qwen_needed={'true' if evidence and provider=='qwen_local' else 'false'}\n")
-          print('PASAJES_PARA_INVESTIGADOR:',len(evidence),'PROVEEDOR:',provider)
-          PY
-      - name: Instalar investigador Qwen local CPU solo cuando hay contexto
+              out.write(f"qwen_needed={'true' if needed else 'false'}\n")
+          print('PASAJES_EQUIPO_IA:',len(report['evidence_manifest']))
+          PYPLAN
+      - name: Instalar auxiliar Qwen local CPU solo cuando hay contexto
         if: steps.research-plan.outputs.qwen_needed == 'true'
         run: |
           python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
           python -m pip install 'transformers==4.57.3' 'accelerate==1.12.0'
-      - name: Investigar desde citas observadas con proveedor configurado
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_RESEARCH_FREE_CONFIRMED: ${{ vars.GEMINI_RESEARCH_FREE_CONFIRMED }}
-        run: |
-          python -m unittest discover -s tests -p test_market_investigator.py -v
-          timeout -k 10s 420s python -m tools.market_investigator \
-            --pdf-report dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json \
-            --selection dist/radar/SELECCION_INVESTIGACION_D1.json \
-            --official-report dist/radar/PAGINAS_OFICIALES_CONTEXTO_LOCAL.json \
-            --primary-pages-report dist/radar/PAGINAS_INVERSORES_NO_CORROBORADAS.json \
-            --out dist/radar/INVESTIGACION_IA_NO_APROBADA.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          r=json.loads(Path('dist/radar/INVESTIGACION_IA_NO_APROBADA.json').read_text())
-          print('INVESTIGACION_RESUMEN:',json.dumps({k:r.get(k) for k in
-              ('status','provider','model','evidence_count','error_type','inference_metrics')},ensure_ascii=False))
-          print('AFIRMACIONES_CANDIDATAS:',len(r['candidate_claims']))
-          print('PREGUNTAS_PENDIENTES:',len(r['missing_questions']))
-          PY
-      - name: Persistir evidencias, preguntas y afirmaciones del investigador en D1
+      - name: Analizar, revisar y guardar el equipo IA en D1
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GEMINI_RESEARCH_FREE_CONFIRMED: ${{ vars.GEMINI_RESEARCH_FREE_CONFIRMED }}
+          GROQ_RESEARCH_FREE_CONFIRMED: ${{ vars.GROQ_RESEARCH_FREE_CONFIRMED }}
+          MISTRAL_RESEARCH_FREE_CONFIRMED: ${{ vars.MISTRAL_RESEARCH_FREE_CONFIRMED }}
+          OPENROUTER_RESEARCH_FREE_CONFIRMED: ${{ vars.OPENROUTER_RESEARCH_FREE_CONFIRMED }}
         run: |
-          python -m tools.push_news_entity_assess --mode research \
-            --input dist/radar/INVESTIGACION_IA_NO_APROBADA.json
+          timeout -k 10s 540s python -m tools.ai_research_pipeline analyze \
+            --sources dist/radar/FUENTES_EQUIPO_IA.json \
+            --out dist/radar/EQUIPO_IA_NO_APROBADO.json
       - name: Relacionar empresas y titulares como hipótesis verificables
         run: |
           python -m unittest discover -s tests -p test_market_news_join.py -v
