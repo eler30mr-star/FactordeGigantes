@@ -112,8 +112,10 @@ export async function selectResearchFromD1(db,now=new Date()){
   if(previous){
    const record=JSON.parse(previous.report_json);
    if(record.selected_wikidata_id===queue.wikidata_id){
-    prior_attempted_urls=(record.source_documents||[])
-      .map(v=>v.url).filter(v=>typeof v==='string'&&v.startsWith('https://')).slice(0,8);
+    const attempted=record.retrieval_budget?.attempted_urls||
+      (record.source_documents||[]).map(v=>v.url);
+    prior_attempted_urls=attempted
+      .filter(v=>typeof v==='string'&&v.startsWith('https://')).slice(0,8);
     prior_evidence_manifest=(record.evidence_manifest||[])
       .filter(v=>v.wikidata_id===queue.wikidata_id&&
         typeof v.url==='string'&&v.url.startsWith('https://')&&
