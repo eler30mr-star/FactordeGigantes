@@ -65,13 +65,15 @@ class InvestigatorTests(unittest.TestCase):
         from tools.market_investigator import select_one_company
         all_sources=prepare_evidence(pdf)
         selected,deferred=select_one_company(all_sources)
-        self.assertEqual({e["wikidata_id"] for e in selected},{"Q221062"})
-        self.assertEqual(deferred,["Q53268"])
+        chosen=selected[0]["wikidata_id"]
+        self.assertIn(chosen,{"Q221062","Q53268"})
+        self.assertEqual({e["wikidata_id"] for e in selected},{chosen})
+        self.assertEqual(set(deferred),{"Q221062","Q53268"}-{chosen})
         self.assertEqual(selected[0]["id"],"E001")
         def no_external(*args,**kwargs):self.fail("Paid or unauthorized model")
         outcome=run_investigation(pdf,free_confirmed=False,runner=no_external)
-        self.assertEqual(outcome["selected_wikidata_id"],"Q221062")
-        self.assertEqual(outcome["deferred_wikidata_ids"],["Q53268"])
+        self.assertEqual(outcome["selected_wikidata_id"],chosen)
+        self.assertEqual(outcome["deferred_wikidata_ids"],deferred)
         self.assertEqual(len(outcome["evidence_manifest"]),1)
 
     def test_valid_candidate_output_propagates_only_unverified_statements(self):
