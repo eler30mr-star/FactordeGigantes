@@ -104,11 +104,17 @@ test('selección D1 entrega histórico de URLs agotadas y pasajes para la siguie
      excerpt:'La Empresa ejemplo anunció un documento de operaciones con detalles de activos y pasivos en su comunicación corporativa pública.'}]};
  raw.prepare("INSERT INTO market_ai_pipeline_runs(id,collected_on,wikidata_id,status,analysis_provider,evidence_count,claims_count,report_json) VALUES (?,?,?,?,?,?,?,?)")
    .run('ai-history',day,'Q100','candidate_claims_generated','gemini',1,0,JSON.stringify(prior));
+ // La última ejecución falló: no puede borrar el dossier de la anterior.
+ const recent={selected_wikidata_id:'Q100',evidence_manifest:[],
+   source_documents:[{url:'https://new.example.org/blocked',status:'fetch_failed'}],
+   retrieval_budget:{attempted_urls:['https://new.example.org/blocked']}};
+ raw.prepare("INSERT INTO market_ai_pipeline_runs(id,collected_on,wikidata_id,status,evidence_count,claims_count,report_json) VALUES (?,?,?,?,?,?,?)")
+   .run('ai-empty',day,'Q100','skipped_no_documentary_evidence',0,0,JSON.stringify(recent));
  const out=await selectResearchFromD1(adapter(raw),new Date(day+'T12:00:00Z'));
  assert.equal(out.selected_wikidata_id,'Q100');
  assert.deepEqual(out.prior_attempted_urls,
-   ['https://www.justice.gov/doc-restricted','https://site.example/original',
-    'https://third.example/locked']);
+   ['https://new.example.org/blocked','https://www.justice.gov/doc-restricted',
+    'https://site.example/original','https://third.example/locked']);
  assert.equal(out.prior_evidence_manifest.length,1);
  assert.equal(out.prior_evidence_manifest[0].document_sha256,'a'.repeat(64));
  assert.equal(out.script_authorized,false);
