@@ -2,6 +2,7 @@ import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {storeNewsEntities} from "./news-entity-ingest.mjs";
 import {storeOfficialEvidence,readOfficialEvidence} from "./market-official-ingest.mjs";
 import {storePdfEvidence,readPdfEvidence} from "./market-pdf-ingest.mjs";
+import {storeMarketResearch,readMarketResearch} from "./market-research-ingest.mjs";
 import {assessMarketFromD1,readMarketAssessments} from "./market-assessment.mjs";
 import {persistYoutubeStudy,readYoutubeMarket} from "./youtube-market.mjs";
 import {storeEntityNewsJoin,readEntityNewsJoin} from "./market-cross-signals.mjs";
@@ -125,8 +126,9 @@ async function handle(request,env) {
   const runAssessment=parts[1]==="market" && parts[2]==="assess" && parts[3]==="run" && parts.length===4;
   const ingestOfficial=parts[1]==="market" && parts[2]==="official" && parts[3]==="ingest" && parts.length===4;
   const ingestPdf=parts[1]==="market" && parts[2]==="pdf" && parts[3]==="ingest" && parts.length===4;
+  const ingestResearch=parts[1]==="market" && parts[2]==="research" && parts[3]==="ingest" && parts.length===4;
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
-  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf) {
+  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
   } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
     return err("Acceso no autorizado",401);
@@ -180,6 +182,21 @@ async function handle(request,env) {
   if(!renderer && url.pathname==="/api/market/cross"){
     if(method!=="GET")return err("Método no admitido",405);
     const out=await readEntityNewsJoin(env.DB,url);
+    return out.error?err(out.error,out.status):json(out);
+  }
+  if(ingestResearch){
+    if(method!=="POST")return err("Método no admitido",405);
+    try{return json(await storeMarketResearch(env.DB,await parseBody(request)),201);}
+    catch(e){
+      if(e instanceof RangeError)return err("Expediente del investigador rechazado: "+e.message,400);
+      if(/no such table:\s*market_research_/i.test(String(e?.message||"")))
+        return err("D1 necesita migración 0011_market_research.sql",503);
+      throw e;
+    }
+  }
+  if(!renderer&&url.pathname==="/api/market/research"){
+    if(method!=="GET")return err("Método no admitido",405);
+    const out=await readMarketResearch(env.DB,url);
     return out.error?err(out.error,out.status):json(out);
   }
   if(ingestPdf){
