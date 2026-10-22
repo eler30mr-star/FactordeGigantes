@@ -30,11 +30,16 @@ def assess_tavily_usage(data):
     if not isinstance(account,dict) or not isinstance(key,dict):raise ValueError('Perfil incompleto')
     plan=account.get('current_plan')
     fields=['plan_usage','plan_limit','paygo_usage','paygo_limit']
-    if not isinstance(plan,str) or len(plan)>40 or any(type(account.get(k)) is not int or account[k]<0 for k in fields):
+    def integer(value):
+        if type(value) is int and value>=0:return value
+        if type(value) is float and value>=0 and value.is_integer():return int(value)
+        if isinstance(value,str) and value.isascii() and value.isdigit() and len(value)<=9:return int(value)
+        raise ValueError('Límite numérico no verificable')
+    account={**account,**{k:integer(account.get(k)) for k in fields}}
+    if not isinstance(plan,str) or len(plan)>40:
         raise ValueError('Plan sin límites comprobables')
-    usage,limit=key.get('usage'),key.get('limit')
-    if type(usage) is not int or usage<0 or (limit is not None and (type(limit) is not int or limit<0)):
-        raise ValueError('Cuota de clave inválida')
+    usage=integer(key.get('usage'))
+    limit=None if key.get('limit') is None else integer(key['limit'])
     free=(plan.lower() in ('researcher','free') and account['plan_limit']==1000 and
           account['paygo_usage']==0 and account['paygo_limit']==0 and
           account['plan_usage']+2<=account['plan_limit'] and (limit is None or usage+2<=limit))
@@ -50,9 +55,21 @@ def check_tavily_profile(env=None,*,fetcher=read_tavily_usage):
     if env.get('TAVILY_RESEARCH_FREE_CONFIRMED')=='0':return {**base,'status':'disabled'}
     key=env.get('TAVILY_API_KEY','').strip()
     if not key:return {**base,'status':'missing_key'}
-    try:return assess_tavily_usage(fetcher(key))
+    data=None
+    try:
+        data=fetcher(key)
+        return assess_tavily_usage(data)
     except ProviderError as exc:return {**base,'status':exc.code}
-    except (ValueError,TypeError,KeyError):return {**base,'status':'invalid_profile'}
+    except (ValueError,TypeError,KeyError):
+        account=data.get('account') if isinstance(data,dict) else None
+        key_data=data.get('key') if isinstance(data,dict) else None
+        fields=['current_plan','plan_usage','plan_limit','paygo_usage','paygo_limit']
+        observed={k:type(account.get(k)).__name__ for k in fields} if isinstance(account,dict) else {}
+        key_types={k:type(key_data.get(k)).__name__ for k in ('usage','limit')} if isinstance(key_data,dict) else {}
+        known_plans={'researcher','free','bootstrap','startup','growth','project','enterprise','pay as you go'}
+        plan=account.get('current_plan') if isinstance(account,dict) else None
+        return {**base,'status':'invalid_profile','plan':plan if isinstance(plan,str) and plan.lower() in known_plans else 'unrecognized',
+                'account_field_types':observed,'key_field_types':key_types}
 
 
 def main():

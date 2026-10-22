@@ -32,4 +32,12 @@ class TavilyProfileTests(unittest.TestCase):
             result=check_tavily_profile({'TAVILY_API_KEY':'fixture'},fetcher=lambda _:data)
             self.assertFalse(result['free_search_confirmed'])
 
+    def test_integer_counters_can_be_encoded_as_numbers_or_decimal_strings(self):
+        data=profile();data['account']['paygo_limit']=0.0;data['account']['plan_usage']='0'
+        self.assertTrue(assess_tavily_usage(data)['free_search_confirmed'])
+        data['account']['paygo_limit']=None
+        result=check_tavily_profile({'TAVILY_API_KEY':'fixture'},fetcher=lambda _:data)
+        self.assertFalse(result['free_search_confirmed'])
+        self.assertEqual(result['account_field_types']['paygo_limit'],'NoneType')
+
 if __name__=='__main__':unittest.main()
