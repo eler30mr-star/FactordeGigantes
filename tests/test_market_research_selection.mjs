@@ -95,6 +95,9 @@ test('selección D1 entrega histórico de URLs agotadas y pasajes para la siguie
    selected_wikidata_id:'Q100',source_documents:[
      {url:'https://www.justice.gov/doc-restricted',status:'fetch_failed'},
      {url:'https://site.example/original',status:'text_extracted'}],
+   retrieval_budget:{attempted_urls:[
+     'https://www.justice.gov/doc-restricted','https://site.example/original',
+     'https://third.example/locked']},
    evidence_manifest:[{id:'E001',wikidata_id:'Q100',company:'Empresa ejemplo',
      url:'https://site.example/original',document_sha256:'a'.repeat(64),
      page:null,source_class:'public_document_candidate',
