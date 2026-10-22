@@ -55,12 +55,38 @@ DOCUMENTAL=("annual report", "financial report", "quarterly", "revenue", "invest
             "informe anual", "ingresos", "inversión", "fundada", "historia",
             "fabricación", "adquisición", "resultados", "operaciones", "producción")
 
+def documentary_excerpts(blocks, limit=3):
+    """Hasta tres pasajes distintos con localizador; la longitud no prueba calidad."""
+    ranked=[]
+    seen=set()
+    for i,block in enumerate(blocks):
+        if not isinstance(block,str):continue
+        text=" ".join(block.split())
+        if not 90<=len(text)<=5000:continue
+        lower=text.casefold()
+        penalties=sum(token in lower for token in PROMOTIONAL)
+        documentary=sum(token in lower for token in DOCUMENTAL)
+        dated=bool(re.search(r"(?<!\d)(?:19|20)\d{2}(?!\d)",text))
+        # Un párrafo largo o un banner con un año no bastan por sí solos.
+        if penalties or not documentary:continue
+        excerpt=text[:300]
+        if excerpt.casefold() in seen:continue
+        seen.add(excerpt.casefold())
+        ranked.append((3*min(documentary,3)+2*dated,-i,excerpt,i))
+    ranked.sort(reverse=True)
+    return [{"excerpt":text,"block_index":index,
+             "verification_state":"uncorroborated"}
+            for _,_,text,index in ranked[:max(0,min(3,limit))]]
+
+
 def select_documentary_excerpt(blocks):
     """Selecciona texto REAL potencialmente útil, no reescribe ni inventa.
 
     Penaliza menús y promociones; prioriza bloques fechados o sobre operaciones.
     No considera las palabras clave como certificación factual.
     """
+    candidates=documentary_excerpts(blocks,1)
+    if candidates:return candidates[0]["excerpt"],"documentary_candidate"
     ranked=[]
     for i,block in enumerate(blocks):
         if not isinstance(block,str):continue
@@ -75,7 +101,7 @@ def select_documentary_excerpt(blocks):
     if not ranked:
         return (blocks[0][:300] if blocks else None), "insufficient_context"
     best=max(ranked)
-    return best[2][:300],("documentary_candidate" if best[0]>0 else "generic_candidate")
+    return best[2][:300],"generic_candidate"
 
 def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
     companies=candidates_from_reports(wiki,entities)
@@ -102,7 +128,8 @@ def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
                 "document_link_candidates":[{
                    "url":p["url"],"document_fetched":False,"ownership_verified":False
                 } for p in links[:DOC_LIMIT]],
-                "short_excerpt":selected_excerpt,"excerpt_quality":excerpt_quality})
+                "short_excerpt":selected_excerpt,"excerpt_quality":excerpt_quality,
+                "excerpt_candidates":documentary_excerpts(blocks)})
         except (OSError,TimeoutError,ValueError,OverflowError,UnicodeError,KeyError,TypeError) as exc:
             result["fetch_error_type"]=type(exc).__name__
         evidence.append(result)
@@ -130,3 +157,4 @@ def main():
           "HECHOS_APROBADOS:",r["primary_facts_verified"])
 
 if __name__=="__main__":main()
+

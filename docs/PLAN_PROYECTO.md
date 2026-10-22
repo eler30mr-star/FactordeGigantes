@@ -1,5 +1,7 @@
 # Plan maestro — Factor de Gigantes
 
+> **Estado de implementación 2026-10-22:** se conecta el investigador Qwen de texto local al radar como alternativa sin clave Gemini, y se amplía recuperación de informes y contexto con varios fragmentos. Esta entrega debe validarse con ejecución real y persistencia D1; no acredita todavía selección de mercado YouTube, contraste factual ni documental autónomo completo. Detalles y resultados en `docs/AVANCE.md`.
+
 > **META FINAL INNEGOCIABLE — ACTUALIZACIÓN 2026-10-21:** Factor de Gigantes debe **estudiar el mercado, descubrir y clasificar autónomamente los mejores temas**, y convertir el seleccionado en un documental profesional, sin depender de que ChatGPT ni el propietario investiguen, escojan manualmente el tema, escriban el guion o monten cada episodio. El propio sistema descubrirá y contrastará fuentes, redactará, narrará con voz autorizada, construirá escenas y exportará MP4 de 8–14 minutos. El propietario supervisa/aprueba. YouTube queda sujeto a autorización humana. **Prioridad inmediata: radar de mercado con estadísticas observadas y selección propia, seguido de un investigador independiente con Gemini API gratuita o Qwen LLM local** (el Qwen-TTS de voz es otro componente). Arquitectura y aceptación en [`docs/ARQUITECTURA_AUTONOMA.md`](ARQUITECTURA_AUTONOMA.md). Este objetivo prevalece sobre seguir redactando BlackBerry a mano.
 
 
@@ -518,3 +520,4 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 - [ ] Habilitar pipeline investigador/guionista Gemini gratuito o Qwen local, producción 8–14 minutos con voz canónica y permisos, QA y OAuth/publicación solo tras aprobaciones.
 
 **Criterio de aceptación pendiente:** la infraestructura YouTube y las coincidencias entre fuentes NO equivalen aún a un radar profesional que selecciona el mejor documental. Priorizar evidencias, comparación y decisión autónoma por delante de nuevas mejoras estéticas.
+

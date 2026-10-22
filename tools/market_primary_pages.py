@@ -13,7 +13,8 @@ import json
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from tools.market_official_evidence import select_documentary_excerpt
+from tools.market_official_evidence import select_documentary_excerpt, documentary_excerpts
+from tools.official_document_links import find_official_document_links
 from tools.research_engine import fetch_public, extract_blocks, validate_url
 
 MAX_PAGES = 3
@@ -88,6 +89,8 @@ def collect_primary_pages(report, *, fetcher=fetch_public):
                 "content_sha256":hashlib.sha256(body).hexdigest(),
                 "short_excerpt":excerpt,
                 "excerpt_quality":quality,
+                "excerpt_candidates":documentary_excerpts(blocks),
+                "document_link_candidates":find_official_document_links(resolved,body,mime=mime),
             })
         except (OSError,TimeoutError,ValueError,TypeError,UnicodeError,KeyError) as exc:
             result["error_type"]=type(exc).__name__
@@ -120,3 +123,4 @@ def main():
 
 if __name__=="__main__":
     main()
+

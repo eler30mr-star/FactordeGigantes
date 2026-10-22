@@ -17,13 +17,33 @@ MAX_SNIPPET=320
 MAX_PAGES=350
 ID=re.compile(r"^Q[1-9][0-9]*$")
 
-def select_pdf_candidates(official):
+def select_pdf_candidates(official,primary_pages=None):
     if not isinstance(official,dict) or official.get("provider")!="wikidata_p856_safe_official_fetch_v1":
         raise ValueError("Se requiere evidencia oficial del radar")
     if official.get("primary_facts_verified")!=0 or official.get("ready_for_youtube") is not False:
         raise ValueError("El radar no ha verificado fuentes")
+    rows=list(official.get("evidence",[])[:3])
+    if primary_pages is not None:
+        if (primary_pages.get("provider")!="official_investor_pages_v1" or
+            primary_pages.get("collected_on")!=official.get("collected_on") or
+            primary_pages.get("facts_verified")!=0 or
+            primary_pages.get("rights_verified") is not False or
+            primary_pages.get("ready_for_youtube") is not False):
+            raise ValueError("Páginas de informes sin procedencia compatible")
+        allowed={r.get("wikidata_id"):r for r in rows if isinstance(r,dict)}
+        for page in primary_pages.get("pages",[])[:3]:
+            source=allowed.get(page.get("wikidata_id"))
+            if not source or page.get("status") not in {"excerpt_candidate","low_information"}:continue
+            origin=source.get("resolved_url")
+            resolved=page.get("resolved_url")
+            if page.get("origin_url")!=origin:continue
+            try:
+                validate_url(resolved)
+                if urlsplit(resolved).hostname!=urlsplit(origin).hostname:continue
+            except (ValueError,TypeError):continue
+            rows.append({**page,"company":source["company"],"status":"candidate_page_readable"})
     selected=[];seen=set()
-    for item in official.get("evidence",[])[:3]:
+    for item in rows:
         if not isinstance(item,dict) or not ID.fullmatch(str(item.get("wikidata_id",""))) or \
            item.get("status")!="candidate_page_readable":continue
         origin=item.get("resolved_url")
@@ -48,8 +68,8 @@ def select_pdf_candidates(official):
         if len(selected)>=MAX_DOCS:break
     return selected
 
-def extract_document_evidence(official, *,fetcher=fetch_document_public):
-    candidates=select_pdf_candidates(official)
+def extract_document_evidence(official, *,primary_pages=None,fetcher=fetch_document_public):
+    candidates=select_pdf_candidates(official,primary_pages)
     documents=[]
     for item in candidates:
         record={**item,"state":"fetch_failed","resolved_url":None,
@@ -90,11 +110,14 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--official",required=True,type=Path)
     parser.add_argument("--out",required=True,type=Path)
+    parser.add_argument("--primary-pages",type=Path)
     a=parser.parse_args()
-    result=extract_document_evidence(json.loads(a.official.read_text(encoding="utf-8")))
+    primary=json.loads(a.primary_pages.read_text(encoding="utf-8")) if a.primary_pages else None
+    result=extract_document_evidence(json.loads(a.official.read_text(encoding="utf-8")),primary_pages=primary)
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("PDF_CANDIDATOS:",result["attempted"],"PDF_CON_FRAGMENTOS:",
           result["text_extracted"],"HECHOS_VERIFICADOS:",result["verified_claim_count"])
 
 if __name__=="__main__":main()
+

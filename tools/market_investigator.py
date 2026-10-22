@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse,hashlib,json,os,re
 from pathlib import Path
 from urllib.parse import urlsplit
-from tools.research_providers import run_gemini_free
+from tools.research_providers import run_gemini_free,run_qwen_local
 
 MAX_EVIDENCE=10
 QID=re.compile(r"^Q[1-9][0-9]*$")
@@ -97,7 +97,35 @@ def prepare_evidence(pdf_report, official_report=None, primary_pages_report=None
               "excerpt":excerpt[:300],"document_sha256":digest,
               "wikidata_id":qid,"company":page.get("company",""),
               "source_class":"potential_official_primary"})
-    return items
+    # Ampliar solo documentos ya admitidos: los índices remiten al HTML
+    # cuyo hash está conservado, sin inventar pasajes ni mezclar compañías.
+    documents=[]
+    if official_report:documents.extend(official_report.get("evidence",[])[:3])
+    if primary_pages_report:documents.extend(primary_pages_report.get("pages",[])[:3])
+    expanded=[]
+    seen=set()
+    for item in items:
+        key=(item["wikidata_id"],item["url"],item["document_sha256"],item["page"],item["excerpt"])
+        if key in seen:continue
+        seen.add(key)
+        expanded.append(item)
+        if item["page"] is not None:continue
+        doc=next((d for d in documents if d.get("resolved_url")==item["url"] and
+                  d.get("wikidata_id")==item["wikidata_id"] and
+                  d.get("content_sha256")==item["document_sha256"]),{})
+        for passage in doc.get("excerpt_candidates",[])[:3]:
+            text=passage.get("excerpt")
+            index=passage.get("block_index")
+            if (not isinstance(text,str) or not 90<=len(text)<=300 or
+                type(index) is not int or not 0<=index<450 or
+                passage.get("verification_state")!="uncorroborated"):
+                continue
+            extra=(item["wikidata_id"],item["url"],item["document_sha256"],None,text)
+            if extra in seen:continue
+            seen.add(extra)
+            expanded.append({**item,"excerpt":text,"block_index":index,
+                             "locator":f"Bloque web {index+1}"})
+    return [{**e,"id":f"E{i+1:03d}"} for i,e in enumerate(expanded)]
 
 
 def select_one_company(evidence):
@@ -128,7 +156,9 @@ def select_one_company(evidence):
 
 
 def run_investigation(pdf_report,*,official_report=None,primary_pages_report=None,free_confirmed=False,api_key=None,model="gemini-2.5-flash-lite",
-                      runner=run_gemini_free):
+                      runner=run_gemini_free,provider="gemini_free",local_generate=None):
+    if provider not in {"gemini_free","qwen_local","disabled"}:
+        raise ValueError("Proveedor investigador no permitido")
     all_evidence=prepare_evidence(pdf_report,official_report=official_report,primary_pages_report=primary_pages_report)
     evidence,deferred=select_one_company(all_evidence)
     # Manifiesto documental con pasajes breves para D1, incluso sin LLM.
@@ -144,16 +174,28 @@ def run_investigation(pdf_report,*,official_report=None,primary_pages_report=Non
       "ready_for_youtube":False,"publication_authorized":False}
     if not evidence:
         return {**base,"status":"skipped_no_documentary_evidence","provider":None}
-    if not free_confirmed or not isinstance(api_key,str) or len(api_key)<15:
+    if provider=="disabled" or (provider=="gemini_free" and
+        (not free_confirmed or not isinstance(api_key,str) or len(api_key)<15)):
         return {**base,"status":"skipped_free_tier_not_authorized","provider":None}
     # Tema deducido de entidades encontradas, no proporcionado por ChatGPT.
     topic=", ".join(dict.fromkeys(item["company"] for item in evidence))[:130]
-    result=runner(topic,evidence,api_key=api_key,model=model,free_tier_confirmed=True)
+    if provider=="qwen_local":
+        from tools.qwen_research_cpu import CpuGenerator,MODEL
+        generator=local_generate if local_generate is not None else CpuGenerator()
+        result=run_qwen_local(topic,evidence,generate=generator)
+        result["model"]=MODEL
+        if isinstance(generator,CpuGenerator):result["inference_metrics"]=generator.metrics
+    else:
+        result=runner(topic,evidence,api_key=api_key,model=model,free_tier_confirmed=True)
     if (result.get("facts_verified_automatically")!=0 or
         result.get("ready_for_script") is not False or
         result.get("ready_for_youtube") is not False):
         raise ValueError("Investigador intentó declarar hechos o contenido listo")
-    return {**base,**result,"status":"candidate_claims_generated",
+    # El modelo/proveedor nunca puede reemplazar el manifiesto de procedencia.
+    return {**result,**base,"provider":result.get("provider"),
+      "candidate_claims":result.get("candidate_claims",[]),
+      "missing_questions":result.get("missing_questions",[]),
+      "status":"candidate_claims_generated",
       "origin":"market_official_and_pdf_v1",
       "input_evidence":[{k:v for k,v in e.items() if k!="excerpt"} for e in evidence],
       "publication_authorized":False}
@@ -164,6 +206,8 @@ def main():
     p.add_argument("--official-report",type=Path)
     p.add_argument("--primary-pages-report",type=Path)
     p.add_argument("--out",required=True,type=Path)
+    p.add_argument("--provider",choices=("gemini_free","qwen_local","disabled"),
+                   default=os.getenv("RESEARCH_PROVIDER","gemini_free"))
     a=p.parse_args()
     input_data=json.loads(a.pdf_report.read_text(encoding="utf-8"))
     official_data=json.loads(a.official_report.read_text(encoding="utf-8")) if a.official_report else None
@@ -171,12 +215,13 @@ def main():
     authorized=os.getenv("GEMINI_RESEARCH_FREE_CONFIRMED")=="1"
     key=os.getenv("GEMINI_API_KEY")
     try:
-        out=run_investigation(input_data,official_report=official_data,primary_pages_report=primary_data,free_confirmed=authorized,api_key=key)
+        out=run_investigation(input_data,official_report=official_data,primary_pages_report=primary_data,free_confirmed=authorized,api_key=key,provider=a.provider)
     except (OSError,ValueError,RuntimeError,KeyError,TypeError) as exc:
         # Nunca registrar cuerpo remoto, token de cabecera o prompt sin consentimiento.
         evidence,deferred=select_one_company(
             prepare_evidence(input_data,official_report=official_data,primary_pages_report=primary_data))
         out={"status":"research_provider_failure","error_type":type(exc).__name__,
+             "provider":None,
              "selected_wikidata_id":evidence[0]["wikidata_id"] if evidence else None,
              "deferred_wikidata_ids":deferred,
              "source_report_day":input_data.get("collected_on"),
@@ -191,3 +236,4 @@ def main():
           "LISTO_PARA_GUION:",out["ready_for_script"])
 
 if __name__=="__main__":main()
+
