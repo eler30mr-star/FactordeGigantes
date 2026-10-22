@@ -231,9 +231,16 @@ jobs:
       - name: Medir competencia YouTube con presupuesto explícito y limitado
         env:
           YOUTUBE_DATA_API_KEY: ${{ secrets.YOUTUBE_DATA_API_KEY }}
-          YOUTUBE_MARKET_BUDGET_ENABLED: ${{ vars.YOUTUBE_MARKET_BUDGET_ENABLED }}
+          # Propietario autorizó conectar la clave el 2026-10-22. Máximo
+          # cuatro búsquedas y cuatro lecturas; la variable 0 sigue deteniendo API.
+          YOUTUBE_MARKET_BUDGET_ENABLED: ${{ vars.YOUTUBE_MARKET_BUDGET_ENABLED || '1' }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
         run: |
+          python - <<'PY'
+          import os
+          print('YOUTUBE_CLAVE_CONFIGURADA:',len(os.getenv('YOUTUBE_DATA_API_KEY',''))>=20)
+          print('YOUTUBE_CUOTA_AUTORIZADA:',os.getenv('YOUTUBE_MARKET_BUDGET_ENABLED')=='1')
+          PY
           python -m unittest discover -s tests -p test_youtube_market_study.py -v
           # Sin clave o aprobación de cuota, no realiza llamadas ni inventa resultados.
           timeout -k 5s 120s python -m tools.youtube_market_study \

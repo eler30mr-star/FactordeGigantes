@@ -90,9 +90,12 @@ def study(discovery, *, api_key, now=None, collector=collect_youtube):
                    "uploads_sampled":0,"sample_size":0,"median_daily_views":None,
                    "distinct_channels":0,"evidence_state":"insufficient_sample",
                    "error_type":type(exc).__name__,"videos":[]})
+                if hasattr(exc,'category'):
+                    queries[-1]['error_category']=exc.category
+                    queries[-1]['http_status']=exc.http_status
                 # Ante error de cuota, credencial o red detiene llamadas posteriores.
                 if isinstance(exc,RuntimeError): break
-        if queries and queries[-1].get("error_type")=="RuntimeError":break
+        if queries and queries[-1].get("error_type") in {"RuntimeError","YoutubeApiError"}:break
     measured=sum(q["evidence_state"]=="observed_sample" for q in queries)
     return {
       "provider":"youtube_data_api_v3","collected_on":today.isoformat(),
@@ -128,7 +131,12 @@ def main():
     print("YOUTUBE_API_MUESTRAS:",report["complete_comparisons"],"de",report["queries_attempted"],
           "pares empresa-región; CUOTA_MAXIMA_ESTIMADA:",report["quota_units_max"],
           "APROBACION_PUBLICACION:",report["automatic_publication_allowed"])
+    for q in report['queries']:
+        print('YOUTUBE_MUESTRA:',q['wikidata_id'],q['region'],q['evidence_state'],
+              'VIDEOS:',q['sample_size'],'ERROR:',q.get('error_category',q.get('error_type','ninguno')),
+              'HTTP:',q.get('http_status'))
 
 
 if __name__=="__main__":
     main()
+

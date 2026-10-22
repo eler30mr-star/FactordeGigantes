@@ -11,6 +11,7 @@ import os
 import re
 from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
 API_HOST="https://www.googleapis.com/youtube/v3/"
 PAGEVIEWS_HOST="https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/"
@@ -19,6 +20,30 @@ MAX_PAYLOAD=5_000_000  # top 1000 artículos Wikimedia puede superar 1 MB; lími
 MAX_VIDEOS=10
 ID=re.compile(r"^[A-Za-z0-9_-]{11}$")
 WIKI_TITLE=re.compile(r"^[^\n#?]{2,120}$")
+
+
+class YoutubeApiError(RuntimeError):
+    """Diagnóstico permitido; nunca conserva URL, clave o mensaje de Google."""
+    def __init__(self,method,status,reason):
+        self.http_status=status
+        self.category=reason
+        super().__init__(f"YouTube {method}: HTTP {status}; {reason}")
+
+
+def youtube_error_reason(exc):
+    allowed={'accessNotConfigured','serviceDisabled','quotaExceeded',
+        'dailyLimitExceeded','keyInvalid','ipRefererBlocked','forbidden',
+        'youtubeSignupRequired','rateLimitExceeded'}
+    try:
+        raw=exc.read(8193)
+        if len(raw)>8192:return 'http_error'
+        body=json.loads(raw.decode('utf-8'))
+        errors=body.get('error',{}).get('errors',[])
+        for item in errors[:5]:
+            if isinstance(item,dict) and item.get('reason') in allowed:
+                return item['reason']
+    except (OSError,ValueError,AttributeError,TypeError):pass
+    return 'http_error'
 
 
 def get_json(url, *, request=None):
@@ -57,6 +82,8 @@ def collect_youtube(topic, *, api_key=None, now=None, request=None, region="MX")
         url=API_HOST+method+"?"+urlencode(params)
         try:
             return get_json(url,request=request)
+        except HTTPError as exc:
+            raise YoutubeApiError(method,exc.code,youtube_error_reason(exc)) from None
         except Exception as exc:
             raise RuntimeError(f"Error YouTube {method}: {type(exc).__name__}; revisar cuota y permisos") from None
 
@@ -166,3 +193,4 @@ def collect_wikipedia(title, *, language="es", now=None, request=None):
         "origin":"wikimedia_pageviews_api",
         "notice":"Interés por artículo, no volumen de Google Search ni demanda YouTube.",
     }
+

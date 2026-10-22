@@ -1274,3 +1274,10 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 
 **Qué está resuelto:** alternativa CPU conectada y primera inferencia con citas guardada en producción. **Qué sigue abierto:** fuentes primarias útiles e independientes, estudio YouTube, selección de tema elegible, guion autónomo largo y producción audiovisual completa con QA y derechos. El proyecto no está terminado.
 
+## 2026-10-22 · Conexión autorizada de la clave YouTube y primera comprobación
+
+- El propietario informó que creó y guardó la clave YouTube en GitHub. Se toma como autorización para el estudio público gratuito ya acordado, no para publicar ni activar facturación. `YOUTUBE_MARKET_BUDGET_ENABLED` ausente usa ahora `1`; un valor explícito `0` mantiene la pausa. La clave sigue siendo obligatoria y nunca se muestra.
+- La prueba conserva dos empresas descubiertas × MX/ES, como máximo cuatro `search.list` y cuatro `videos.list`. Referencia de cuota comprobada el 2026-10-22: https://developers.google.com/youtube/data/determine_quota_cost (actualizada 2026-10-15): search tiene depósito separado, costo uno por llamada; el límite de ocho representa cuatro búsquedas y cuatro lecturas en sus depósitos, no una cuota global garantizada de la cuenta.
+- Diagnóstico HTTP: se preservan únicamente código y motivo permitido (`accessNotConfigured`, cuota, permisos, etc.). Nunca se guarda la URL con clave ni mensajes remotos arbitrarios. Ante el primer fallo de credencial/cuota se detienen ambas iteraciones de empresas.
+- Se añadieron pruebas de ausencia de filtración del secreto en errores y detención después del primer HTTP rechazado. **Pendiente al preparar el commit:** probar la clave real desde Actions y verificar estadísticas en D1. La declaración del propietario por sí sola no acredita permisos ni muestras válidas.
+

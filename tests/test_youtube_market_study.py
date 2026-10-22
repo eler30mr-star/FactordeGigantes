@@ -1,6 +1,8 @@
 """Contratos offline: muestra YouTube ficticia, nunca se publica como mercado real."""
 from datetime import date,timedelta
 import unittest
+import io
+from urllib.error import HTTPError
 from tools.youtube_market_study import study,choose_candidates,MAX_QUERY_PAIRS,QUOTA_CAP
 
 TODAY=date(2026,10,21)
@@ -23,6 +25,31 @@ def fake(topic,*,api_key,region,now):
           "channel_id":"UC"+str(i)*22} for i in (1,2,3)]}
 
 class YoutubeStudyTests(unittest.TestCase):
+    def test_google_error_diagnostic_does_not_expose_key_or_remote_message(self):
+        from tools.market_sources import collect_youtube,YoutubeApiError
+        secret='DO_NOT_PRINT_THIS_API_KEY'
+        def unavailable(url):
+            body=('{"error":{"message":"'+secret+'",'
+                  '"errors":[{"reason":"accessNotConfigured"}]}}').encode()
+            raise HTTPError(url,403,secret,{},io.BytesIO(body))
+        with self.assertRaises(YoutubeApiError) as cm:
+            collect_youtube('Empresa de prueba',api_key=secret,now=TODAY,request=unavailable)
+        self.assertEqual(cm.exception.category,'accessNotConfigured')
+        self.assertEqual(cm.exception.http_status,403)
+        self.assertNotIn(secret,str(cm.exception))
+        self.assertNotIn('https://',str(cm.exception))
+
+    def test_http_failure_stops_both_company_loops(self):
+        from tools.market_sources import YoutubeApiError
+        calls=[]
+        def denied(*args,**kwargs):
+            calls.append(1)
+            raise YoutubeApiError('search',403,'quotaExceeded')
+        r=study(discovery(),api_key='x'*24,now=TODAY,collector=denied)
+        self.assertEqual(len(calls),1)
+        self.assertEqual(r['queries'][0]['http_status'],403)
+        self.assertEqual(r['queries'][0]['error_category'],'quotaExceeded')
+
     def test_budget_and_real_candidate_selection_with_two_regions(self):
         calls=[]
         def observe(topic,**kwargs):
@@ -66,3 +93,4 @@ class YoutubeStudyTests(unittest.TestCase):
 
 if __name__=="__main__":
     unittest.main()
+
