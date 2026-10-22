@@ -40,6 +40,17 @@ class OfficialEvidence(unittest.TestCase):
         self.assertEqual(result["evidence"][0]["short_excerpt"],text)
         self.assertFalse(result["evidence"][0]["source_identity_verified"])
 
+    def test_filters_cookie_banners_and_prefers_business_events(self):
+        from tools.market_official_evidence import select_documentary_excerpt
+        promo="Accept cookies and subscribe to our newsletter to discover our services, advertising and privacy policy details on this site."
+        substantive="In 2024 the manufacturing company published its annual report describing acquisition operations and revenue at production sites."
+        excerpt,quality=select_documentary_excerpt([promo,substantive])
+        self.assertEqual(excerpt,substantive)
+        self.assertEqual(quality,"documentary_candidate")
+        missing,quality=select_documentary_excerpt(["Cookies"])
+        self.assertEqual(quality,"insufficient_context")
+        self.assertEqual(missing,"Cookies")
+
     def test_rejects_ssrf_urls_and_dedupes_by_canonical_entity(self):
         w,n=reports()
         n["candidates"][0]["official_website_candidate"]="http://localhost/"
