@@ -17,7 +17,10 @@ from tools.ai_clients import ProviderError
 from tools.pdf_sources import analyze_document, fetch_document_public
 from tools.research_engine import fetch_public, validate_url
 
-MAX_DOCUMENTS = 4
+MAX_DOCUMENTS = 8
+MAX_PRIMARY_ATTEMPTS = 5
+MAX_SECONDARY_ATTEMPTS = 5
+MAX_PER_HOST = 1
 MAX_EVIDENCE = 10
 
 
@@ -124,22 +127,37 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         return normalized(title) in normalized(text) or any(w in tokens for w in words)
     def rank(lead):
         parsed = urlsplit(lead["url"])
-        relevant = any(w in normalized(parsed.path) for w in words)
-        return (-int(primary_host(parsed.hostname)), -int(relevant),
+        path = normalized(parsed.path + " " + (lead.get("title") or ""))
+        relevant = any(w in path for w in words)
+        # La URL archivada puede terminar en CAPTCHA/HTML y consumir presupuesto
+        # sin poder abrir el documento original. Probar primero el editor original.
+        archive = parsed.hostname in {"web.archive.org", "archive.today",
+                                     "archive.ph", "wayback.archive-it.org"}
+        return (int(archive), -int(relevant),
                 -int(parsed.path.lower().endswith(".pdf")), lead["url"])
+
+    # Intercalar gobierno/justicia con publicaciones independientes. El orden
+    # alfabético de Wikipedia enviaba cuatro solicitudes y se detenía aunque
+    # tres de ellas no entregaran extractos. Nunca rellenar con texto simulado.
+    authorities = sorted((x for x in eligible
+                          if primary_host(urlsplit(x["url"]).hostname)), key=rank)
+    independent = sorted((x for x in eligible
+                          if not primary_host(urlsplit(x["url"]).hostname)), key=rank)
+    ordered = []
+    while authorities or independent:
+        if authorities:
+            ordered.append(authorities.pop(0))
+        if independent:
+            ordered.append(independent.pop(0))
     per_host, per_kind = Counter(), Counter()
-    ordered = sorted(eligible, key=rank)
-    # Reservar espacio para contexto independiente: cuatro portales oficiales
-    # bloqueados o interactivos no deben consumir todo el presupuesto.
-    have_primary = any(primary_host(urlsplit(x["url"]).hostname) for x in ordered)
-    have_secondary = any(not primary_host(urlsplit(x["url"]).hostname) for x in ordered)
-    mixed = have_primary and have_secondary
+    useful_urls, useful_hosts, regulatory_hits = set(), set(), set()
     for lead in ordered:
         if len(out["source_documents"]) >= MAX_DOCUMENTS:
             break
         host = urlsplit(lead["url"]).hostname
         kind = "primary" if primary_host(host) else "secondary"
-        if per_host[host] >= 1 or mixed and per_kind[kind] >= 2:
+        if per_host[host] >= MAX_PER_HOST or per_kind[kind] >= (
+                MAX_PRIMARY_ATTEMPTS if kind == "primary" else MAX_SECONDARY_ATTEMPTS):
             continue
         per_host[host] += 1
         per_kind[kind] += 1
@@ -182,10 +200,28 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                            "full_document_text_read": bool(fragments) and
                                (analysis["type"] != "pdf" or analysis["total_pages"] <= 12)})
             out["evidence_manifest"].extend(fragments)
+            if fragments:
+                useful_urls.add(resolved)
+                useful_hosts.add(urlsplit(resolved).hostname)
+                if primary_host(urlsplit(resolved).hostname):
+                    regulatory_hits.add(urlsplit(resolved).hostname)
         except (OSError, ValueError, TypeError, KeyError, ImportError, RuntimeError) as exc:
             record["status"] = "fetch_failed"
             record["error_type"] = type(exc).__name__
         out["source_documents"].append(record)
+        # Dos dominios con texto y al menos un regulador ofrecen un punto de
+        # partida para contraste. No los declaramos hechos verificados.
+        if len(useful_urls) >= 2 and len(useful_hosts) >= 2 and regulatory_hits:
+            break
+    out["source_documents"] = out["source_documents"][:MAX_DOCUMENTS]
+    out["retrieval_budget"] = {
+        "max_documents": MAX_DOCUMENTS,
+        "attempted": len(out["source_documents"]),
+        "documents_with_relevant_text": len(useful_urls),
+        "independent_domains_with_text": len(useful_hosts),
+        "public_authority_domains_with_text": len(regulatory_hits),
+        "budget_exhausted": len(out["source_documents"]) >= MAX_DOCUMENTS,
+    }
     out["evidence_manifest"] = [{**e, "id": f"E{i+1:03d}"}
                                 for i, e in enumerate(out["evidence_manifest"][:MAX_EVIDENCE])]
     out["status"] = "sources_collected" if out["evidence_manifest"] else "skipped_no_documentary_evidence"
