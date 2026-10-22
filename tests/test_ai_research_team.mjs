@@ -64,6 +64,9 @@ test('corroboración por fuente única no puede indicar verificación factual',(
  r.source_quality.all_claims_verified=false;
  r.source_quality.claim_gaps[0].cited_documents=2;
  assert.throws(()=>validateAiReport(r),RangeError);
+ r.source_quality.claim_gaps[0].cited_documents=1;
+ r.source_quality.claim_gaps[0].gaps=[];
+ assert.throws(()=>validateAiReport(r),RangeError);
 });
 
 test('historial SQLite real idempotente, alerta numérica y puertas SQL cerradas',async()=>{
