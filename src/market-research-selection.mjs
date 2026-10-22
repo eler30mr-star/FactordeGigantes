@@ -101,8 +101,31 @@ export async function selectResearchFromD1(db,now=new Date()){
     .bind('rq-'+digest.slice(0,28),chosen.wikidata_id,chosen.title,id,chosen.market_score,chosen.wikidata_id));
  await db.batch(writes);
  const queue=await db.prepare("SELECT id,wikidata_id,title,state,market_score,selection_run_id FROM market_research_queue WHERE state IN ('awaiting_sources','researching','review') ORDER BY created_at LIMIT 1").first();
+ // Si la última investigación sólo encontró una fuente, usar el histórico D1
+ // para NO gastar en las mismas cuatro páginas. El histórico está protegido
+ // por el contrato original de report_json y se limita a siete días.
+ let prior_attempted_urls=[],prior_evidence_manifest=[];
+ if(queue?.state==='awaiting_sources'){
+  const previous=await db.prepare(
+   "SELECT report_json FROM market_ai_pipeline_runs WHERE wikidata_id=? AND collected_on>=? ORDER BY created_at DESC,rowid DESC LIMIT 1"
+  ).bind(queue.wikidata_id,old).first();
+  if(previous){
+   const record=JSON.parse(previous.report_json);
+   if(record.selected_wikidata_id===queue.wikidata_id){
+    prior_attempted_urls=(record.source_documents||[])
+      .map(v=>v.url).filter(v=>typeof v==='string'&&v.startsWith('https://')).slice(0,8);
+    prior_evidence_manifest=(record.evidence_manifest||[])
+      .filter(v=>v.wikidata_id===queue.wikidata_id&&
+        typeof v.url==='string'&&v.url.startsWith('https://')&&
+        typeof v.excerpt==='string'&&v.excerpt.length>=90&&
+        typeof v.document_sha256==='string'&&/^[0-9a-f]{64}$/.test(v.document_sha256))
+      .slice(0,4);
+   }
+  }
+ }
  return {ok:true,stored_in:'d1',run_id:id,...snapshot,
    selected_wikidata_id:queue?.wikidata_id??null,research_queue:queue??null,
+   prior_attempted_urls,prior_evidence_manifest,
    automatic_publication_allowed:false,script_authorized:false};
 }
 
