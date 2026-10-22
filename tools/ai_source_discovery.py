@@ -142,6 +142,11 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             if primary_host(host) and not primary_host(urlsplit(resolved).hostname):
                 raise ValueError("Redirección fuera de autoridad pública")
             analysis = analyze_document(raw, mime, pdf_max_pages=350, pdf_scan_pages=12)
+            record.update({"bytes_read": len(raw), "mime": mime,
+                           "readable_blocks": len(analysis["blocks"]),
+                           "raw_prefix_hex": raw[:4].hex(),
+                           "entity_name_in_payload": normalized(title) in normalized(raw.decode("utf-8", errors="ignore")),
+                           "first_block_preview": str(next(iter(analysis["blocks"]), ""))[:160]})
             digest = hashlib.sha256(raw).hexdigest()
             fragments = []
             for index, block in enumerate(analysis["blocks"]):
