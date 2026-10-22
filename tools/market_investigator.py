@@ -87,6 +87,7 @@ def run_investigation(pdf_report,*,official_report=None,free_confirmed=False,api
         raise ValueError("Investigador intentó declarar hechos o contenido listo")
     return {**base,**result,"status":"candidate_claims_generated",
       "origin":"market_official_and_pdf_v1",
+      "input_evidence":[{k:v for k,v in e.items() if k!="excerpt"} for e in evidence],
       "publication_authorized":False}
 
 def main():
