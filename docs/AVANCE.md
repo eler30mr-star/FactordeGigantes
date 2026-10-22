@@ -1544,3 +1544,9 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 ### Revalidación histórica sin repetir IA
 - Se añadió revalidación determinista de metadata antes del guionista: recalcula clasificación y matriz sobre una copia, conserva el hash del expediente original y no modifica D1 ni citas ni decisiones humanas. Así una etiqueta histórica NCBI no exige gastar una nueva inferencia para corregirse.
 - CLI sobre el expediente real, después de esa revalidación: `blocked_insufficient_research`, cero escenas, con motivos por cada una de las ocho afirmaciones y falta de documento primario. Esto sustituye el bloqueo técnico `blocked_source_contract` de la comprobación anterior por el bloqueo factual real. El JSON original de D1 sigue intacto.
+
+### Integración y encadenado hacia guion
+- Commit `930d2fe843ed73a41795ab0e9b17addcce0f5561` sincronizado directamente en main. CI [39854241274](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39854241274) `success`.
+- Backend desplegado con `--keep-vars`, versión `b33ded64-db7b-41f7-bf15-4429fa23631c`. No se aplicó migración ni se alteraron registros editoriales.
+- Se añadió recibo local de persistencia D1 con el run_id exacto confirmado y encadenado automático hacia la fase script sólo si el plan documental supera la puerta. La fase script usa otra ejecución, no repite la investigación ni supera el límite de una generación por proveedor/ejecución. Su aceptación con dossier real suficiente sigue pendiente.
+- La suite final incorpora revalidación histórica y recibo D1: 265 pruebas Python previstas tras la última regresión añadida; la regresión específica de recibo pasó y la suite anterior de 264 + 84 Node pasó completa. Confirmar la ejecución CI siguiente para la revisión de encadenado. Reservas D1 antes de la prueba script: Gemini 3 y Groq 3; no se añadió consumo en las comprobaciones locales.

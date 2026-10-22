@@ -323,6 +323,8 @@ def main():
     # Informe local se conserva incluso si D1 no confirma la ingesta.
     if a.mode == "analyze":
         stored = control.persist(result)
+        a.out.with_suffix(".receipt.json").write_text(
+            json.dumps(stored,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
         print("EQUIPO_IA_D1:", stored["run_id"])
     print("EQUIPO_IA_ESTADO:", result["status"], "PASAJES:", len(result["evidence_manifest"]))
     for stage in result["stages"]:

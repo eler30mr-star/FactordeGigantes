@@ -113,6 +113,24 @@ class PipelineContractTests(unittest.TestCase):
                 control.return_value.reserve.assert_not_called()
                 control.return_value.persist.assert_not_called()
 
+    def test_confirmed_d1_receipt_is_saved_for_resuming_exact_report(self):
+        import tempfile
+        from pathlib import Path
+        from tools.ai_research_pipeline import main
+        sources,_=self.discover()
+        report=source_report(sources)
+        receipt={'ok':True,'stored_in':'d1','run_id':'ai-'+'a'*28,'automatic_publication_allowed':False}
+        with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
+            source=Path(folder)/'sources.json';out=Path(folder)/'report.json'
+            source.write_text(json.dumps(sources),encoding='utf-8')
+            with patch('sys.argv',['pipeline','analyze','--sources',str(source),'--out',str(out)]), \
+                 patch('tools.ai_research_pipeline.ControlClient') as control, \
+                 patch('tools.ai_research_pipeline.analyze_sources',return_value=report):
+                control.return_value.persist.return_value=receipt
+                main()
+                self.assertEqual(json.loads(out.with_suffix('.receipt.json').read_text()),receipt)
+                control.return_value.persist.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -22,6 +22,19 @@ concurrency:
   group: fdg-topic-discovery-market
   cancel-in-progress: false
 jobs:
+  script-after-research:
+    needs: topic-discovery
+    if: needs.topic-discovery.outputs.script_run_id != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Encadenar guionista sólo para el expediente con fuentes suficientes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SCRIPT_RUN_ID: ${{ needs.topic-discovery.outputs.script_run_id }}
+        run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=script -f research_run_id="$SCRIPT_RUN_ID"
   documentary-script:
     if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.phase == 'script'
     runs-on: ubuntu-latest
@@ -60,6 +73,8 @@ jobs:
     if: github.event.repository.private == false && inputs.phase != 'script'
     runs-on: ubuntu-latest
     timeout-minutes: 22
+    outputs:
+      script_run_id: ${{ steps.script-plan.outputs.run_id }}
     env:
       RESEARCH_PROVIDER: ${{ vars.RESEARCH_PROVIDER || 'team' }}
       HF_HOME: /tmp/fdg-radar-model
@@ -297,12 +312,23 @@ jobs:
             --sources dist/radar/FUENTES_EQUIPO_IA.json \
             --out dist/radar/EQUIPO_IA_NO_APROBADO.json
       - name: Preparar plan documental desde investigación propia, sin fabricar guion
+        id: script-plan
         run: |
           python -m unittest discover -s tests -p test_documentary_blueprint.py -v
           python -m tools.documentary_blueprint \
             --research dist/radar/EQUIPO_IA_NO_APROBADO.json \
             --selection dist/radar/SELECCION_INVESTIGACION_D1.json \
             --out dist/radar/PLAN_DOCUMENTAL_NO_APROBADO.json
+          python - <<'PYDRAFT'
+          import json,os,re
+          from pathlib import Path
+          plan=json.loads(Path('dist/radar/PLAN_DOCUMENTAL_NO_APROBADO.json').read_text())
+          receipt=json.loads(Path('dist/radar/EQUIPO_IA_NO_APROBADO.receipt.json').read_text())
+          run_id=receipt.get('run_id','')
+          if plan['status']=='source_grounded_outline_unapproved' and re.fullmatch(r'ai-[a-f0-9]{28}',run_id):
+              with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+                  out.write('run_id='+run_id+'\n')
+          PYDRAFT
       - name: Relacionar empresas y titulares como hipótesis verificables
         run: |
           python -m unittest discover -s tests -p test_market_news_join.py -v

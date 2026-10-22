@@ -25,6 +25,11 @@ condiciones constituye verificación factual automática ni concede aprobación.
 
 ## Guionista reanudable
 
+Cuando la investigación supera la puerta documental, el workflow encadena
+automáticamente una ejecución independiente de guion con el identificador
+exacto confirmado por D1. Esta conexión queda pendiente de aceptación con un
+dossier real suficiente; una prueba con un dossier bloqueado no la acredita.
+
 En GitHub Actions, ejecutar el mismo workflow con `phase=script` y
 `research_run_id=latest` (o el identificador `ai-...` de un expediente activo).
 También existe una puerta de prueba en `Comprobar base`, con `run_script=true`.
