@@ -1,6 +1,6 @@
 # Historial de avance — Factor de Gigantes
 
-> **Estado vigente 2026-10-21:** **D1 real migrada hasta 0009**; radar completo de esta etapa enlaza RSS → resolución Wikidata → páginas corporativas P856 → evaluación automática trazable, con GitHub OIDC y Worker desplegado. Datos REMOTOS verificados: 114 titulares, 2 entidades noticia–Wikidata (Toyota y América Móvil), 2 páginas corporativas accesibles con SHA-256 (Toyota y DuPont), 4 evaluaciones y **0 selecciones aprobadas**. La prioridad continúa siendo YouTube Data API REAL, contrastar afirmaciones primarias, seleccionar y conectar investigador/guionista/productora de 8–14 min. Sin YouTube no se presume ganador; YouTube y publicación permanecen bloqueados por permisos/evidencias.
+> **Estado vigente 2026-10-21 (última actualización):** Cloudflare D1 cuenta Factor, migraciones **0001–0010 aplicadas** sin perder trabajos anteriores (jobs=1, events=8). Radar Wikimedia/RSS/Wikidata/P856 integrado y probado: 129 titulares acumulados, páginas corporativas accesibles y cuatro evaluaciones bloqueadas por datos incompletos. Nuevo recolector automático de PDFs oficiales con localizador de páginas, SHA-256 y API D1 desplegados; **primera prueba real: 1 PDF DuPont candidato, descarga fallida y 0 fragmentos**. Se conectó el adaptador existente Gemini gratuito a evidencia corporativa/PDF, pero **NO se ha ejecutado una investigación Gemini real** sin habilitación voluntaria de credencial y modalidad gratuita. YouTube público sigue con 0 muestras; ninguna selección, guion ni publicación aprobada.
 
 ## 2026-10-20 · Inicio del proyecto
 
@@ -1171,3 +1171,31 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 4. Integrar `gemini_free` o `qwen_local` investigador y guionista, voz oficial, visuales y MP4 profesional 8–14 minutos; asegurar QA derechos, y solo luego OAuth/publicación aprobada.
 
 **Estado honesto:** P0 ha avanzado en integración y persistencia real. El proyecto total aún está lejos de su final; no se asigna porcentaje inventado ni se confunden dos páginas descargadas con un documental autónomo.
+
+
+## 2026-10-21 · P0/P1: PDF primarios rastreables y puente a investigador autónomo con coste bloqueado
+
+### Código integrado en `main`
+- `tools/market_pdf_evidence.py`: extrae **solo PDFs encontrados realmente** desde enlaces identificados en páginas P856 del radar. Reutiliza `tools/pdf_sources.py` y seguridad de `tools/research_engine.py` (HTTPS, DNS público, redirecciones, límites de descarga y tiempos). Hasta 2 documentos por ejecución, exclusivamente del **mismo hostname** que la página corporativa candidata; nunca adivina rutas ni rastrea todo un sitio. Si el PDF tiene texto legible, registra SHA-256, página física, índice de bloque y hasta 5 extractos breves por documento. No autoriza derechos ni verifica afirmaciones.
+- Migración aditiva `migrations/0010_pdf_evidence.sql`: `market_pdf_evidence_runs`, `market_pdf_evidence_documents`, `market_pdf_evidence_fragments`. Aplicada directamente a Cloudflare D1 remota **tras bookmark Time Travel y export SQL temporal**; sin DROP ni cambios sobre jobs.
+- `src/market-pdf-ingest.mjs` valida informe, origen, dominio de documentos, página dentro de páginas totales, hashes, orden y estado `uncorroborated`, antes de escribir con D1.batch e ID de ejecución idempotente. Worker: `POST /api/market/pdf/ingest` con GitHub OIDC efímero; `GET /api/market/pdf` solo con credencial administrativa.
+- `tools/push_news_entity_assess.py` admite `--mode pdf`, manteniendo OIDC y bloqueo de permisos, y `.github/workflows/topic-discovery-smoke.yml` ejecuta automáticamente extracción/almacenamiento luego de la identificación de sitios corporativos; las nuevas salidas se conservan en artefactos temporales.
+- `public/index.html` y `public/app.js`: sección privada «Informes corporativos y citas» con PDF, estado, hash, páginas y fragmentos cuando realmente existan. En ausencia de datos, informa vacío en vez de dibujar material simulado.
+- `tools/market_investigator.py`: enlaza estos pasajes con el **proveedor real existente** de `tools/research_providers.py` (Gemini 2.5 Flash Lite) y conserva página/URL/hash/identidad Wikidata y citas E001… El puente también puede tomar fragmentos de **páginas web corporativas P856 realmente descargadas** cuando el PDF falla; estas páginas son candidatas a fuentes primarias, no hechos verificados. Si no hay pasajes no llama al modelo; si faltan `GEMINI_API_KEY` **o** `GEMINI_RESEARCH_FREE_CONFIRMED=1`, entrega estado `skipped_*` sin consumir tokens ni cuota. Nunca envía secretos en el informe. Las respuestas siguen `candidate_unverified` y `ready_for_script=false`.
+- Tests Python `tests/test_market_pdf_evidence.py`, `tests/test_market_investigator.py`, Node `tests/test_market_pdf_ingest.mjs`, incorporados al CI existente: errores de red, PDF fuera de dominio, páginas, hashes, rechazos de derechos falsos, persistencia idempotente, pasajes web fallback, y omisión de llamadas Gemini por defecto.
+
+### Resultado real — distinguirlo del contrato
+- [GitHub Actions 39696304954](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/39696304954), `success`: radar autónomo completo, fuentes corporativas → búsqueda PDF → persistencia por OIDC → evaluación D1.
+- D1 remota tras ejecución: **1 corrida PDF**, **1 documento PDF corporativo candidato DuPont** y **0 extractos/páginas**. La URL del informe PDF fue descubierta realmente en HTML corporativo, pero su descarga quedó con `state=fetch_failed`. **No afirmar que se leyó ni se extrajeron hechos del documento**; se deben probar alternativas de recuperación autorizadas o buscar otros documentos públicos.
+- Permanecen `jobs=1` y `events=8`; `market_youtube_runs=0`. Base conservada, sin llamadas YouTube ni publicaciones.
+- Se retiró el permiso OIDC de evento `push` y el disparador temporal del radar después de E2E. La validación Cloudflare confirmó que Worker rechaza `push` y tiene módulo PDF desplegado.
+- **Prueba del puente Gemini:** fixtures de proveedor y CI exitosos con fuente web y PDF **sin llamadas reales al modelo**. No se aseguró existencia de proyecto gratuito, ni se almacenaron claves, ni se activó facturación, ni se ejecutó una síntesis final.
+- CI regresó a las reglas de seguridad estándar; se conserva workflow diario y manual. Las pruebas se ejecutan sobre `main`, no sobre una rama secundaria.
+
+### Próximo trabajo desbloqueado
+1. En P0, conectar cuota gratuita **autorizada** YouTube para muestras reales MX/ES y ranking respaldado por mercado, o conservar `insufficient_evidence`. No abrir facturación ni solicitar secretos por chat.
+2. En P1, recuperar PDF alternativos verificables cuando el servidor bloquea descargas, mejorar localización de documentos originales (informes financieros/reguladores), contrastar pasajes y persistir **claims** con fuente, locator y estado; no verificar hechos por coincidencia textual.
+3. Persistir resultados de investigación y preguntas pendientes en D1 y orquestar selección elegible → investigador Gemini/Qwen bajo coste limitado → guion 8–14 min. Gemini solo tras comprobación externa de uso sin facturación.
+4. Producción audiovisual y YouTube continúan sin autorización de publicación ni derechos; no sustituir la voz canónica.
+
+**Balance:** infraestructura PDF y handoff IA integrados, probado E2E el rastreo/registro; extracción de páginas PDF reales **aún no lograda** en la primera fuente observada. Investigación autónoma con Gemini **aún no activada**. No es un documental completo.
