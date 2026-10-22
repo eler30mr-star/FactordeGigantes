@@ -54,7 +54,7 @@ def inspect_episode(ai,selection):
         raise ValueError("Exceso de citas o afirmaciones")
     index={e.get("id"):e for e in evidence if isinstance(e,dict)}
     if len(index)!=len(evidence):raise ValueError("Citas repetidas")
-    sources=set();domains=set();regulators=set()
+    sources=set();domains=set();regulators=set();primary_sources=set()
     for e in evidence:
         if e.get("wikidata_id")!=qid or e.get("company")!=company or \
             not isinstance(e.get("url"),str) or not e["url"].startswith("https://") or \
@@ -67,12 +67,16 @@ def inspect_episode(ai,selection):
         domains.add(host)
         if e.get("source_class")=="public_authority_candidate":
             regulators.add(host)
+        if e.get("source_class") in (
+                "public_authority_candidate","potential_official_pdf",
+                "potential_official_primary"):
+            primary_sources.add(host)
     by_claim={r.get("claim_index"):r for r in reviews if isinstance(r,dict)}
     if len(by_claim)!=len(reviews):raise ValueError("Revisión duplicada")
     gaps=[]
     if len(sources)<2:gaps.append("at_least_two_original_documents_required")
     if len(domains)<2:gaps.append("at_least_two_independent_domains_required")
-    if not regulators:gaps.append("original_regulatory_source_required")
+    if not primary_sources:gaps.append("original_primary_document_required")
     if len(claims)<MIN_CLAIMS:gaps.append("insufficient_distinct_claims")
     if len(reviews)!=len(claims):gaps.append("review_missing_or_incomplete")
     quality=ai.get("source_quality") or {}
@@ -104,7 +108,7 @@ def inspect_episode(ai,selection):
     base={"schema":"fdg_documentary_blueprint_v1","company":company,
           "wikidata_id":qid,"selected_from_real_market":True,
           "source_document_count":len(sources),"independent_domains":len(domains),
-          "regulatory_domains":len(regulators),
+          "regulatory_domains":len(regulators),"original_primary_domains":len(primary_sources),
           "candidate_claim_count":len(claims),"review_count":len(reviews),
           "target_duration_seconds":TARGET_SECONDS,"target_narration_wpm":WPM,
           "verified_claim_count":0,"factual_approval":False,
