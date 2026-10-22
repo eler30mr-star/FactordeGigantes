@@ -159,9 +159,23 @@ export async function storeAiReport(db,report){
  VALUES (?,?,?,?,?,?,?,?)`).bind(id,report.collected_on,report.selected_wikidata_id,
  report.status,report.analysis_provider,report.evidence_manifest.length,report.candidate_claims.length,body);
  const statements=[insert];
- if(report.evidence_manifest.length)statements.push(db.prepare("UPDATE market_research_queue SET state='researching' WHERE wikidata_id=? AND state='awaiting_sources'").bind(report.selected_wikidata_id));
+ // El revisor IA NO es corroboración independiente. Si todas las citas
+ // provienen de una sola fuente, devolver la cola a búsqueda de documentos;
+ // el plan de producción queda cerrado. Una revisión humana/estado 'review'
+ // no puede retroceder por la llegada de otra ejecución automática.
+ const quality=report.source_quality;
+ const needsSources=Boolean(quality&&(
+   !report.candidate_claims.length||
+   quality.claim_gaps.some(g=>g.gaps.length>0)));
+ const nextState=needsSources?'awaiting_sources':'researching';
+ if(report.evidence_manifest.length)
+  statements.push(db.prepare(
+   "UPDATE market_research_queue SET state=?,updated_at=datetime('now') WHERE wikidata_id=? AND state IN ('awaiting_sources','researching')"
+  ).bind(nextState,report.selected_wikidata_id));
  await db.batch(statements);
- return {ok:true,stored_in:'d1',run_id:id,automatic_publication_allowed:false};
+ return {ok:true,stored_in:'d1',run_id:id,queue_state:report.evidence_manifest.length?nextState:'awaiting_sources',
+   reason:needsSources?'independent_sources_required':'corroboration_pending',
+   automatic_publication_allowed:false};
 }
 export async function readAiReports(db){
  const [runs,budgets]=await Promise.all([
