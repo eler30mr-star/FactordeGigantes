@@ -87,24 +87,34 @@ def evidence_gaps(evidence, claims):
     all_hosts={urlsplit(u).hostname for u in all_urls}
     authority_hosts={urlsplit(e["url"]).hostname for e in evidence
                      if e.get("source_class")=="public_authority_candidate"}
+    # Un informe original de la compañía es fuente primaria. Los reguladores
+    # siguen registrados por separado y serán necesarios cuando se investiguen
+    # denuncias/sanciones, no para cualquier innovación o perfil empresarial.
+    originals={"public_authority_candidate","potential_official_primary",
+               "potential_official_pdf"}
+    primary_hosts={urlsplit(e["url"]).hostname for e in evidence
+                   if e.get("source_class") in originals}
     by_id={e["id"]:e for e in evidence}
     pending=[]
     for idx,claim in enumerate(claims,1):
         refs=[by_id[x] for x in claim["evidence_ids"] if x in by_id]
         urls={e["url"] for e in refs}
         hosts={urlsplit(u).hostname for u in urls}
-        original_primary=any(e.get("source_class")=="public_authority_candidate"
-                             for e in refs)
+        regulatory_primary=any(e.get("source_class")=="public_authority_candidate"
+                               for e in refs)
+        original_primary=any(e.get("source_class") in originals for e in refs)
         reasons=[]
         if len(urls)<2:reasons.append("only_one_document")
         if len(hosts)<2:reasons.append("no_independent_domain")
-        if not original_primary:reasons.append("no_regulatory_primary_document")
+        if not original_primary:reasons.append("no_original_primary_document")
         pending.append({"claim_index":idx,"cited_documents":len(urls),
                         "independent_domains":len(hosts),
-                        "regulatory_primary_cited":original_primary,
+                        "regulatory_primary_cited":regulatory_primary,
+                        "original_primary_cited":original_primary,
                         "gaps":reasons,"verification_state":"requires_corroboration"})
     return {"unique_documents":len(all_urls),"independent_domains":len(all_hosts),
             "regulatory_primary_domains":len(authority_hosts),
+            "original_primary_domains":len(primary_hosts),
             "claims_requiring_review":len(pending),
             "claim_gaps":pending,
             "all_claims_verified":False,"ready_for_script":False}
