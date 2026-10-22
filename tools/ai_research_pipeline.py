@@ -222,8 +222,9 @@ def gate_duplicate_research(selection, evidence):
     if not isinstance(prev,list) or len(prev)>4:
         raise ValueError("Historial documental fuera de límite")
     def identity(e):
-        return (e.get("url"),e.get("document_sha256"),
-                e.get("page"),e.get("excerpt"))
+        # Otra selección de párrafo del mismo archivo y hash NO constituye
+        # fuente nueva ni justifica consumir otra solicitud Gemini/Groq.
+        return (e.get("url"),e.get("document_sha256"))
     old={identity(e) for e in prev if isinstance(e,dict)}
     if not old:
         return evidence,{"reason":"first_observation_or_missing_history",
