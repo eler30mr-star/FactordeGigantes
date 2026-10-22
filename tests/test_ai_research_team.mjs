@@ -74,6 +74,32 @@ test('historial SQLite real idempotente, alerta numérica y puertas SQL cerradas
  assert.throws(()=>raw.prepare('UPDATE market_ai_pipeline_runs SET publication_authorized=1').run());
  assert.equal(raw.prepare('PRAGMA foreign_key_check').all().length,0);
 });
+test('citas de una sola noticia devuelven la cola a búsqueda de fuentes independientes',async()=>{
+ const {db,raw}=setup(),r=report(),day=new Date().toISOString().slice(0,10);
+ raw.prepare('INSERT INTO market_entities(wikidata_id,title,first_seen,last_seen) VALUES (?,?,?,?)')
+   .run('Q100','Empresa ejemplo',day,day);
+ raw.prepare('INSERT INTO market_research_selection_runs(id,observed_on,method,candidate_count,qualified_count,ranked_snapshot_json) VALUES (?,?,?,?,?,?)')
+   .run('selection-test',day,'research_market_priority_v1',1,1,'{}');
+ raw.prepare('INSERT INTO market_research_queue(id,wikidata_id,title,selection_run_id,market_score,state) VALUES (?,?,?,?,?,?)')
+   .run('rq-fixture','Q100','Empresa ejemplo','selection-test',55,'researching');
+ r.source_quality={
+  unique_documents:1,independent_domains:1,regulatory_primary_domains:1,
+  claims_requiring_review:1,all_claims_verified:false,ready_for_script:false,
+  claim_gaps:[{claim_index:1,cited_documents:1,independent_domains:1,
+   regulatory_primary_cited:true,gaps:['only_one_document','no_independent_domain'],
+   verification_state:'requires_corroboration'}]
+ };
+ const output=await storeAiReport(db,r);
+ assert.equal(output.queue_state,'awaiting_sources');
+ assert.equal(output.reason,'independent_sources_required');
+ assert.equal(raw.prepare("SELECT state FROM market_research_queue WHERE id='rq-fixture'").get().state,'awaiting_sources');
+ assert.equal(raw.prepare("SELECT script_authorized FROM market_research_queue WHERE id='rq-fixture'").get().script_authorized,0);
+ raw.prepare("UPDATE market_research_queue SET state='review' WHERE id='rq-fixture'").run();
+ await storeAiReport(db,r);
+ assert.equal(raw.prepare("SELECT state FROM market_research_queue WHERE id='rq-fixture'").get().state,'review');
+ assert.equal(raw.prepare("PRAGMA foreign_key_check").all().length,0);
+});
+
 test('Cloudflare sin modalidad gratuita confirmada nunca invoca IA',async()=>{
  const out=await classifyWithCloudflare({AI:{run(){assert.fail('inferencia sin modalidad confirmada');}}},{});
  assert.equal(out.status,'free_mode_unconfirmed');
