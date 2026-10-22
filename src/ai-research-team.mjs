@@ -74,6 +74,26 @@ export function validateAiReport(r,now=new Date()){
   publicUrl(e.url);known.add(e.id);
  }
  validateClaims(r.candidate_claims,known);validateClaims(r.preliminary_claims,known);
+ if(r.retrieval_budget!==undefined&&r.retrieval_budget!==null){
+  const b=r.retrieval_budget;
+  const fresh=r.source_documents.filter(d=>d.status==='text_extracted'&&d.resolved_url);
+  const documents=new Set(fresh.map(d=>d.resolved_url));
+  const hosts=new Set([...documents].map(u=>new URL(u).hostname));
+  if(!b||typeof b!=='object'||b.max_documents!==8||
+     !Number.isSafeInteger(b.attempted)||b.attempted!==r.source_documents.length||
+     !Number.isSafeInteger(b.documents_with_relevant_text)||
+     b.documents_with_relevant_text!==documents.size||
+     !Number.isSafeInteger(b.independent_domains_with_text)||
+     b.independent_domains_with_text!==hosts.size||
+     !Number.isSafeInteger(b.public_authority_domains_with_text)||
+     b.public_authority_domains_with_text<0||
+     b.public_authority_domains_with_text>hosts.size||
+     !Number.isSafeInteger(b.new_fragments)||b.new_fragments<0||
+     b.new_fragments>r.evidence_manifest.length||
+     b.budget_exhausted!==(b.attempted===8))
+    throw new RangeError('Presupuesto de recuperación no coincide con fuentes observadas');
+ }
+
  if(r.source_quality!==undefined){
   const q=r.source_quality;
   if(!q||typeof q!=='object'||q.all_claims_verified!==false||
