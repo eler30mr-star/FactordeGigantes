@@ -74,3 +74,12 @@ El borrador no marca hechos aprobados, no sustituye la voz canónica, no
 autoriza recursos visuales ni música, y no llama al renderizador. La aprobación
 editorial y los derechos deben resolverse antes de producir el MP4; la
 publicación en YouTube continúa requiriendo autorización humana explícita.
+
+## Calidad del archivo audiovisual
+
+El control local `tools/av_quality.py` inspecciona y decodifica el MP4 real
+antes de reportar un render como listo. Detecta problemas de pistas,
+duración, congelamiento, negro y silencio prolongado. Es independiente de
+las cuotas del investigador y mantiene separadas calidad técnica, revisión
+editorial, identidad vocal y licencias. Perfiles, límites y operación en
+[QA_AUDIOVISUAL.md](QA_AUDIOVISUAL.md).

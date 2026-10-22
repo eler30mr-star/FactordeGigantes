@@ -15,6 +15,22 @@ on:
 permissions:
   contents: read
 jobs:
+  audiovisual-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preparar FFmpeg para pruebas sobre archivos reales
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+      - name: Verificar detección de exportaciones defectuosas sin IA ni voz nueva
+        env:
+          FDG_MEDIA_QA_INTEGRATION: '1'
+        run: python -m unittest tests.test_av_quality -v
   live-profile:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[profile-e2e]')
     needs: checks

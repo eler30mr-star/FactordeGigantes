@@ -65,6 +65,11 @@ jobs:
           print('VIDEO_ESCENA01_S:',media['format']['duration'])
           print('PISTA_AUDIO_PRESENTE: TRUE; PUBLICACION_AUTORIZADA: FALSE')
           PY
+      - name: Comprobar decodificación, audio y continuidad del MP4 exportado
+        run: |
+          python -m tools.av_quality \
+            dist/blackberry-escena01-video/BLACKBERRY_ESCENA01_CON_VOZ_NUEVA_REVISAR.mp4 \
+            --out dist/blackberry-escena01-video/QA_AUDIOVISUAL.json --profile preview
       - name: Subir MP4 con audio de prueba y reporte de revisión
         if: always()
         uses: actions/upload-artifact@v4

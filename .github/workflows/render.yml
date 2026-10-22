@@ -34,6 +34,18 @@ jobs:
           RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
           JOB_ID: ${{ inputs.job_id }}
         run: python tools/render.py --remote --job-id "$JOB_ID" --voice-engine piper --captions burn --output dist/video.mp4
+      - name: Inspeccionar exportación antes de reportarla como lista
+        run: |
+          PROFILE=$(python -c "import json;print('short' if json.load(open('dist/ficha.json'))['format']=='short' else 'preview')")
+          python -m tools.av_quality dist/video.mp4 --profile "$PROFILE" --out dist/QA_AUDIOVISUAL.json
+      - name: Conservar diagnóstico audiovisual incluso si la puerta falla
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostico-audiovisual-${{ inputs.job_id }}
+          path: dist/QA_AUDIOVISUAL.json
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Subir video de prueba como artefacto
         uses: actions/upload-artifact@v4
         with:
@@ -43,6 +55,7 @@ jobs:
             dist/subtitulos.srt
             dist/ficha.json
             dist/creditos.txt
+            dist/QA_AUDIOVISUAL.json
           if-no-files-found: error
           retention-days: 7
       - name: Reportar resultado correcto
