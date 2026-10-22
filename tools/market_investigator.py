@@ -63,13 +63,45 @@ def prepare_evidence(pdf_report, official_report=None):
                "source_class":"potential_official_primary"})
     return items
 
+
+def select_one_company(evidence):
+    """Nunca unir fuentes de dos compañías para una tesis documental.
+
+    Ranking determinista basado en evidencia realmente obtenida, NO en
+    demanda de mercado ni juicio editorial: preferir fuentes PDF paginadas,
+    luego diversidad de documentos y volumen de texto.
+    """
+    groups={}
+    for item in evidence:
+        if not isinstance(item,dict) or not QID.fullmatch(str(item.get("wikidata_id",""))):
+            continue
+        groups.setdefault(item["wikidata_id"],[]).append(item)
+    if not groups:
+        return [],[]
+    def score(pair):
+        qid,rows=pair
+        source_count=len({(x["url"],x["document_sha256"]) for x in rows})
+        pdf_pages=sum(x.get("source_class")=="potential_official_pdf" for x in rows)
+        text_count=sum(len(x.get("excerpt","")) for x in rows)
+        return (-pdf_pages,-source_count,-text_count,qid)
+    chosen=min(groups.items(),key=score)[0]
+    selected=groups[chosen][:MAX_EVIDENCE]
+    ordered=[{**item,"id":f"E{index+1:03d}"} for index,item in enumerate(selected)]
+    deferred=sorted(qid for qid in groups if qid!=chosen)
+    return ordered,deferred
+
+
 def run_investigation(pdf_report,*,official_report=None,free_confirmed=False,api_key=None,model="gemini-2.5-flash-lite",
                       runner=run_gemini_free):
-    evidence=prepare_evidence(pdf_report,official_report=official_report)
+    all_evidence=prepare_evidence(pdf_report,official_report=official_report)
+    evidence,deferred=select_one_company(all_evidence)
     # Manifiesto documental con pasajes breves para D1, incluso sin LLM.
     # Todo extracto es público, no equivale a confirmación de hechos.
     base={"source_report_day":pdf_report.get("collected_on"),
       "source_provider":"market_official_and_pdf_v1",
+      "selected_wikidata_id":evidence[0]["wikidata_id"] if evidence else None,
+      "deferred_wikidata_ids":deferred,
+      "selection_method":"evidence_coverage_not_market_selection_v1",
       "evidence_manifest":evidence,"evidence_count":len(evidence),
       "candidate_claims":[],"missing_questions":[],
       "facts_verified_automatically":0,"ready_for_script":False,
@@ -104,8 +136,11 @@ def main():
         out=run_investigation(input_data,official_report=official_data,free_confirmed=authorized,api_key=key)
     except (OSError,ValueError,RuntimeError,KeyError,TypeError) as exc:
         # Nunca registrar cuerpo remoto, token de cabecera o prompt sin consentimiento.
-        evidence=prepare_evidence(input_data,official_report=official_data)
+        evidence,deferred=select_one_company(
+            prepare_evidence(input_data,official_report=official_data))
         out={"status":"research_provider_failure","error_type":type(exc).__name__,
+             "selected_wikidata_id":evidence[0]["wikidata_id"] if evidence else None,
+             "deferred_wikidata_ids":deferred,
              "source_report_day":input_data.get("collected_on"),
              "source_provider":"market_official_and_pdf_v1","evidence_manifest":evidence,
              "evidence_count":len(evidence),"candidate_claims":[],"missing_questions":[],
