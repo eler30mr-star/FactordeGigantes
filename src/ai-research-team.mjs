@@ -74,6 +74,31 @@ export function validateAiReport(r,now=new Date()){
   publicUrl(e.url);known.add(e.id);
  }
  validateClaims(r.candidate_claims,known);validateClaims(r.preliminary_claims,known);
+ if(r.source_quality!==undefined){
+  const q=r.source_quality;
+  if(!q||typeof q!=='object'||q.all_claims_verified!==false||
+     q.ready_for_script!==false||!Number.isSafeInteger(q.unique_documents)||
+     q.unique_documents<0||q.unique_documents>10||
+     !Number.isSafeInteger(q.independent_domains)||q.independent_domains<0||
+     q.independent_domains>10||
+     !Array.isArray(q.claim_gaps)||q.claim_gaps.length!==r.candidate_claims.length||
+     q.claims_requiring_review!==r.candidate_claims.length)
+   throw new RangeError('Análisis documental no puede aprobar hechos');
+  const actualDocs=new Set(r.evidence_manifest.map(e=>e.url));
+  const actualHosts=new Set(r.evidence_manifest.map(e=>new URL(e.url).hostname));
+  if(q.unique_documents!==actualDocs.size||q.independent_domains!==actualHosts.size)
+    throw new RangeError('Conteo de fuentes de investigación incoherente');
+  for(const [idx,row] of q.claim_gaps.entries()){
+   const docs=new Set(r.candidate_claims[idx].evidence_ids
+     .map(id=>r.evidence_manifest.find(e=>e.id===id)?.url));
+   const hosts=new Set([...docs].map(url=>new URL(url).hostname));
+   if(!row||row.claim_index!==idx+1||row.verification_state!=='requires_corroboration'||
+      !Array.isArray(row.gaps)||row.gaps.some(g=>![
+       'only_one_document','no_independent_domain','no_regulatory_primary_document'].includes(g))||
+      row.cited_documents!==docs.size||row.independent_domains!==hosts.size)
+     throw new RangeError('Corroboración no sustentada en los documentos citados');
+  }
+ }
  if(r.missing_questions.some(q=>typeof q!=='string'||q.trim().length<3||q.length>220))
    throw new RangeError('Pregunta inválida');
  if((r.status==='candidate_claims_generated')!==Boolean(r.candidate_claims.length)||
