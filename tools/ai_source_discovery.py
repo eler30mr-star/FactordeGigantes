@@ -72,8 +72,47 @@ def wikipedia_links(title, *, fetcher=fetch_public):
             for link in links[:800] if isinstance(link, (str, dict))]
 
 
+
+def gdelt_articles(title, *, fetcher=fetch_public):
+    """Una búsqueda pública sin clave para localizar medios realmente distintos.
+
+    GDELT devuelve URL y titular, NO evidencia factual. No se conserva
+    cobertura como prueba hasta descargar el artículo y comprobar su texto.
+    Una petición por corrida; sin reintentos ni scraping de motores privados.
+    """
+    if not isinstance(title,str) or not 3<=len(title.strip())<=130:
+        raise ValueError("Empresa canónica necesaria")
+    phrase=" ".join(title.strip().split())
+    if any(c in phrase for c in '"\\\n\r'):
+        raise ValueError("Consulta de noticias no válida")
+    query='"'+phrase+'"'
+    endpoint="https://api.gdeltproject.org/api/v2/doc/doc?"+urlencode({
+        "query":query,"mode":"artlist","format":"json",
+        "maxrecords":"20","timespan":"1y","sort":"datedesc"})
+    raw,resolved,mime=fetcher(endpoint,timeout=12)
+    if urlsplit(resolved).hostname!="api.gdeltproject.org" or "json" not in mime.lower() or len(raw)>150_000:
+        raise ValueError("Índice GDELT rechazado")
+    data=json.loads(raw)
+    articles=data.get("articles") if isinstance(data,dict) else None
+    if not isinstance(articles,list) or len(articles)>20:
+        raise ValueError("Respuesta GDELT sin artículos verificables")
+    results=[]
+    for row in articles:
+        if not isinstance(row,dict):continue
+        url=row.get("url")
+        label=row.get("title")
+        if not isinstance(url,str) or not isinstance(label,str):continue
+        try:
+            validate_url(url)
+        except (ValueError,TypeError):
+            continue
+        results.append({"url":url,"title":label[:200],"discovered_by":"gdelt_doc_artlist",
+                        "seendate":str(row.get("seendate",""))[:20]})
+    return results
+
+
 def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
-                     document_fetcher=fetch_document_public):
+                     document_fetcher=fetch_document_public,gdelt_fetcher=fetch_public):
     qid, title = selection_identity(selection)
     day = datetime.now(timezone.utc).date().isoformat()
     out = {"schema": "fdg_ai_sources_v1", "collected_on": day,
@@ -117,6 +156,16 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     except (OSError, ValueError, TypeError, KeyError):
         out["stages"].append({"provider": "wikipedia", "role": "discover",
                               "status": "source_unavailable"})
+    # Oportunidades actuales: una fuente abierta adicional, sin facturación ni
+    # claves. Si GDELT aplica rate-limit, continuar con Wikipedia y resto.
+    try:
+        fresh=gdelt_articles(title,fetcher=gdelt_fetcher)
+        leads.extend(fresh)
+        out["stages"].append({"provider":"gdelt","role":"discover",
+                              "status":"success","result_count":len(fresh)})
+    except (OSError,ValueError,TypeError,KeyError,TimeoutError):
+        out["stages"].append({"provider":"gdelt","role":"discover",
+                              "status":"source_unavailable"})
     queries = [f'"{title}" regulator court complaint financial statements',
                f'"{title}" history annual report investigation original documents']
     for provider in ("tavily", "exa"):
