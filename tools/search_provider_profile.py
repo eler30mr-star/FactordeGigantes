@@ -24,7 +24,7 @@ def read_tavily_usage(key):
         raise ProviderError('profile_unavailable') from None
 
 
-def assess_tavily_usage(data):
+def assess_tavily_usage(data,*,paygo_disabled_confirmed=False):
     if not isinstance(data,dict):raise ValueError('Perfil inválido')
     account,key=data.get('account'),data.get('key')
     if not isinstance(account,dict) or not isinstance(key,dict):raise ValueError('Perfil incompleto')
@@ -35,16 +35,18 @@ def assess_tavily_usage(data):
         if type(value) is float and value>=0 and value.is_integer():return int(value)
         if isinstance(value,str) and value.isascii() and value.isdigit() and len(value)<=9:return int(value)
         raise ValueError('Límite numérico no verificable')
-    account={**account,**{k:integer(account.get(k)) for k in fields}}
+    owner_confirmed_null=(account.get('paygo_limit') is None and paygo_disabled_confirmed is True)
+    account={**account,**{k:(None if k=='paygo_limit' and owner_confirmed_null else integer(account.get(k))) for k in fields}}
     if not isinstance(plan,str) or len(plan)>40:
         raise ValueError('Plan sin límites comprobables')
     usage=integer(key.get('usage'))
     limit=None if key.get('limit') is None else integer(key['limit'])
     free=(plan.lower() in ('researcher','free') and account['plan_limit']==1000 and
-          account['paygo_usage']==0 and account['paygo_limit']==0 and
+          account['paygo_usage']==0 and (account['paygo_limit']==0 or owner_confirmed_null) and
           account['plan_usage']+2<=account['plan_limit'] and (limit is None or usage+2<=limit))
-    return {'provider':'tavily','status':'verified_free_no_paygo' if free else 'free_profile_not_confirmed',
+    return {'provider':'tavily','status':('owner_confirmed_no_paygo' if owner_confirmed_null else 'verified_free_no_paygo') if free else 'free_profile_not_confirmed',
             'free_search_confirmed':free,'plan':plan,
+            'paygo_confirmation_source':'owner' if owner_confirmed_null else 'usage_api',
             **{k:account[k] for k in fields},'key_usage':usage,'key_limit':limit,
             'searches_executed':0,'billing_changed':False}
 
@@ -58,7 +60,7 @@ def check_tavily_profile(env=None,*,fetcher=read_tavily_usage):
     data=None
     try:
         data=fetcher(key)
-        return assess_tavily_usage(data)
+        return assess_tavily_usage(data,paygo_disabled_confirmed=env.get('TAVILY_RESEARCH_FREE_CONFIRMED')=='1')
     except ProviderError as exc:return {**base,'status':exc.code}
     except (ValueError,TypeError,KeyError):
         account=data.get('account') if isinstance(data,dict) else None

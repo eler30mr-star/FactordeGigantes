@@ -54,6 +54,17 @@ No se acredita la calidad de un documental real por pasar pruebas con fixtures.
 
 ## Cuotas y producción
 
+El propietario confirmó el 2026-10-22 que PAYGO de Tavily está desactivado.
+El workflow habilita sus búsquedas básicas con un máximo de dos por ejecución,
+ocho al día y doscientas al mes mediante reservas D1. Un valor explícito `0`
+en `TAVILY_RESEARCH_FREE_CONFIRMED` mantiene el servicio apagado.
+Antes de buscar se consulta el plan: debe ser Researcher/Free, con límite de
+mil créditos, consumo PAYGO cero y al menos dos créditos disponibles. Si
+`paygo_limit` es nulo, se conserva ese valor y se registra la confirmación
+del propietario; no se presenta como comprobación de facturación por API.
+Un límite PAYGO positivo, plan pagado o perfil ilegible bloquean Tavily.
+Exa permanece sin habilitar.
+
 Gemini/Groq mantienen sus límites D1 de cuatro solicitudes diarias y cien
 mensuales, además de una generación por proveedor y ejecución. Guion e
 investigación se reanudan en ejecuciones separadas; comparten el presupuesto

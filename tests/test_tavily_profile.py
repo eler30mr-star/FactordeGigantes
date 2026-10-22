@@ -40,4 +40,16 @@ class TavilyProfileTests(unittest.TestCase):
         self.assertFalse(result['free_search_confirmed'])
         self.assertEqual(result['account_field_types']['paygo_limit'],'NoneType')
 
+    def test_owner_confirmation_only_resolves_null_paygo_limit(self):
+        data=profile();data['account']['paygo_limit']=None
+        env={'TAVILY_API_KEY':'fixture','TAVILY_RESEARCH_FREE_CONFIRMED':'1'}
+        result=check_tavily_profile(env,fetcher=lambda _:data)
+        self.assertTrue(result['free_search_confirmed'])
+        self.assertEqual(result['status'],'owner_confirmed_no_paygo')
+        self.assertEqual(result['paygo_confirmation_source'],'owner')
+        self.assertIsNone(result['paygo_limit'])
+        for change in ({'paygo_usage':1},{'paygo_limit':1},{'current_plan':'Bootstrap'},{'plan_usage':999}):
+            invalid=copy.deepcopy(data);invalid['account'].update(change)
+            self.assertFalse(check_tavily_profile(env,fetcher=lambda _:invalid)['free_search_confirmed'])
+
 if __name__=='__main__':unittest.main()

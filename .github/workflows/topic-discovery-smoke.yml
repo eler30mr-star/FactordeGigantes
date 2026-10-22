@@ -34,7 +34,8 @@ jobs:
       - name: Consultar sólo plan y cuotas Tavily, sin búsqueda ni pagos
         env:
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          TAVILY_RESEARCH_FREE_CONFIRMED: ${{ vars.TAVILY_RESEARCH_FREE_CONFIRMED }}
+          # Propietario confirmó PAYGO apagado el 2026-10-22. Un 0 explícito prevalece.
+          TAVILY_RESEARCH_FREE_CONFIRMED: ${{ vars.TAVILY_RESEARCH_FREE_CONFIRMED || '1' }}
         run: python -m tools.search_provider_profile --out dist/profile/TAVILY_PLAN_CHECK.json
       - uses: actions/upload-artifact@v4
         with:
@@ -283,9 +284,21 @@ jobs:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
-          TAVILY_RESEARCH_FREE_CONFIRMED: ${{ vars.TAVILY_RESEARCH_FREE_CONFIRMED }}
+          TAVILY_RESEARCH_FREE_CONFIRMED: ${{ vars.TAVILY_RESEARCH_FREE_CONFIRMED || '1' }}
           EXA_RESEARCH_FREE_CONFIRMED: ${{ vars.EXA_RESEARCH_FREE_CONFIRMED }}
         run: |
+          python - <<'PYTAVILY'
+          import json,os
+          from pathlib import Path
+          from tools.search_provider_profile import check_tavily_profile
+          result=check_tavily_profile()
+          Path('dist/radar/TAVILY_PLAN_CHECK.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+          if not result['free_search_confirmed']:
+              with open(os.environ['GITHUB_ENV'],'a') as out:out.write('TAVILY_RESEARCH_FREE_CONFIRMED=0\n')
+          print('TAVILY_PROFILE:',json.dumps(result,ensure_ascii=False))
+          PYTAVILY
+          # GITHUB_ENV sólo afecta pasos posteriores; aplicar también en este proceso.
+          export TAVILY_RESEARCH_FREE_CONFIRMED=$(python -c "import json;print('1' if json.load(open('dist/radar/TAVILY_PLAN_CHECK.json'))['free_search_confirmed'] else '0')")
           timeout -k 5s 180s python -m tools.ai_research_pipeline discover \
             --selection dist/radar/SELECCION_INVESTIGACION_D1.json \
             --pdf dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json \
