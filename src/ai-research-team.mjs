@@ -86,15 +86,25 @@ export function validateAiReport(r,now=new Date()){
    throw new RangeError('Análisis documental no puede aprobar hechos');
   const actualDocs=new Set(r.evidence_manifest.map(e=>e.url));
   const actualHosts=new Set(r.evidence_manifest.map(e=>new URL(e.url).hostname));
-  if(q.unique_documents!==actualDocs.size||q.independent_domains!==actualHosts.size)
+  const regulatoryHosts=new Set(r.evidence_manifest
+    .filter(e=>e.source_class==='public_authority_candidate')
+    .map(e=>new URL(e.url).hostname));
+  if(q.unique_documents!==actualDocs.size||q.independent_domains!==actualHosts.size||
+     q.regulatory_primary_domains!==regulatoryHosts.size)
     throw new RangeError('Conteo de fuentes de investigación incoherente');
+  const byId=new Map(r.evidence_manifest.map(e=>[e.id,e]));
   for(const [idx,row] of q.claim_gaps.entries()){
-   const docs=new Set(r.candidate_claims[idx].evidence_ids
-     .map(id=>r.evidence_manifest.find(e=>e.id===id)?.url));
+   const cited=r.candidate_claims[idx].evidence_ids.map(id=>byId.get(id));
+   const docs=new Set(cited.map(e=>e.url));
    const hosts=new Set([...docs].map(url=>new URL(url).hostname));
+   const primary=cited.some(e=>e.source_class==='public_authority_candidate');
+   const gaps=[];
+   if(docs.size<2)gaps.push('only_one_document');
+   if(hosts.size<2)gaps.push('no_independent_domain');
+   if(!primary)gaps.push('no_regulatory_primary_document');
    if(!row||row.claim_index!==idx+1||row.verification_state!=='requires_corroboration'||
-      !Array.isArray(row.gaps)||row.gaps.some(g=>![
-       'only_one_document','no_independent_domain','no_regulatory_primary_document'].includes(g))||
+      !Array.isArray(row.gaps)||row.gaps.length!==gaps.length||
+      row.gaps.some(g=>!gaps.includes(g))||row.regulatory_primary_cited!==primary||
       row.cited_documents!==docs.size||row.independent_domains!==hosts.size)
      throw new RangeError('Corroboración no sustentada en los documentos citados');
   }
