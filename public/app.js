@@ -246,6 +246,66 @@ async function loadResearch(includeRuns=false) {
     ". Pulsa «Actualizar» para consultar las ejecuciones.");
 }
 // Visualizar exclusivamente observaciones D1 con su procedencia; sin declarar ganador.
+async function loadMarketResearch() {
+  const data=await request("/api/market/research?limit=20");
+  if(!Array.isArray(data.runs)||!Array.isArray(data.evidence)||
+     !Array.isArray(data.claims)||!Array.isArray(data.citations)||
+     !Array.isArray(data.questions))throw Error("Expediente investigador incompleto");
+  const root=$("market-research-results");
+  root.replaceChildren();
+  const latest=data.runs[0];
+  $("market-research-status").textContent="Ejecuciones: "+data.runs.length+
+    " · fuentes: "+data.evidence.length+" · afirmaciones candidatas: "+data.claims.length+
+    " · preguntas pendientes: "+data.questions.length+" · hechos aprobados: 0"+
+    (latest?" · estado: "+String(latest.status):"");
+  if(!latest){
+    root.append(tag("p","empty","No existe aún un expediente del investigador. No se ha inventado ningún resultado de IA."));
+    return;
+  }
+  if(latest.status!=="candidate_claims_generated")
+    root.append(tag("p","muted","El investigador no generó afirmaciones: "+String(latest.status)+
+      ". Puede haber fuentes recopiladas, pero la ejecución requiere permisos gratuitos aprobados."));
+  for(const e of data.evidence){
+    const el=tag("article","job","");
+    const heading=tag("div","jobtop","");
+    heading.append(tag("strong","",String(e.company||e.wikidata_id)),
+       tag("span","tag",String(e.evidence_id)));
+    el.append(heading);
+    el.append(tag("p","muted","Tipo: "+String(e.source_kind)+
+      " · ubicación: "+(e.pdf_page==null?"Página web corporativa":"PDF página "+e.pdf_page)+
+      " · SHA-256: "+String(e.document_sha256)));
+    el.append(tag("p","muted",String(e.excerpt||"")));
+    try{
+      const u=new URL(String(e.source_url||""));
+      if(u.protocol==="https:"){
+        const link=tag("a","news-link","Abrir fuente citada");
+        link.href=u.href;link.target="_blank";link.rel="noopener noreferrer";
+        el.append(link);
+      }
+    }catch{/* no enlazar fuente inválida */}
+    root.append(el);
+  }
+  for(const claim of data.claims){
+    const el=tag("article","job","");
+    el.append(tag("strong","","Afirmación candidata "+String(claim.claim_index)));
+    const supporting=data.citations.filter(c=>Number(c.claim_index)===Number(claim.claim_index))
+      .map(c=>String(c.evidence_id)).join(", ");
+    el.append(tag("p","muted",String(claim.statement||"")));
+    el.append(tag("small","", "Citas: "+supporting+
+      " · comprobación numérica: "+String(claim.numeric_support_state)+
+      " · estado: pendiente de verificación"));
+    root.append(el);
+  }
+  for(const question of data.questions){
+    const el=tag("article","job","");
+    el.append(tag("strong","","Pregunta pendiente "+String(question.question_index)));
+    el.append(tag("p","muted",String(question.question||"")));
+    root.append(el);
+  }
+}
+$("market-research-refresh").addEventListener("click",()=>loadMarketResearch().catch(e=>{
+  $("market-research-status").textContent=e.message;
+}));
 async function loadPdfEvidence() {
   const report=await request("/api/market/pdf?limit=20");
   if(!Array.isArray(report.documents)||!Array.isArray(report.fragments)||!Array.isArray(report.runs))
@@ -549,6 +609,7 @@ $("connect").addEventListener("click",async () => {
     loadOpportunities().catch(e=>{$("opportunities-status").textContent=e.message;});
     loadOfficialEvidence().catch(e=>{$("official-status").textContent=e.message;});
     loadPdfEvidence().catch(e=>{$("pdf-status").textContent=e.message;});
+    loadMarketResearch().catch(e=>{$("market-research-status").textContent=e.message;});
     loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
     loadYoutubeMarket().catch(e=>{$("youtube-status").textContent=e.message;});
     loadCrossSignals().catch(e=>{$("cross-status").textContent=e.message;});
