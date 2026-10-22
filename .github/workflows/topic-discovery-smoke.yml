@@ -114,6 +114,12 @@ jobs:
         run: |
           python -m tools.push_news_entity_assess --mode official \
             --input dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json
+      - name: Recuperar páginas de informes e inversores sin adivinar URLs
+        run: |
+          python -m unittest discover -s tests -p test_market_primary_pages.py -v
+          timeout -k 5s 65s python -m tools.market_primary_pages \
+            --official dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
+            --out dist/radar/PAGINAS_INVERSORES_NO_CORROBORADAS.json
       - name: Extraer evidencia paginada de informes PDF corporativos
         run: |
           python -m unittest discover -s tests -p test_market_pdf_evidence.py -v
@@ -135,6 +141,7 @@ jobs:
           timeout -k 5s 65s python -m tools.market_investigator \
             --pdf-report dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json \
             --official-report dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
+            --primary-pages-report dist/radar/PAGINAS_INVERSORES_NO_CORROBORADAS.json \
             --out dist/radar/INVESTIGACION_IA_NO_APROBADA.json
       - name: Persistir evidencias, preguntas y afirmaciones del investigador en D1
         env:
