@@ -49,6 +49,20 @@ test('ingesta conserva citas e impide aprobación, mezclas e inventar referencia
   const r=report();mutate(r);assert.throws(()=>validateAiReport(r),RangeError);
  }
 });
+test('presupuesto documental cuenta consultas y URLs legibles reales',()=>{
+ const x=report();
+ x.source_documents=[{url:'https://www.justice.gov/example',status:'text_extracted',
+  resolved_url:'https://www.justice.gov/example'}];
+ x.retrieval_budget={max_documents:8,attempted:1,
+  documents_with_relevant_text:1,independent_domains_with_text:1,
+  public_authority_domains_with_text:1,new_fragments:1,budget_exhausted:false};
+ assert.doesNotThrow(()=>validateAiReport(x));
+ x.retrieval_budget.documents_with_relevant_text=2;
+ assert.throws(()=>validateAiReport(x),RangeError);
+ x.retrieval_budget.documents_with_relevant_text=1;
+ x.retrieval_budget.attempted=8;
+ assert.throws(()=>validateAiReport(x),RangeError);
+});
 test('corroboración por fuente única no puede indicar verificación factual',()=>{
  const r=report();
  r.source_quality={
