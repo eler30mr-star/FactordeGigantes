@@ -56,6 +56,8 @@ def wikipedia_links(title, *, fetcher=fetch_public):
     if urlsplit(resolved).hostname != "en.wikipedia.org" or "json" not in mime:
         raise ValueError("Respuesta de descubrimiento inesperada")
     data = json.loads(raw)
+    if not isinstance(data, dict) or not isinstance(data.get("parse"), dict):
+        raise ValueError("Descubrimiento sin artículo")
     links = (data.get("parse") or {}).get("externallinks", [])
     if not isinstance(links, list):
         raise ValueError("Lista de enlaces inválida")

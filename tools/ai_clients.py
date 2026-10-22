@@ -133,8 +133,11 @@ class FreeClients:
                 "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
                 body, {"x-goog-api-key": key})
             try:
+                parts = reply["candidates"][0]["content"]["parts"]
+                if not isinstance(parts, list) or any(not isinstance(p, dict) for p in parts):
+                    raise ProviderError("invalid_response")
                 # Nunca incluir los bloques de pensamiento como JSON de salida.
-                text = "".join(p.get("text", "") for p in reply["candidates"][0]["content"]["parts"]
+                text = "".join(p.get("text", "") for p in parts
                                if not p.get("thought"))
             except (KeyError, TypeError, IndexError):
                 raise ProviderError("invalid_response") from None
@@ -159,6 +162,8 @@ class FreeClients:
         if not isinstance(text, str) or len(text) > 24_000:
             raise ProviderError("invalid_response")
         usage = reply.get("usage") or reply.get("usageMetadata") or {}
+        if not isinstance(usage, dict):
+            raise ProviderError("invalid_response")
         # Lista cerrada: no guardar metadatos arbitrarios del proveedor.
         metrics = {k: v for k, v in usage.items() if k in {
             "prompt_tokens", "completion_tokens", "total_tokens",

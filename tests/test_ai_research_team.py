@@ -196,7 +196,7 @@ class TeamTests(unittest.TestCase):
         self.assertEqual(result["stages"][2]["status"], "invalid_output")
 
     def test_groq_cannot_invent_references_or_omit_claims(self):
-        for reviews in ([], [{"claim_index": 1, "assessment": "supported_by_excerpt",
+        for reviews in ([], [None], [12], [{"claim_index": 1, "assessment": "supported_by_excerpt",
                              "evidence_ids": ["E999"], "reason": "No existe esta cita"}]):
             with self.assertRaises(ValueError):
                 parse_review(json.dumps({"reviews": reviews}), evidence(), [{}])

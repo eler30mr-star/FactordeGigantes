@@ -27,6 +27,8 @@ def parse_review(text, evidence, claims):
     known, seen = {e["id"] for e in evidence}, set()
     out = []
     for item in reviews:
+        if not isinstance(item, dict):
+            raise ValueError("Revisión sin esquema")
         index = item.get("claim_index")
         verdict = item.get("assessment")
         refs, reason = item.get("evidence_ids"), item.get("reason")
@@ -101,6 +103,7 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
                 rows = result.get("classification")
                 known = {e["id"] for e in evidence}
                 if (not isinstance(rows, list) or len(rows) != len(known) or
+                    any(not isinstance(r, dict) for r in rows) or
                     {r.get("evidence_id") for r in rows} != known or any(
                         r.get("category") not in {"documentary", "promotional", "unclear"} for r in rows)):
                     raise ValueError("Clasificación inválida")
