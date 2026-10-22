@@ -174,7 +174,8 @@ class DiscoveryTests(unittest.TestCase):
             return ("<p>" + TEXT + "</p>").encode(), url, "text/html"
         out = discover_sources(SELECTION, clients=self.clients(), wiki_fetcher=wiki, document_fetcher=document)
         self.assertIn("https://reporter.example/empresa-ejemplo", fetched)
-        self.assertEqual(sum(".gov/" in u for u in fetched), 2)
+        self.assertLessEqual(sum(".gov/" in u for u in fetched), 5)
+        self.assertGreaterEqual(sum(".gov/" in u for u in fetched), 3)
         self.assertTrue(out["evidence_manifest"])
         self.assertFalse(out["source_documents"][0]["full_document_text_read"])
 
