@@ -5,7 +5,7 @@ on:
       phase:
         description: 'Investigar o reanudar únicamente el borrador desde D1'
         type: choice
-        options: [research, script]
+        options: [research, script, profile]
         default: research
       research_run_id:
         description: 'Expediente ai-... o latest para la cola activa'
@@ -22,6 +22,25 @@ concurrency:
   group: fdg-topic-discovery-market
   cancel-in-progress: false
 jobs:
+  search-provider-profile:
+    if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.phase == 'profile'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Consultar sólo plan y cuotas Tavily, sin búsqueda ni pagos
+        env:
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          TAVILY_RESEARCH_FREE_CONFIRMED: ${{ vars.TAVILY_RESEARCH_FREE_CONFIRMED }}
+        run: python -m tools.search_provider_profile --out dist/profile/TAVILY_PLAN_CHECK.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fdg-search-provider-profile
+          path: dist/profile/
+          retention-days: 5
   script-after-research:
     needs: topic-discovery
     if: needs.topic-discovery.outputs.script_run_id != ''
@@ -70,7 +89,7 @@ jobs:
           retention-days: 5
           if-no-files-found: warn
   topic-discovery:
-    if: github.event.repository.private == false && inputs.phase != 'script'
+    if: github.event.repository.private == false && inputs.phase != 'script' && inputs.phase != 'profile'
     runs-on: ubuntu-latest
     timeout-minutes: 22
     outputs:
