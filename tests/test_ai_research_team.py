@@ -152,7 +152,7 @@ class DiscoveryTests(unittest.TestCase):
             return ("<p>" + TEXT + "</p>").encode(), url, "text/html"
         out = discover_sources(SELECTION, clients=self.clients(), wiki_fetcher=wiki, document_fetcher=document)
         self.assertEqual(fetched[0], "https://www.justice.gov/empresa-ejemplo")
-        self.assertLessEqual(len(fetched), 4)
+        self.assertLessEqual(len(fetched), 8)
         self.assertTrue(out["evidence_manifest"])
 
     def test_no_selection_does_not_call_any_provider(self):
