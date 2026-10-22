@@ -114,6 +114,7 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
     report = {"schema": "fdg_ai_pipeline_v1", "collected_on": sources["collected_on"],
               "selected_wikidata_id": sources["selected_wikidata_id"], "company": sources["company"],
               "evidence_manifest": evidence, "source_documents": sources["source_documents"],
+              "retrieval_budget": sources.get("retrieval_budget"),
               "stages": list(sources["stages"]), "candidate_claims": [], "missing_questions": [],
               "reviews": [], "classification": [], "preliminary_claims": [],
               "source_quality": evidence_gaps(evidence, []),
