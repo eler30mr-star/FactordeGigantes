@@ -69,7 +69,7 @@ def select_documentary_excerpt(blocks):
         lower=excerpt.casefold()
         penalties=sum(token in lower for token in PROMOTIONAL)
         documentary=sum(token in lower for token in DOCUMENTAL)
-        dated=bool(re.search(r"(?<!\\d)(?:19|20)\\d{2}(?!\\d)",excerpt))
+        dated=bool(re.search(r"(?<!\d)(?:19|20)\d{2}(?!\d)",excerpt))
         score=3*min(documentary,3)+2*dated-6*penalties+min(3,len(excerpt)//250)
         ranked.append((score,-i,excerpt))
     if not ranked:
