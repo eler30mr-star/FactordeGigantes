@@ -66,6 +66,22 @@ class StoryboardTests(unittest.TestCase):
         self.assertEqual(result["scenes"],[])
         self.assertFalse(result["publication_authorized"])
 
+    def test_corporate_annual_report_is_a_primary_source_without_regulator(self):
+        research,market=fixture(True)
+        research["evidence_manifest"][0]["source_class"]="potential_official_pdf"
+        result=inspect_episode(research,market)
+        self.assertEqual(result["status"],"source_grounded_outline_unapproved")
+        self.assertEqual(result["regulatory_domains"],0)
+        self.assertEqual(result["original_primary_domains"],1)
+        self.assertFalse(result["publication_authorized"])
+
+    def test_two_news_without_primary_original_still_block(self):
+        research,market=fixture(True)
+        research["evidence_manifest"][0]["source_class"]="public_document_candidate"
+        result=inspect_episode(research,market)
+        self.assertEqual(result["status"],"blocked_insufficient_corroboration")
+        self.assertIn("original_primary_document_required",result["blocking_reasons"])
+
     def test_groq_uncertainty_blocks_outline(self):
         research,market=fixture(True)
         research["reviews"][2]["assessment"]="insufficient_context"
