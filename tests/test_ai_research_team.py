@@ -177,7 +177,11 @@ class DiscoveryTests(unittest.TestCase):
         self.assertLessEqual(sum(".gov/" in u for u in fetched), 5)
         self.assertGreaterEqual(sum(".gov/" in u for u in fetched), 3)
         self.assertTrue(out["evidence_manifest"])
-        self.assertFalse(out["source_documents"][0]["full_document_text_read"])
+        self.assertTrue(any(row["status"]=="text_extracted"
+                            for row in out["source_documents"]))
+        # El límite compacto de cuatro entradas prefiere páginas que
+        # sí contienen texto, sin confundirlo con verificación factual.
+        self.assertLessEqual(len(out["source_documents"]),4)
 
     def test_history_prevents_repeating_failed_urls_and_merges_only_new_evidence(self):
         previous={**evidence()[0],"id":"E001","company":TITLE}
