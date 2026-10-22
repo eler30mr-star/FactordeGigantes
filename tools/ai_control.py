@@ -47,3 +47,9 @@ class ControlClient:
                 or out.get("automatic_publication_allowed") is not False):
             raise ProviderError("persistence_unconfirmed")
         return out
+
+    def script_context(self, run_id="latest"):
+        out = self.request("/api/market/ai-pipeline/script-context", {"run_id": run_id})
+        if not isinstance(out.get("ok"), bool) or out.get("automatic_publication_allowed") is not False:
+            raise ProviderError("script_context_unconfirmed")
+        return out

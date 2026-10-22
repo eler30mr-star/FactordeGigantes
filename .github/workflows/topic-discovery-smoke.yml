@@ -1,6 +1,16 @@
 name: FDG - radar diario empresas y noticias
 on:
   workflow_dispatch:
+    inputs:
+      phase:
+        description: 'Investigar o reanudar únicamente el borrador desde D1'
+        type: choice
+        options: [research, script]
+        default: research
+      research_run_id:
+        description: 'Expediente ai-... o latest para la cola activa'
+        type: string
+        default: latest
   schedule:
     # Wikimedia publica rankings diarios con retraso; 1 chequeo al día
     # evita consumo redundante. No hay IA pagada ni subida a YouTube.
@@ -12,8 +22,42 @@ concurrency:
   group: fdg-topic-discovery-market
   cancel-in-progress: false
 jobs:
+  documentary-script:
+    if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.phase == 'script'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Reanudar guionista desde expediente D1 sin repetir investigación
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          SCRIPT_RUN_ID: ${{ inputs.research_run_id || 'latest' }}
+          RESEARCH_PROVIDER: ${{ vars.RESEARCH_PROVIDER || 'team' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GEMINI_RESEARCH_FREE_CONFIRMED: ${{ vars.GEMINI_RESEARCH_FREE_CONFIRMED || '1' }}
+          MISTRAL_RESEARCH_FREE_CONFIRMED: ${{ vars.MISTRAL_RESEARCH_FREE_CONFIRMED }}
+          OPENROUTER_RESEARCH_FREE_CONFIRMED: ${{ vars.OPENROUTER_RESEARCH_FREE_CONFIRMED }}
+        run: |
+          python -m tools.documentary_script --run-id "$SCRIPT_RUN_ID" \
+            --out dist/script/GUION_DOCUMENTAL_NO_APROBADO.json
+      - name: Conservar borrador o bloqueo verificable para revisión
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdg-guion-documental-revision
+          path: dist/script/
+          retention-days: 5
+          if-no-files-found: warn
   topic-discovery:
-    if: github.event.repository.private == false
+    if: github.event.repository.private == false && inputs.phase != 'script'
     runs-on: ubuntu-latest
     timeout-minutes: 22
     env:

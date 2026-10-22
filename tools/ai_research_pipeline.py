@@ -12,13 +12,15 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import re
 
 from tools.ai_clients import FreeClients, MODELS, ProviderError, readiness
 from tools.ai_control import ControlClient
-from tools.ai_source_discovery import discover_sources, selection_identity
+from tools.ai_source_discovery import discover_sources, selection_identity, normalized
 from tools.research_engine import fetch_public
 from tools.market_investigator import prepare_evidence, select_one_company
 from tools.research_providers import parse_candidate_output, request_document, run_qwen_local
+CLAIM_POLICY = json.loads((Path(__file__).resolve().parents[1] / "src/research-claim-policy.json").read_text(encoding="utf-8"))
 
 
 def parse_review(text, evidence, claims):
@@ -107,13 +109,17 @@ def evidence_gaps(evidence, claims):
         reasons=[]
         if len(urls)<2:reasons.append("only_one_document")
         if len(hosts)<2:reasons.append("no_independent_domain")
-        if not regulatory_primary:reasons.append("no_regulatory_primary_document")
+        regulatory_required = bool(re.search(CLAIM_POLICY["regulatory_terms"], normalized(claim.get("statement", ""))))
+        if regulatory_required and not regulatory_primary:reasons.append("no_regulatory_primary_document")
+        if not regulatory_required and not original_primary:reasons.append("no_original_primary_document")
         pending.append({"claim_index":idx,"cited_documents":len(urls),
                         "independent_domains":len(hosts),
                         "regulatory_primary_cited":regulatory_primary,
                         "original_primary_cited":original_primary,
+                        "regulatory_evidence_required":regulatory_required,
+                        "advisories":[] if regulatory_primary else ["no_regulatory_primary_document"],
                         "gaps":reasons,"verification_state":"requires_corroboration"})
-    return {"unique_documents":len(all_urls),"independent_domains":len(all_hosts),
+    return {"method":CLAIM_POLICY["method"],"unique_documents":len(all_urls),"independent_domains":len(all_hosts),
             "regulatory_primary_domains":len(authority_hosts),
             "original_primary_domains":len(primary_hosts),
             "claims_requiring_review":len(pending),
@@ -128,6 +134,7 @@ def source_report(sources):
               "evidence_manifest": evidence, "source_documents": sources["source_documents"],
               "retrieval_budget": sources.get("retrieval_budget"),
               "research_freshness": sources.get("research_freshness"),
+              "research_targets": sources.get("research_targets", []),
               "stages": list(sources["stages"]), "candidate_claims": [], "missing_questions": [],
               "reviews": [], "classification": [], "preliminary_claims": [],
               "source_quality": evidence_gaps(evidence, []),
@@ -207,7 +214,7 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
         report["stages"].append({"provider": "qwen", "role": "extract", "status": "local_failure",
                                  "error_type": type(exc).__name__})
     result, chosen = None, None
-    prompt = request_document(topic, evidence)
+    prompt = request_document(topic, evidence, targets=sources.get("research_targets"))
     for provider in ("gemini", "mistral", "openrouter"):
         if result is not None:
             report["stages"].append({"provider": provider, "role": "fallback", "status": "not_needed"})
@@ -265,10 +272,13 @@ def gate_duplicate_research(selection, evidence):
         # fuente nueva ni justifica consumir otra solicitud Gemini/Groq.
         return (e.get("url"),e.get("document_sha256"))
     old={identity(e) for e in prev if isinstance(e,dict)}
+    expand=set(selection.get("citation_expansion_urls") or [])
     if not old:
+        if evidence and all(e.get("url") in expand for e in evidence):
+            return [],{"reason":"unchanged_documentary_sources","new_unique_passages":0}
         return evidence,{"reason":"first_observation_or_missing_history",
                          "new_unique_passages":len({identity(e) for e in evidence})}
-    fresh={identity(e) for e in evidence}-old
+    fresh={identity(e) for e in evidence if e.get("url") not in expand}-old
     if not fresh:
         return [],{"reason":"unchanged_documentary_sources","new_unique_passages":0}
     return evidence,{"reason":"new_documentary_sources",

@@ -1,9 +1,12 @@
 // Solo OIDC de radar para escritura. D1 conserva reservas y resultados sin aprobación.
 import regulatoryAuthorities from './regulatory-authorities.json' with {type:'json'};
+import claimPolicy from './research-claim-policy.json' with {type:'json'};
+const regulatoryTerms=new RegExp(claimPolicy.regulatory_terms);
+const claimNeedsRegulator=text=>regulatoryTerms.test(text.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase());
 const regulatoryHost=host=>regulatoryAuthorities.some(d=>host===d||host.endsWith('.'+d));
 export const AI_CAPS=Object.freeze({tavily:[8,200],exa:[4,60],gemini:[4,100],
  groq:[4,100],mistral:[2,40],openrouter:[2,40],cloudflare:[4,100]});
-const PROVIDERS=new Set([...Object.keys(AI_CAPS),'qwen','wikipedia','gdelt','d1_history']);
+const PROVIDERS=new Set([...Object.keys(AI_CAPS),'qwen','wikipedia','gdelt','d1_history','document_citations']);
 const FLAGS=['facts_verified_automatically','ready_for_script','ready_for_youtube','publication_authorized'];
 const SHA=/^[a-f0-9]{64}$/,QID=/^Q[1-9][0-9]*$/;
 const CF_MODEL='@cf/meta/llama-3.1-8b-instruct';
@@ -89,11 +92,27 @@ export function validateAiReport(r,now=new Date()){
      (f.reason==='new_documentary_sources'&&f.new_unique_passages===0))
    throw new RangeError('Auditoría de fuentes nuevas incoherente');
  }
+ if(r.research_targets!==undefined){
+  if(!Array.isArray(r.research_targets)||r.research_targets.length>8)
+   throw new RangeError('Objetivos factuales fuera de límite');
+  for(const t of r.research_targets){
+   if(!t||!Number.isSafeInteger(t.claim_index)||t.claim_index<1||t.claim_index>8||
+      typeof t.statement!=='string'||t.statement.length<10||t.statement.length>650||
+      !Array.isArray(t.cited_urls)||t.cited_urls.length>8||
+      !Array.isArray(t.gaps)||t.gaps.length>4||t.gaps.some(g=>!['only_one_document',
+       'no_independent_domain','no_regulatory_primary_document','no_original_primary_document'].includes(g)))
+    throw new RangeError('Objetivo factual inválido');
+   for(const url of t.cited_urls)publicUrl(url);
+  }
+ }
  if(r.retrieval_budget!==undefined&&r.retrieval_budget!==null){
   const b=r.retrieval_budget;
   const fresh=r.source_documents.filter(d=>d.status==='text_extracted'&&d.resolved_url);
   const documents=new Set(fresh.map(d=>d.resolved_url));
   const hosts=new Set([...documents].map(u=>new URL(u).hostname));
+  if(b.citation_scanned_urls!==undefined&&(!Array.isArray(b.citation_scanned_urls)||
+     b.citation_scanned_urls.length>8||b.citation_scanned_urls.some(u=>!b.attempted_urls?.includes(u))))
+   throw new RangeError('Auditoría de referencias incoherente');
   if(!b||typeof b!=='object'||b.max_documents!==8||
      !Number.isSafeInteger(b.attempted)||b.attempted<r.source_documents.length||
      b.attempted>8||!Array.isArray(b.attempted_urls)||
@@ -118,6 +137,7 @@ export function validateAiReport(r,now=new Date()){
 
  if(r.source_quality!==undefined){
   const q=r.source_quality;
+  if(q?.method!==undefined&&q.method!==claimPolicy.method)throw new RangeError('Política factual desconocida');
   if(!q||typeof q!=='object'||q.all_claims_verified!==false||
      q.ready_for_script!==false||!Number.isSafeInteger(q.unique_documents)||
      q.unique_documents<0||q.unique_documents>10||
@@ -151,7 +171,15 @@ export function validateAiReport(r,now=new Date()){
    const gaps=[];
    if(docs.size<2)gaps.push('only_one_document');
    if(hosts.size<2)gaps.push('no_independent_domain');
-   if(!regulatory)gaps.push('no_regulatory_primary_document');
+   const required=claimNeedsRegulator(r.candidate_claims[idx].statement);
+   if(q.method===claimPolicy.method){
+    if(required&&!regulatory)gaps.push('no_regulatory_primary_document');
+    if(!required&&!primary)gaps.push('no_original_primary_document');
+    const advisory=regulatory?[]:['no_regulatory_primary_document'];
+    if(row?.regulatory_evidence_required!==required||!Array.isArray(row?.advisories)||
+       row.advisories.length!==advisory.length||row.advisories.some(g=>!advisory.includes(g)))
+     throw new RangeError('Requisitos factuales incoherentes');
+   }else if(!regulatory)gaps.push('no_regulatory_primary_document');
    if(!row||row.claim_index!==idx+1||row.verification_state!=='requires_corroboration'||
       !Array.isArray(row.gaps)||row.gaps.length!==gaps.length||
       row.gaps.some(g=>!gaps.includes(g))||row.regulatory_primary_cited!==regulatory||
@@ -171,6 +199,7 @@ export function validateAiReport(r,now=new Date()){
   if(!stage||!PROVIDERS.has(stage.provider)||typeof stage.role!=='string'||
     !['discover','classify','extract','analyze','review','fallback','avoid_duplicate_sources'].includes(stage.role)||
     (stage.provider==='gdelt'&&stage.role!=='discover')||
+    (stage.provider==='document_citations'&&stage.role!=='discover')||
     (stage.provider==='d1_history'&&stage.role!=='avoid_duplicate_sources')||
     (stage.role==='avoid_duplicate_sources'&&stage.provider!=='d1_history')||
     typeof stage.status!=='string'||!/^[a-z_]{3,70}$/.test(stage.status))
@@ -247,6 +276,20 @@ export async function readAiReports(db){
   db.prepare("SELECT provider,COUNT(*) AS reserved_requests FROM ai_budget_reservations WHERE reserved_month=strftime('%Y-%m','now') GROUP BY provider").all()]);
  return {ok:true,runs:(runs.results||[]).map(({report_json,...r})=>({...r,report:JSON.parse(report_json)})),
    budgets:budgets.results||[],caps:AI_CAPS,automatic_publication_allowed:false};
+}
+
+export async function readScriptContext(db,runId='latest'){
+ if(typeof runId!=='string'||(runId!=='latest'&&!/^ai-[a-f0-9]{28}$/.test(runId)))
+  throw new RangeError('Expediente de guion inválido');
+ const row=await db.prepare(`SELECT r.id,r.report_json,q.wikidata_id,q.title,q.state
+ FROM market_ai_pipeline_runs r JOIN market_research_queue q ON q.wikidata_id=r.wikidata_id
+ WHERE q.state IN ('awaiting_sources','researching','review') AND r.claims_count>0
+ AND r.collected_on>=date('now','-7 days') AND (?='latest' OR r.id=?)
+ ORDER BY r.created_at DESC,r.rowid DESC LIMIT 1`).bind(runId,runId).first();
+ if(!row)return {ok:false,reason:'no_active_research_with_claims',automatic_publication_allowed:false};
+ return {ok:true,run_id:row.id,research:JSON.parse(row.report_json),
+  selection:{selected_wikidata_id:row.wikidata_id,research_queue:{wikidata_id:row.wikidata_id,title:row.title,state:row.state}},
+  automatic_publication_allowed:false};
 }
 export async function classifyWithCloudflare(env,body){
  if(env.CLOUDFLARE_AI_FREE_CONFIRMED!=='1'||!env.AI)

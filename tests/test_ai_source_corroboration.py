@@ -5,6 +5,28 @@ def e(eid,url,kind="public_document_candidate"):
     return {"id":eid,"url":url,"source_class":kind}
 
 class CorroborationGates(unittest.TestCase):
+    def test_corporate_original_and_independent_report_do_not_require_unrelated_regulator(self):
+        result=evidence_gaps([
+            e('E001','https://company.example/annual','potential_official_pdf'),
+            e('E002','https://newspaper.example/report')
+        ],[{'statement':'La empresa presentó resultados de operaciones y una nueva estrategia.',
+            'evidence_ids':['E001','E002']}])
+        row=result['claim_gaps'][0]
+        self.assertEqual(row['gaps'],[])
+        self.assertFalse(row['regulatory_evidence_required'])
+        self.assertIn('no_regulatory_primary_document',row['advisories'])
+        self.assertFalse(result['all_claims_verified'])
+
+    def test_legal_claim_still_needs_actual_regulatory_document(self):
+        result=evidence_gaps([
+            e('E001','https://company.example/annual','potential_official_pdf'),
+            e('E002','https://newspaper.example/report')
+        ],[{'statement':'La empresa fue condenada por fraude después del juicio.',
+            'evidence_ids':['E001','E002']}])
+        row=result['claim_gaps'][0]
+        self.assertTrue(row['regulatory_evidence_required'])
+        self.assertIn('no_regulatory_primary_document',row['gaps'])
+
     def test_same_publisher_three_passages_are_one_document(self):
         sources=[e("E001","https://example.org/news/story"),
                  e("E002","https://example.org/news/story"),
@@ -25,7 +47,8 @@ class CorroborationGates(unittest.TestCase):
         ],[{"evidence_ids":["E001","E002"]}])
         self.assertEqual(result["independent_domains"],2)
         self.assertNotIn("no_independent_domain",result["claim_gaps"][0]["gaps"])
-        self.assertIn("no_regulatory_primary_document",result["claim_gaps"][0]["gaps"])
+        self.assertIn("no_original_primary_document",result["claim_gaps"][0]["gaps"])
+        self.assertIn("no_regulatory_primary_document",result["claim_gaps"][0]["advisories"])
         self.assertFalse(result["ready_for_script"])
 
     def test_even_a_regulator_and_independent_report_is_not_automatically_verified(self):

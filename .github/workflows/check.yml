@@ -8,9 +8,28 @@ on:
         description: 'Ejecutar también el radar real en main, sin publicar'
         type: boolean
         default: false
+      run_script:
+        description: 'Probar guionista reanudable desde D1, sin render ni publicación'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
+  live-script:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      ((github.event_name == 'push' && contains(github.event.head_commit.message, '[script-e2e]')) ||
+       (github.event_name == 'workflow_dispatch' && inputs.run_script))
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Probar etapa de guion sin repetir radar ni inferencias de investigación
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=script -f research_run_id=latest
   live-radar:
     # Puerta operacional explícita: un commit marcado o solicitud manual.
     # El radar recibe workflow_dispatch; OIDC sigue rechazando push.

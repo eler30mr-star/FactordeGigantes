@@ -104,7 +104,7 @@ export async function selectResearchFromD1(db,now=new Date()){
  // Si la última investigación sólo encontró una fuente, usar el histórico D1
  // para NO gastar en las mismas cuatro páginas. El histórico está protegido
  // por el contrato original de report_json y se limita a siete días.
- let prior_attempted_urls=[],prior_evidence_manifest=[];
+ let prior_attempted_urls=[],prior_evidence_manifest=[],prior_research_targets=[],citation_expansion_urls=[];
  if(queue?.state==='awaiting_sources'){
   // Una corrida reciente sin fuentes no debe borrar citas de la anterior.
   // Recuperar hasta cinco informes del mismo tema y reutilizar solamente
@@ -112,15 +112,31 @@ export async function selectResearchFromD1(db,now=new Date()){
   const history=await db.prepare(
    "SELECT report_json FROM market_ai_pipeline_runs WHERE wikidata_id=? AND collected_on>=? ORDER BY created_at DESC,rowid DESC LIMIT 5"
   ).bind(queue.wikidata_id,old).all();
-  const urls=new Set(),citations=new Set();
+  const urls=new Set(),citations=new Set(),scanned=new Set();
   for(const entry of history.results||[]){
    const record=JSON.parse(entry.report_json);
    if(record.selected_wikidata_id!==queue.wikidata_id)continue;
+   for(const url of record.retrieval_budget?.citation_scanned_urls||[])scanned.add(url);
+   for(const doc of record.source_documents||[]){
+    if(doc.citation_links_scanned===true){scanned.add(doc.url);if(doc.resolved_url)scanned.add(doc.resolved_url);}
+   }
    const attempted=Array.isArray(record.retrieval_budget?.attempted_urls)
      ?record.retrieval_budget.attempted_urls
      :(record.source_documents||[]).map(v=>v.url);
    for(const url of attempted){
-    if(typeof url==='string'&&url.startsWith('https://')&&urls.size<8)urls.add(url);
+    if(typeof url==='string'&&url.startsWith('https://')&&urls.size<40)urls.add(url);
+   }
+   if(!prior_research_targets.length&&Array.isArray(record.candidate_claims)){
+    const byId=new Map((record.evidence_manifest||[]).map(e=>[e.id,e]));
+    prior_research_targets=record.candidate_claims.slice(0,8).flatMap((c,index)=>{
+     if(typeof c?.statement!=='string'||c.statement.length<10||c.statement.length>650||
+        !Array.isArray(c.evidence_ids))return [];
+     const gaps=record.source_quality?.claim_gaps?.find(g=>g.claim_index===index+1)?.gaps||[];
+     if(!gaps.length)return [];
+     return [{claim_index:index+1,statement:c.statement,
+       cited_urls:[...new Set(c.evidence_ids.map(id=>byId.get(id)?.url).filter(Boolean))].slice(0,8),
+       gaps:gaps.slice(0,4)}];
+    });
    }
    for(const v of record.evidence_manifest||[]){
     if(v.wikidata_id!==queue.wikidata_id||
@@ -133,10 +149,16 @@ export async function selectResearchFromD1(db,now=new Date()){
    }
   }
   prior_attempted_urls=[...urls];
+  for(const target of prior_research_targets){
+   for(const url of target.cited_urls){
+    if(!scanned.has(url)&&!citation_expansion_urls.includes(url)&&citation_expansion_urls.length<2)
+     citation_expansion_urls.push(url);
+   }
+  }
  }
  return {ok:true,stored_in:'d1',run_id:id,...snapshot,
    selected_wikidata_id:queue?.wikidata_id??null,research_queue:queue??null,
-   prior_attempted_urls,prior_evidence_manifest,
+   prior_attempted_urls,prior_evidence_manifest,prior_research_targets,citation_expansion_urls,
    automatic_publication_allowed:false,script_authorized:false};
 }
 

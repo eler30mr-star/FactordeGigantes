@@ -121,17 +121,19 @@ class FreeClients:
                  "discovered_by": provider}
                 for r in reply["results"][:5] if isinstance(r, dict)]
 
-    def generate(self, provider, prompt):
+    def generate(self, provider, prompt, *, role=None, max_output_tokens=1800):
         if self.env.get("RESEARCH_PROVIDER") == "qwen_local":
             raise ProviderError("not_selected")
         if provider not in MODELS or not isinstance(prompt, str) or len(prompt) > 24_000:
             raise ValueError("Solicitud de IA fuera del perfil permitido")
+        if role not in (None, "script") or type(max_output_tokens) is not int or not 256 <= max_output_tokens <= 6000:
+            raise ValueError("Perfil de generación inválido")
         key, model = self.env.get(KEYS[provider], ""), MODELS[provider]
         if provider == "gemini":
             body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
                     "generationConfig": {"responseMimeType": "application/json",
-                                         "maxOutputTokens": 1800, "temperature": 0.1}}
-            reply = self.request(provider, "analyze",
+                                         "maxOutputTokens": max_output_tokens, "temperature": 0.1}}
+            reply = self.request(provider, role or "analyze",
                 "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
                 body, {"x-goog-api-key": key})
             try:
@@ -149,13 +151,13 @@ class FreeClients:
                          "openrouter": "https://openrouter.ai/api/v1/chat/completions"}
             body = {"model": model, "messages": [{"role": "user", "content": prompt}],
                     "response_format": {"type": "json_object"}, "stream": False}
-            body["max_completion_tokens" if provider == "groq" else "max_tokens"] = 1800
+            body["max_completion_tokens" if provider == "groq" else "max_tokens"] = max_output_tokens
             if provider == "groq":
                 body["reasoning_effort"] = "low"
             if provider == "openrouter":
                 # Router exclusivamente gratuito, sin fallback pagado ni plugins.
                 body["provider"] = {"max_price": {"prompt": 0, "completion": 0}}
-            reply = self.request(provider, "review" if provider == "groq" else "analyze",
+            reply = self.request(provider, role or ("review" if provider == "groq" else "analyze"),
                                  endpoints[provider], body, {"Authorization": "Bearer " + key})
             try:
                 text = reply["choices"][0]["message"]["content"]

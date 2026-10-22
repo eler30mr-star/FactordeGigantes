@@ -102,6 +102,8 @@ test('selección D1 entrega histórico de URLs agotadas y pasajes para la siguie
      url:'https://site.example/original',document_sha256:'a'.repeat(64),
      page:null,source_class:'public_document_candidate',
      excerpt:'La Empresa ejemplo anunció un documento de operaciones con detalles de activos y pasivos en su comunicación corporativa pública.'}]};
+ prior.candidate_claims=[{statement:'La Empresa ejemplo anunció cambios de operaciones que requieren contraste.',evidence_ids:['E001']}];
+ prior.source_quality={claim_gaps:[{claim_index:1,gaps:['only_one_document','no_independent_domain']}]};
  raw.prepare("INSERT INTO market_ai_pipeline_runs(id,collected_on,wikidata_id,status,analysis_provider,evidence_count,claims_count,report_json) VALUES (?,?,?,?,?,?,?,?)")
    .run('ai-history',day,'Q100','candidate_claims_generated','gemini',1,0,JSON.stringify(prior));
  // La última ejecución falló: no puede borrar el dossier de la anterior.
@@ -117,6 +119,17 @@ test('selección D1 entrega histórico de URLs agotadas y pasajes para la siguie
     'https://site.example/original','https://third.example/locked']);
  assert.equal(out.prior_evidence_manifest.length,1);
  assert.equal(out.prior_evidence_manifest[0].document_sha256,'a'.repeat(64));
+ assert.equal(out.prior_research_targets.length,1);
+ assert.equal(out.prior_research_targets[0].statement,prior.candidate_claims[0].statement);
+ assert.deepEqual(out.prior_research_targets[0].cited_urls,['https://site.example/original']);
+ assert.deepEqual(out.prior_research_targets[0].gaps,['only_one_document','no_independent_domain']);
+ assert.deepEqual(out.citation_expansion_urls,['https://site.example/original']);
+ const scanned={selected_wikidata_id:'Q100',evidence_manifest:[],
+   source_documents:[{url:'https://site.example/original',citation_links_scanned:true}],
+   retrieval_budget:{attempted_urls:['https://site.example/original'],citation_scanned_urls:['https://site.example/original']}};
+ raw.prepare("INSERT INTO market_ai_pipeline_runs(id,collected_on,wikidata_id,status,evidence_count,claims_count,report_json) VALUES (?,?,?,?,?,?,?)")
+   .run('ai-scanned',day,'Q100','skipped_no_documentary_evidence',0,0,JSON.stringify(scanned));
+ assert.deepEqual((await selectResearchFromD1(adapter(raw),new Date(day+'T12:00:00Z'))).citation_expansion_urls,[]);
  assert.equal(out.script_authorized,false);
  assert.equal(raw.prepare('PRAGMA foreign_key_check').all().length,0);
 });

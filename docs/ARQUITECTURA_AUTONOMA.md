@@ -1,5 +1,7 @@
 # Factor de Gigantes — arquitectura de la fábrica documental autónoma
 
+> **Actualización operativa 2026-10-22:** el radar y el equipo Qwen/Gemini/Groq ya tienen una prueba real persistida en D1. La continuación utiliza afirmaciones pendientes, historial de URLs y referencias documentales; el guionista tiene una fase independiente del mismo workflow, sin repetir la investigación y sin render/publicación. Es código con pruebas, sujeto a la evidencia de CI/E2E en `AVANCE.md`. Theranos sigue bloqueado por corroboración insuficiente. Las secciones que dicen “a 2026-10-21” y el estado experimental inferior son el diagnóstico inicial, no el estado actual.
+
 **Decisión de producto 2026-10-21 · Prioridad P0 · Rama main**
 
 ## Meta definitiva (criterio de aceptación)

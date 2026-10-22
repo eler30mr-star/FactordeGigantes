@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
-import {reserveAiBudget,validateAiReport,storeAiReport,readAiReports,classifyWithCloudflare} from '../src/ai-research-team.mjs';
+import {reserveAiBudget,validateAiReport,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from '../src/ai-research-team.mjs';
 import worker from '../src/worker.js';
 
 function setup(){
@@ -125,6 +125,19 @@ test('corroboración por fuente única no puede indicar verificación factual',(
  assert.throws(()=>validateAiReport(r),RangeError);
 });
 
+test('política por afirmación se recalcula y no permite ocultar exigencia regulatoria',()=>{
+ const r=report();r.candidate_claims[0].statement='La Empresa ejemplo fue condenada por fraude en 2099.';
+ r.source_quality={method:'claim_source_policy_v2',unique_documents:1,independent_domains:1,
+  regulatory_primary_domains:1,original_primary_domains:1,claims_requiring_review:1,
+  all_claims_verified:false,ready_for_script:false,claim_gaps:[{
+   claim_index:1,cited_documents:1,independent_domains:1,regulatory_primary_cited:true,
+   original_primary_cited:true,regulatory_evidence_required:true,advisories:[],
+   gaps:['only_one_document','no_independent_domain'],verification_state:'requires_corroboration'}]};
+ assert.doesNotThrow(()=>validateAiReport(r));
+ r.source_quality.claim_gaps[0].regulatory_evidence_required=false;
+ assert.throws(()=>validateAiReport(r),RangeError);
+});
+
 test('historial SQLite real idempotente, alerta numérica y puertas SQL cerradas',async()=>{
  const {db,raw}=setup();const first=await storeAiReport(db,report()),second=await storeAiReport(db,report());
  assert.equal(first.run_id,second.run_id);
@@ -163,6 +176,26 @@ test('Cloudflare sin modalidad gratuita confirmada nunca invoca IA',async()=>{
  const out=await classifyWithCloudflare({AI:{run(){assert.fail('inferencia sin modalidad confirmada');}}},{});
  assert.equal(out.status,'free_mode_unconfirmed');
 });
+
+test('guionista recupera sólo expediente activo y no escribe ni concede permisos',async()=>{
+ const {db,raw}=setup(),r=report(),day=r.collected_on;
+ raw.prepare('INSERT INTO market_entities(wikidata_id,title,first_seen,last_seen) VALUES (?,?,?,?)')
+  .run('Q100',r.company,day,day);
+ raw.prepare('INSERT INTO market_research_selection_runs(id,observed_on,method,candidate_count,qualified_count,ranked_snapshot_json) VALUES (?,?,?,?,?,?)')
+  .run('sel-script',day,'research_market_priority_v1',1,1,'{}');
+ raw.prepare('INSERT INTO market_research_queue(id,wikidata_id,title,selection_run_id,market_score) VALUES (?,?,?,?,?)')
+  .run('rq-script','Q100',r.company,'sel-script',55);
+ const saved=await storeAiReport(db,r);
+ const context=await readScriptContext(db,'latest');
+ assert.equal(context.run_id,saved.run_id);
+ assert.equal(context.research.company,r.company);
+ assert.equal(context.selection.selected_wikidata_id,'Q100');
+ assert.equal(context.automatic_publication_allowed,false);
+ await assert.rejects(readScriptContext(db,'../secret'),RangeError);
+ raw.prepare("UPDATE market_research_queue SET state='closed'").run();
+ assert.equal((await readScriptContext(db,saved.run_id)).ok,false);
+ assert.equal(raw.prepare('SELECT COUNT(*) AS n FROM ai_budget_reservations').get().n,0);
+});
 test('clasificador Cloudflare admite solo categorías y reserva antes de inferir',async()=>{
  const {db}=setup();let calls=0;
  const env={DB:db,CLOUDFLARE_AI_FREE_CONFIRMED:'1',AI:{async run(model,body){
@@ -176,7 +209,7 @@ test('clasificador Cloudflare admite solo categorías y reserva antes de inferir
 });
 test('ninguna escritura IA admite tokens ADMIN o RENDERER',async()=>{
  const env={ADMIN_TOKEN:'a'.repeat(32),RENDERER_TOKEN:'r'.repeat(32),DB:{}};
- for(const path of ['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest'])
+ for(const path of ['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest','/api/market/ai-pipeline/script-context'])
   for(const auth of ['',env.ADMIN_TOKEN,env.RENDERER_TOKEN]){
    const r=await worker.fetch(new Request('https://factor.test'+path,{method:'POST',headers:{Authorization:'Bearer '+auth}}),env,{});
    assert.equal(r.status,401);

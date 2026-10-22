@@ -1,0 +1,4 @@
+{
+  "method": "claim_source_policy_v2",
+  "regulatory_terms": "\\b(?:fraud\\w*|acus\\w*|alleg\\w*|conden\\w*|sentenc\\w*|demand\\w*|sancion\\w*|multas?|restitu\\w*|fiscal\\w*|juici\\w*|tribunal\\w*|settlement|court|complaint|charged|indict\\w*|regulat\\w*)\\b"
+}

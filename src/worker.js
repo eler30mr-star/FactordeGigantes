@@ -1,5 +1,5 @@
 import {verifyMarketOIDC} from "./github-oidc.mjs";
-import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare} from "./ai-research-team.mjs";
+import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from "./ai-research-team.mjs";
 import {selectResearchFromD1,readResearchQueue} from "./market-research-selection.mjs";
 import {storeNewsEntities} from "./news-entity-ingest.mjs";
 import {storeOfficialEvidence,readOfficialEvidence} from "./market-official-ingest.mjs";
@@ -140,7 +140,7 @@ async function handle(request,env) {
   const ingestPdf=parts[1]==="market" && parts[2]==="pdf" && parts[3]==="ingest" && parts.length===4;
   const ingestResearch=parts[1]==="market" && parts[2]==="research" && parts[3]==="ingest" && parts.length===4;
   const runResearchSelection=url.pathname==='/api/market/research-selection/run';
-  const aiWrite=['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest'].includes(url.pathname);
+  const aiWrite=['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest','/api/market/ai-pipeline/script-context'].includes(url.pathname);
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
   if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection || aiWrite) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
@@ -153,6 +153,7 @@ async function handle(request,env) {
     try{
       if(!aiWrite)return json(await readAiReports(env.DB));
       const body=await parseBody(request);
+      if(url.pathname==='/api/market/ai-pipeline/script-context')return json(await readScriptContext(env.DB,body.run_id));
       if(url.pathname==='/api/market/ai-budget/reserve')
         return json(await reserveAiBudget(env.DB,body.provider,body.request_id));
       if(url.pathname==='/api/market/ai-classify')return json(await classifyWithCloudflare(env,body));

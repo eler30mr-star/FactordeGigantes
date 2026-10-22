@@ -5,14 +5,15 @@ nunca sus resúmenes como prueba. No se adivinan rutas ni nombres de compañías
 """
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, deque
 from datetime import datetime, timezone
 import hashlib
+from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
 import unicodedata
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlencode, urlsplit, urljoin
 
 from tools.ai_clients import ProviderError
 from tools.pdf_sources import analyze_document, fetch_document_public
@@ -31,6 +32,54 @@ def regulatory_host(host):
     """Autoridad candidata conocida; un repositorio .gov no es un regulador."""
     host = (host or "").lower().rstrip(".")
     return any(host == domain or host.endswith("." + domain) for domain in REGULATORY_HOSTS)
+
+
+def research_targets(selection):
+    targets = selection.get("prior_research_targets", [])
+    allowed = {"only_one_document", "no_independent_domain", "no_regulatory_primary_document",
+               "no_original_primary_document"}
+    if not isinstance(targets, list) or len(targets) > 8:
+        raise ValueError("Objetivos de contraste fuera del presupuesto")
+    for target in targets:
+        if (not isinstance(target, dict) or type(target.get("claim_index")) is not int or
+                not 1 <= target["claim_index"] <= 8 or
+                not isinstance(target.get("statement"), str) or not 10 <= len(target["statement"]) <= 650 or
+                not isinstance(target.get("cited_urls"), list) or len(target["cited_urls"]) > 8 or
+                not isinstance(target.get("gaps"), list) or any(g not in allowed for g in target["gaps"])):
+            raise ValueError("Objetivo factual inválido")
+        for url in target["cited_urls"]:
+            validate_url(url)
+    return targets
+
+
+def document_references(raw, base):
+    """Seguir sólo URLs de autoridades observadas en el documento descargado.
+
+    El enlace aporta una pista, nunca prueba de un hecho. El lector público
+    valida DNS y redirecciones al descargar; todo cuenta en el límite de ocho.
+    """
+    class Links(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.urls = []
+        def handle_starttag(self, tag, attrs):
+            if tag != "a" or len(self.urls) >= 12:
+                return
+            href = dict(attrs).get("href")
+            if not href:
+                return
+            try:
+                url = urljoin(base, href).split("#", 1)[0]
+                validate_url(url)
+            except (ValueError, TypeError):
+                return
+            if regulatory_host(urlsplit(url).hostname) and url not in self.urls:
+                self.urls.append(url)
+    parser = Links()
+    parser.feed(raw.decode("utf-8", errors="replace"))
+    return [{"url": url, "title": "Referencia original enlazada por el documento",
+             "discovered_by": "document_citations", "discovered_from": base}
+            for url in parser.urls]
 
 
 def normalized(text):
@@ -123,12 +172,14 @@ def gdelt_articles(title, *, fetcher=fetch_public):
 def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                      document_fetcher=fetch_document_public,gdelt_fetcher=None):
     qid, title = selection_identity(selection)
+    targets = research_targets(selection)
     day = datetime.now(timezone.utc).date().isoformat()
     out = {"schema": "fdg_ai_sources_v1", "collected_on": day,
            "selected_wikidata_id": qid, "company": title, "evidence_manifest": [],
            "source_documents": [], "stages": [], "facts_verified_automatically": 0,
            "ready_for_script": False, "ready_for_youtube": False,
            "publication_authorized": False}
+    out["research_targets"] = targets
     if not qid:
         out["status"] = "skipped_no_selection"
         return out
@@ -136,8 +187,13 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     # observaron anteriormente. Sólo usarlos para ampliar el dossier cuando
     # se consiga al menos UNA fuente nueva. Así evitamos gasto IA redundante.
     previous_urls = selection.get("prior_attempted_urls", [])
+    expand_urls = selection.get("citation_expansion_urls", [])
+    if not isinstance(expand_urls, list) or len(expand_urls) > 2:
+        raise ValueError("Ampliación de referencias fuera del presupuesto")
+    for url in expand_urls:
+        validate_url(url)
     previous_passages = selection.get("prior_evidence_manifest", [])
-    if (not isinstance(previous_urls,list) or len(previous_urls)>8 or
+    if (not isinstance(previous_urls,list) or len(previous_urls)>40 or
             not isinstance(previous_passages,list) or len(previous_passages)>4):
         raise ValueError("Historial de fuentes excede el presupuesto")
     for url in previous_urls:
@@ -160,10 +216,13 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             passage = {**passage, "source_class": "public_document_candidate"}
         preserved.append(passage)
     leads = []
+    leads.extend({"url": u, "title": "Extraer referencias originales del documento ya citado",
+                  "discovered_by": "d1_document_citation_expansion"} for u in expand_urls)
     try:
-        leads.extend(wikipedia_links(title, fetcher=wiki_fetcher))
+        wiki_leads = wikipedia_links(title, fetcher=wiki_fetcher)
+        leads.extend(wiki_leads)
         out["stages"].append({"provider": "wikipedia", "role": "discover",
-                              "status": "success", "result_count": len(leads)})
+                              "status": "success", "result_count": len(wiki_leads)})
     except (OSError, ValueError, TypeError, KeyError):
         out["stages"].append({"provider": "wikipedia", "role": "discover",
                               "status": "source_unavailable"})
@@ -179,6 +238,9 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                                   "status":"source_unavailable"})
     queries = [f'"{title}" regulator court complaint financial statements',
                f'"{title}" history annual report investigation original documents']
+    if targets:
+        # Siguen siendo dos búsquedas por proveedor: sustituir, no multiplicar.
+        queries = [f'"{title}" ' + t["statement"][:220] for t in targets[:2]]
     for provider in ("tavily", "exa"):
         found = []
         try:
@@ -199,7 +261,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             validate_url(url)
             # URL completa observada, sin fragmentos y sin credenciales.
             url = url.split("#", 1)[0]
-            if url in seen or url in previous_urls:
+            if url in seen or url in previous_urls and url not in expand_urls:
                 continue
             seen.add(url)
             eligible.append({**lead, "url": url})
@@ -221,7 +283,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         # sin poder abrir el documento original. Probar primero el editor original.
         archive = parsed.hostname in {"web.archive.org", "archive.today",
                                      "archive.ph", "wayback.archive-it.org"}
-        return (int(archive), -int(relevant),
+        return (-int(lead["url"] in expand_urls), -int(regulatory_host(parsed.hostname)), int(archive), -int(relevant),
                 -int(parsed.path.lower().endswith(".pdf")), lead["url"])
 
     # Intercalar gobierno/justicia con publicaciones independientes. El orden
@@ -231,17 +293,23 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                           if primary_host(urlsplit(x["url"]).hostname)), key=rank)
     independent = sorted((x for x in eligible
                           if not primary_host(urlsplit(x["url"]).hostname)), key=rank)
-    ordered = []
+    ordered = deque()
     while authorities or independent:
         if authorities:
             ordered.append(authorities.pop(0))
         if independent:
             ordered.append(independent.pop(0))
+    # Una expansión documental deliberada va antes del barrido general; su
+    # lectura cuenta en los mismos ocho intentos y no justifica por sí sola IA.
+    ordered = deque(sorted(ordered, key=lambda x: x["url"] not in expand_urls))
     per_host, per_kind = Counter(), Counter()
     useful_urls, useful_hosts, regulatory_hits = set(), set(), set()
-    for lead in ordered:
-        if len(out["source_documents"]) >= MAX_DOCUMENTS:
-            break
+    attempted_urls = set(previous_urls) - set(expand_urls)
+    followed = set()
+    while ordered and len(out["source_documents"]) < MAX_DOCUMENTS:
+        lead = ordered.popleft()
+        if lead["url"] in attempted_urls:
+            continue
         host = urlsplit(lead["url"]).hostname
         kind = "primary" if primary_host(host) else "secondary"
         if per_host[host] >= MAX_PER_HOST or per_kind[kind] >= (
@@ -249,6 +317,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             continue
         per_host[host] += 1
         per_kind[kind] += 1
+        attempted_urls.add(lead["url"])
         record = {**lead, "status": "fetch_failed"}
         try:
             raw, resolved, mime = document_fetcher(lead["url"], timeout=12)
@@ -256,6 +325,14 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             if primary_host(host) and not primary_host(urlsplit(resolved).hostname):
                 raise ValueError("Redirección fuera de autoridad pública")
             analysis = analyze_document(raw, mime, pdf_max_pages=350, pdf_scan_pages=12)
+            if "html" in mime:
+                references = document_references(raw, resolved)
+                record.update({"citation_links_scanned": True,
+                               "reference_urls": [r["url"] for r in references]})
+                for reference in reversed(references):
+                    if reference["url"] not in attempted_urls and reference["url"] not in followed and len(followed) < 16:
+                        followed.add(reference["url"])
+                        ordered.appendleft(reference)
             record.update({"bytes_read": len(raw), "mime": mime,
                            "readable_blocks": len(analysis["blocks"]),
                            "raw_prefix_hex": raw[:4].hex(),
@@ -317,6 +394,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         "independent_domains_with_text": len(useful_hosts),
         "public_authority_domains_with_text": len(regulatory_hits),
         "budget_exhausted": len(attempted_documents) >= MAX_DOCUMENTS,
+        "citation_scanned_urls": [d["url"] for d in attempted_documents if d.get("citation_links_scanned")],
     }
     new_fragments=out["evidence_manifest"]
     new_count=len(new_fragments)
@@ -333,6 +411,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             if len(new_fragments)>=MAX_EVIDENCE:
                 break
     out["retrieval_budget"]["new_fragments"]=new_count
+    out["stages"].append({"provider":"document_citations","role":"discover",
+                          "status":"success" if followed else "empty","result_count":len(followed)})
     out["evidence_manifest"] = [{**e, "id": f"E{i+1:03d}"}
                                 for i, e in enumerate(new_fragments[:MAX_EVIDENCE])]
     out["status"] = "sources_collected" if out["retrieval_budget"]["documents_with_relevant_text"] else "skipped_no_documentary_evidence"
