@@ -54,6 +54,7 @@ test('presupuesto documental cuenta consultas y URLs legibles reales',()=>{
  x.source_documents=[{url:'https://www.justice.gov/example',status:'text_extracted',
   resolved_url:'https://www.justice.gov/example'}];
  x.retrieval_budget={max_documents:8,attempted:1,
+  attempted_urls:['https://www.justice.gov/example'],
   documents_with_relevant_text:1,independent_domains_with_text:1,
   public_authority_domains_with_text:1,new_fragments:1,budget_exhausted:false};
  assert.doesNotThrow(()=>validateAiReport(x));
