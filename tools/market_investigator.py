@@ -48,6 +48,8 @@ def prepare_evidence(pdf_report, official_report=None):
         for doc in official_report.get("evidence",[])[:3]:
             if len(items)>=MAX_EVIDENCE:break
             if doc.get("status")!="candidate_page_readable":continue
+            if doc.get("excerpt_quality") in ("generic_candidate","insufficient_context"):
+                continue  # Página rastreada, pero no basta para alimentar un guion.
             sha=doc.get("content_sha256")
             url=doc.get("resolved_url")
             excerpt=doc.get("short_excerpt")
