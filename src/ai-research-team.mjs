@@ -136,7 +136,7 @@ export function validateAiReport(r,now=new Date()){
    const gaps=[];
    if(docs.size<2)gaps.push('only_one_document');
    if(hosts.size<2)gaps.push('no_independent_domain');
-   if(!primary)gaps.push('no_original_primary_document');
+   if(!regulatory)gaps.push('no_regulatory_primary_document');
    if(!row||row.claim_index!==idx+1||row.verification_state!=='requires_corroboration'||
       !Array.isArray(row.gaps)||row.gaps.length!==gaps.length||
       row.gaps.some(g=>!gaps.includes(g))||row.regulatory_primary_cited!==regulatory||
