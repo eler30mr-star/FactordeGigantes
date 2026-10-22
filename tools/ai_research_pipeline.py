@@ -106,7 +106,7 @@ def evidence_gaps(evidence, claims):
         reasons=[]
         if len(urls)<2:reasons.append("only_one_document")
         if len(hosts)<2:reasons.append("no_independent_domain")
-        if not original_primary:reasons.append("no_original_primary_document")
+        if not regulatory_primary:reasons.append("no_regulatory_primary_document")
         pending.append({"claim_index":idx,"cited_documents":len(urls),
                         "independent_domains":len(hosts),
                         "regulatory_primary_cited":regulatory_primary,
