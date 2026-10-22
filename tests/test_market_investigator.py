@@ -91,6 +91,33 @@ class InvestigatorTests(unittest.TestCase):
           free_confirmed=True,api_key="x"*20,runner=must_not_call)
         self.assertEqual(outcome["status"],"skipped_no_documentary_evidence")
 
+    def test_investor_report_pages_feed_same_company_evidence_without_api(self):
+        secondary={"provider":"official_investor_pages_v1",
+          "collected_on":report(False).get("collected_on"),
+          "facts_verified":0,"rights_verified":False,"ready_for_youtube":False,
+          "pages":[{"wikidata_id":"Q53268","company":"Empresa de prueba",
+            "status":"excerpt_candidate","excerpt_quality":"documentary_candidate",
+            "resolved_url":"https://example.org/investors/results",
+            "origin_url":"https://example.org/",
+            "content_sha256":"c"*64,
+            "short_excerpt":"In 2024 the company announced annual manufacturing operations and an acquisition, reported in its corporate investor announcement, pending external corroboration."}]}
+        # El informe PDF original de tests no tiene fecha; marcar la fecha
+        # de ambos informes observados sin inventar datos de mercado.
+        pdf=report(False)
+        pdf["collected_on"]="2026-10-21"
+        secondary["collected_on"]="2026-10-21"
+        sources=prepare_evidence(pdf,primary_pages_report=secondary)
+        self.assertEqual(len(sources),1)
+        self.assertEqual(sources[0]["id"],"E001")
+        self.assertEqual(sources[0]["document_sha256"],"c"*64)
+        self.assertEqual(sources[0]["wikidata_id"],"Q53268")
+        def forbidden(*args,**kwargs):
+            self.fail("No Gemini call without free tier")
+        result=run_investigation(pdf,primary_pages_report=secondary,
+                                  free_confirmed=False,runner=forbidden)
+        self.assertEqual(result["status"],"skipped_free_tier_not_authorized")
+        self.assertEqual(result["evidence_count"],1)
+
     def test_valid_candidate_output_propagates_only_unverified_statements(self):
         def model(topic,evidence,**kw):
             self.assertEqual(topic,"Empresa de prueba")
