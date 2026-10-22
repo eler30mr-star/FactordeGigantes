@@ -109,9 +109,6 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             raise ValueError("Fuente histórica D1 sin procedencia admitida")
         validate_url(passage["url"])
         preserved.append(passage)
-    out["stages"].append({"provider":"d1_history","role":"avoid_duplicate_sources",
-                          "status":"success" if previous_urls else "empty",
-                          "result_count":len(previous_urls)})
     leads = []
     try:
         leads.extend(wikipedia_links(title, fetcher=wiki_fetcher))
@@ -132,6 +129,9 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             state = {"status": exc.code}
         leads.extend(found)  # Conservar primera consulta aunque falle la segunda.
         out["stages"].append({"provider": provider, "role": "discover", **state})
+    out["stages"].append({"provider":"d1_history","role":"avoid_duplicate_sources",
+                          "status":"success" if previous_urls else "empty",
+                          "result_count":len(previous_urls)})
     seen, eligible = set(), []
     for lead in leads:
         try:
@@ -251,6 +251,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         "budget_exhausted": len(out["source_documents"]) >= MAX_DOCUMENTS,
     }
     new_fragments=out["evidence_manifest"]
+    new_count=len(new_fragments)
     # Conservar citas viejas para comparar sólo si una nueva lectura real
     # amplió la base informativa. Nunca recircular el mismo dossier a Gemini.
     if new_fragments:
@@ -263,8 +264,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                 new_fragments.append(old)
             if len(new_fragments)>=MAX_EVIDENCE:
                 break
-    out["retrieval_budget"]["new_fragments"]=len(out["evidence_manifest"]) if not preserved else (
-        len(out["evidence_manifest"])-sum(e in preserved for e in out["evidence_manifest"]))
+    out["retrieval_budget"]["new_fragments"]=new_count
     out["evidence_manifest"] = [{**e, "id": f"E{i+1:03d}"}
                                 for i, e in enumerate(new_fragments[:MAX_EVIDENCE])]
     out["status"] = "sources_collected" if out["retrieval_budget"]["documents_with_relevant_text"] else "skipped_no_documentary_evidence"
