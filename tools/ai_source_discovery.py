@@ -9,6 +9,7 @@ from collections import Counter
 from datetime import datetime, timezone
 import hashlib
 import json
+from pathlib import Path
 import re
 import unicodedata
 from urllib.parse import urlencode, urlsplit
@@ -22,6 +23,14 @@ MAX_PRIMARY_ATTEMPTS = 5
 MAX_SECONDARY_ATTEMPTS = 5
 MAX_PER_HOST = 1
 MAX_EVIDENCE = 10
+REGULATORY_HOSTS = frozenset(json.loads(
+    (Path(__file__).resolve().parents[1] / "src/regulatory-authorities.json").read_text(encoding="utf-8")))
+
+
+def regulatory_host(host):
+    """Autoridad candidata conocida; un repositorio .gov no es un regulador."""
+    host = (host or "").lower().rstrip(".")
+    return any(host == domain or host.endswith("." + domain) for domain in REGULATORY_HOSTS)
 
 
 def normalized(text):
@@ -147,6 +156,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                      "public_authority_candidate","public_document_candidate"}):
             raise ValueError("Fuente histórica D1 sin procedencia admitida")
         validate_url(passage["url"])
+        if passage["source_class"] == "public_authority_candidate" and not regulatory_host(urlsplit(passage["url"]).hostname):
+            passage = {**passage, "source_class": "public_document_candidate"}
         preserved.append(passage)
     leads = []
     try:
@@ -267,7 +278,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                     "page": analysis["page_map"][index], "block_index": index,
                     "excerpt": excerpt, "source_id": qid + "-observed-document",
                     "claim_id": "documentary_candidate",
-                    "source_class": "public_authority_candidate" if primary_host(urlsplit(resolved).hostname)
+                    "source_class": "public_authority_candidate" if regulatory_host(urlsplit(resolved).hostname)
                                     else "public_document_candidate"})
                 if len(fragments) >= 3:
                     break
@@ -280,7 +291,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             if fragments:
                 useful_urls.add(resolved)
                 useful_hosts.add(urlsplit(resolved).hostname)
-                if primary_host(urlsplit(resolved).hostname):
+                if regulatory_host(urlsplit(resolved).hostname):
                     regulatory_hits.add(urlsplit(resolved).hostname)
         except (OSError, ValueError, TypeError, KeyError, ImportError, RuntimeError) as exc:
             record["status"] = "fetch_failed"

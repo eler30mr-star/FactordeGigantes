@@ -78,6 +78,18 @@ test('ingesta conserva citas e impide aprobación, mezclas e inventar referencia
   const r=report();mutate(r);assert.throws(()=>validateAiReport(r),RangeError);
  }
 });
+
+test('PubMed, archivos públicos y dominios parecidos no acreditan reguladores',()=>{
+ for(const url of ['https://pubmed.ncbi.nlm.nih.gov/27018593',
+   'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4855945',
+   'https://id.loc.gov/authorities/n2018015605',
+   'https://sec.gov.attacker.example/document']){
+  const r=report();r.evidence_manifest[0].url=url;
+  assert.throws(()=>validateAiReport(r),RangeError);
+  r.evidence_manifest[0].source_class='public_document_candidate';
+  assert.doesNotThrow(()=>validateAiReport(r));
+ }
+});
 test('presupuesto documental cuenta consultas y URLs legibles reales',()=>{
  const x=report();
  x.source_documents=[{url:'https://www.justice.gov/example',status:'text_extracted',

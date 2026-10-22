@@ -11,6 +11,31 @@ from tools.ai_research_pipeline import (
 
 
 class PipelineContractTests(unittest.TestCase):
+    def test_government_repositories_do_not_gain_regulatory_authority(self):
+        from tools.ai_source_discovery import regulatory_host
+        for host in ("pubmed.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov", "id.loc.gov",
+                     "sec.gov.attacker.example", "notsec.gov"):
+            self.assertFalse(regulatory_host(host))
+        self.assertTrue(regulatory_host("www.justice.gov"))
+        sources, clients = self.discover()
+        prior = {**sources["evidence_manifest"][0],
+                 "url": "https://pubmed.ncbi.nlm.nih.gov/27018593",
+                 "source_class": "public_authority_candidate"}
+        selection = {"selected_wikidata_id": "Q100", "research_queue": {
+            "wikidata_id": "Q100", "title": "Empresa Ejemplo"},
+            "prior_evidence_manifest": [prior]}
+        with patch("tools.ai_source_discovery.wikipedia_links", return_value=[{
+                "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4855945",
+                "title": "Empresa Ejemplo", "discovered_by": "wikipedia_external_links"}]):
+            result = discover_sources(selection, clients=clients,
+                document_fetcher=lambda url, **_: (
+                    ("<p>" + prior["excerpt"] + "</p>").encode(), url, "text/html"))
+        self.assertEqual(len(result["evidence_manifest"]), 2)
+        self.assertTrue(all(e["source_class"] == "public_document_candidate"
+                            for e in result["evidence_manifest"]))
+        self.assertEqual(result["retrieval_budget"]["public_authority_domains_with_text"], 0)
+        validate_report_locally(source_report(result))
+
     def discover(self):
         title = "Empresa Ejemplo"
         selection = {"selected_wikidata_id": "Q100", "research_queue": {

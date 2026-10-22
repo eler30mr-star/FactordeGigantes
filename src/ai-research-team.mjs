@@ -1,4 +1,6 @@
 // Solo OIDC de radar para escritura. D1 conserva reservas y resultados sin aprobación.
+import regulatoryAuthorities from './regulatory-authorities.json' with {type:'json'};
+const regulatoryHost=host=>regulatoryAuthorities.some(d=>host===d||host.endsWith('.'+d));
 export const AI_CAPS=Object.freeze({tavily:[8,200],exa:[4,60],gemini:[4,100],
  groq:[4,100],mistral:[2,40],openrouter:[2,40],cloudflare:[4,100]});
 const PROVIDERS=new Set([...Object.keys(AI_CAPS),'qwen','wikipedia','gdelt','d1_history']);
@@ -71,7 +73,10 @@ export function validateAiReport(r,now=new Date()){
     !['potential_official_primary','potential_official_pdf','public_authority_candidate','public_document_candidate'].includes(e.source_class)||
     (e.page!==null&&(!Number.isSafeInteger(e.page)||e.page<1||e.page>350)))
       throw new RangeError('Pasaje sin procedencia');
-  publicUrl(e.url);known.add(e.id);
+  publicUrl(e.url);
+  if(e.source_class==='public_authority_candidate'&&!regulatoryHost(new URL(e.url).hostname))
+   throw new RangeError('Alojamiento público no acredita una autoridad regulatoria');
+  known.add(e.id);
  }
  validateClaims(r.candidate_claims,known);validateClaims(r.preliminary_claims,known);
  if(r.research_freshness!==undefined&&r.research_freshness!==null){
