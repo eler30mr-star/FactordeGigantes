@@ -71,6 +71,19 @@ test("rechaza falsos permisos, citas inexistentes, autores y URLs hostiles",asyn
   assert.equal(d.batches.length,0);
  }
 });
+test("rechaza mezcla de dos empresas aun con citas individuales válidas",async()=>{
+ const r=basic(),d=db();
+ r.evidence_manifest.push({...r.evidence_manifest[0],id:"E002",
+   wikidata_id:"Q221062",company:"Otra empresa",document_sha256:"b".repeat(64)});
+ r.evidence_count=2;
+ await assert.rejects(storeMarketResearch(d,r),/mezcla compañías/);
+ assert.equal(d.batches.length,0);
+ const another=basic(),db2=db();
+ another.selected_wikidata_id="Q221062";
+ await assert.rejects(storeMarketResearch(db2,another),/no coincide/);
+ assert.equal(db2.batches.length,0);
+});
+
 test("sin evidencia recuperada persiste observación vacía y permanece bloqueada",async()=>{
  const r=basic(),d=db();
  Object.assign(r,{status:"skipped_no_documentary_evidence",evidence_manifest:[],evidence_count:0});
