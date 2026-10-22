@@ -25,7 +25,7 @@ class CorroborationGates(unittest.TestCase):
         ],[{"evidence_ids":["E001","E002"]}])
         self.assertEqual(result["independent_domains"],2)
         self.assertNotIn("no_independent_domain",result["claim_gaps"][0]["gaps"])
-        self.assertIn("no_regulatory_primary_document",result["claim_gaps"][0]["gaps"])
+        self.assertIn("no_original_primary_document",result["claim_gaps"][0]["gaps"])
         self.assertFalse(result["ready_for_script"])
 
     def test_even_a_regulator_and_independent_report_is_not_automatically_verified(self):
