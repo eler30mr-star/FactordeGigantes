@@ -1,5 +1,6 @@
 """Fixtures de página corporativa: texto sintético, sin atribuirle realidad."""
 import unittest
+from unittest.mock import patch
 from tools.market_official_evidence import collect_official_evidence,candidates_from_reports
 def reports():
     w={"method":"wikimedia_wikidata_company_discovery_v1","collected_on":"2026-10-21",
@@ -27,6 +28,18 @@ class OfficialEvidence(unittest.TestCase):
         self.assertTrue(all(not x["publication_authorized"] for x in result["evidence"]))
         self.assertEqual(len(calls),2)
         self.assertTrue(all(timeout==12 for _,timeout in calls))
+    def test_substantive_excerpt_beats_navigation_from_realistic_html(self):
+        w,n=reports()
+        text="El informe institucional recoge hechos empresariales que deben corroborarse " \
+             "con otros documentos y con el contexto histórico antes de narrarlos."
+        with patch("tools.market_official_evidence.extract_blocks",
+                   return_value=["Aviso de cookies",text]):
+            result=collect_official_evidence(w,n,
+                fetcher=lambda url,timeout:(b"<html><body>Ejemplo</body></html>",url,"text/html"))
+        self.assertEqual(result["readable"],2)
+        self.assertEqual(result["evidence"][0]["short_excerpt"],text)
+        self.assertFalse(result["evidence"][0]["source_identity_verified"])
+
     def test_rejects_ssrf_urls_and_dedupes_by_canonical_entity(self):
         w,n=reports()
         n["candidates"][0]["official_website_candidate"]="http://localhost/"
