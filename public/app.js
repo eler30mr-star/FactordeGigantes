@@ -269,6 +269,20 @@ async function loadAiTeam(){
     row.append(tag('strong','',`${stage.provider} · ${roles[stage.role]||stage.role}`),
       tag('p','muted',statuses[stage.status]||stage.status));root.append(row);
   }
+  if(report.source_quality){
+    const q=report.source_quality;
+    const note=tag('article','job','');
+    note.append(tag('strong','','Cobertura y corroboración documental'),
+      tag('p','muted',
+        'Documentos: '+String(q.unique_documents)+
+        ' · dominios distintos: '+String(q.independent_domains)+
+        ' · dominios regulatorios: '+String(q.regulatory_primary_domains)+
+        ' · afirmaciones que requieren contraste: '+String(q.claims_requiring_review)));
+    note.append(tag('small','',
+      'Varias citas del mismo documento no constituyen corroboración independiente. '+
+      'Ninguna coincidencia entre modelos verifica automáticamente los hechos.'));
+    root.append(note);
+  }
   for(const e of report.evidence_manifest){
     const row=tag('article','job','');
     row.append(tag('strong','',`Fuente ${e.id}${e.page?' · página '+e.page:''}`),tag('p','muted',e.excerpt));
