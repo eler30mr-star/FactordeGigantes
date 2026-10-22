@@ -80,11 +80,18 @@ export function validateAiReport(r,now=new Date()){
   const documents=new Set(fresh.map(d=>d.resolved_url));
   const hosts=new Set([...documents].map(u=>new URL(u).hostname));
   if(!b||typeof b!=='object'||b.max_documents!==8||
-     !Number.isSafeInteger(b.attempted)||b.attempted!==r.source_documents.length||
+     !Number.isSafeInteger(b.attempted)||b.attempted<r.source_documents.length||
+     b.attempted>8||!Array.isArray(b.attempted_urls)||
+     b.attempted_urls.length!==b.attempted||
+     new Set(b.attempted_urls).size!==b.attempted||
+     b.attempted_urls.some(u=>{try{publicUrl(u);return false;}catch{return true;}})||
+     r.source_documents.some(d=>!b.attempted_urls.includes(d.url))||
      !Number.isSafeInteger(b.documents_with_relevant_text)||
-     b.documents_with_relevant_text!==documents.size||
+     b.documents_with_relevant_text<documents.size||
+     b.documents_with_relevant_text>b.attempted||
      !Number.isSafeInteger(b.independent_domains_with_text)||
-     b.independent_domains_with_text!==hosts.size||
+     b.independent_domains_with_text<hosts.size||
+     b.independent_domains_with_text>b.documents_with_relevant_text||
      !Number.isSafeInteger(b.public_authority_domains_with_text)||
      b.public_authority_domains_with_text<0||
      b.public_authority_domains_with_text>hosts.size||
