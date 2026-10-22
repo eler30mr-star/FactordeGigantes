@@ -83,6 +83,34 @@ test('selección D1 real, historial idempotente y una única cola activa',async(
  assert.equal(raw.prepare('PRAGMA foreign_key_check').all().length,0);
  assert.equal(first.automatic_publication_allowed,false);
 });
+test('selección D1 entrega histórico de URLs agotadas y pasajes para la siguiente investigación',async()=>{
+ const raw=sqliteD1(),day=DAY;
+ raw.prepare("INSERT INTO market_entities(wikidata_id,title,first_seen,last_seen) VALUES (?,?,?,?)")
+   .run('Q100','Empresa ejemplo',day,day);
+ raw.prepare("INSERT INTO market_research_selection_runs(id,observed_on,method,candidate_count,qualified_count,ranked_snapshot_json) VALUES (?,?,?,?,?,?)")
+   .run('sel-history',day,'research_market_priority_v1',1,1,'{}');
+ raw.prepare("INSERT INTO market_research_queue(id,wikidata_id,title,selection_run_id,market_score,state) VALUES (?,?,?,?,?,?)")
+   .run('rq-history','Q100','Empresa ejemplo','sel-history',65,'awaiting_sources');
+ const prior={schema:'fdg_ai_pipeline_v1',collected_on:day,
+   selected_wikidata_id:'Q100',source_documents:[
+     {url:'https://www.justice.gov/doc-restricted',status:'fetch_failed'},
+     {url:'https://site.example/original',status:'text_extracted'}],
+   evidence_manifest:[{id:'E001',wikidata_id:'Q100',company:'Empresa ejemplo',
+     url:'https://site.example/original',document_sha256:'a'.repeat(64),
+     page:null,source_class:'public_document_candidate',
+     excerpt:'La Empresa ejemplo anunció un documento de operaciones con detalles de activos y pasivos en su comunicación corporativa pública.'}]};
+ raw.prepare("INSERT INTO market_ai_pipeline_runs(id,collected_on,wikidata_id,status,analysis_provider,evidence_count,claims_count,report_json) VALUES (?,?,?,?,?,?,?,?)")
+   .run('ai-history',day,'Q100','candidate_claims_generated','gemini',1,0,JSON.stringify(prior));
+ const out=await selectResearchFromD1(adapter(raw),new Date(day+'T12:00:00Z'));
+ assert.equal(out.selected_wikidata_id,'Q100');
+ assert.deepEqual(out.prior_attempted_urls,
+   ['https://www.justice.gov/doc-restricted','https://site.example/original']);
+ assert.equal(out.prior_evidence_manifest.length,1);
+ assert.equal(out.prior_evidence_manifest[0].document_sha256,'a'.repeat(64));
+ assert.equal(out.script_authorized,false);
+ assert.equal(raw.prepare('PRAGMA foreign_key_check').all().length,0);
+});
+
 test('OIDC protege selección y ADMIN protege lectura de la cola',async()=>{
  const env={ADMIN_TOKEN:'a'.repeat(32),RENDERER_TOKEN:'r'.repeat(32),DB:{}};
  for(const auth of ['',env.ADMIN_TOKEN,env.RENDERER_TOKEN]){
