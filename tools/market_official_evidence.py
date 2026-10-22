@@ -46,6 +46,37 @@ def candidates_from_reports(wiki,entities):
             if len(ordered)>=LIMIT:return ordered
     return ordered
 
+PROMOTIONAL=("cookie", "cookies", "privacy policy", "política de privacidad",
+             "accept all", "accept cookies", "sign up", "newsletter", "suscríbete",
+             "advertising", "contact us", "contáctenos", "all rights reserved",
+             "explore our", "discover our", "learn more", "click here", "inicio sesión")
+DOCUMENTAL=("annual report", "financial report", "quarterly", "revenue", "investment",
+            "founded", "history", "manufacturing", "acquisition", "company was",
+            "informe anual", "ingresos", "inversión", "fundada", "historia",
+            "fabricación", "adquisición", "resultados", "operaciones", "producción")
+
+def select_documentary_excerpt(blocks):
+    """Selecciona texto REAL potencialmente útil, no reescribe ni inventa.
+
+    Penaliza menús y promociones; prioriza bloques fechados o sobre operaciones.
+    No considera las palabras clave como certificación factual.
+    """
+    ranked=[]
+    for i,block in enumerate(blocks):
+        if not isinstance(block,str):continue
+        excerpt=" ".join(block.split())
+        if not 90<=len(excerpt)<=5000:continue
+        lower=excerpt.casefold()
+        penalties=sum(token in lower for token in PROMOTIONAL)
+        documentary=sum(token in lower for token in DOCUMENTAL)
+        dated=bool(re.search(r"(?<!\\d)(?:19|20)\\d{2}(?!\\d)",excerpt))
+        score=3*min(documentary,3)+2*dated-6*penalties+min(3,len(excerpt)//250)
+        ranked.append((score,-i,excerpt))
+    if not ranked:
+        return (blocks[0][:300] if blocks else None), "insufficient_context"
+    best=max(ranked)
+    return best[2][:300],("documentary_candidate" if best[0]>0 else "generic_candidate")
+
 def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
     companies=candidates_from_reports(wiki,entities)
     collected=wiki["collected_on"]
@@ -63,13 +94,7 @@ def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
             if not isinstance(body,bytes) or len(body)>2_000_000:
                 raise ValueError("Contenido oficial supera límite")
             blocks=extract_blocks(body,mime)
-            # El primer bloque suele ser navegación/aviso de cookies (60–72 caracteres
-            # en la captura real). Elegir el primer pasaje sustantivo, sin copiar
-            # la página ni construir afirmaciones con texto que no existe.
-            candidates=[" ".join(b.split()) for b in blocks
-                        if isinstance(b,str) and 90<=len(" ".join(b.split()))<=5000]
-            selected_excerpt=candidates[0][:300] if candidates else (
-                blocks[0][:300] if blocks else None)
+            selected_excerpt,excerpt_quality=select_documentary_excerpt(blocks)
             links=find_official_document_links(resolved,body,mime=mime)
             result.update({"status":"candidate_page_readable" if blocks else "candidate_page_unreadable",
                 "content_sha256":hashlib.sha256(body).hexdigest(),
@@ -77,7 +102,7 @@ def collect_official_evidence(wiki,entities,*,fetcher=fetch_public):
                 "document_link_candidates":[{
                    "url":p["url"],"document_fetched":False,"ownership_verified":False
                 } for p in links[:DOC_LIMIT]],
-                "short_excerpt":selected_excerpt})
+                "short_excerpt":selected_excerpt,"excerpt_quality":excerpt_quality})
         except (OSError,TimeoutError,ValueError,OverflowError,UnicodeError,KeyError,TypeError) as exc:
             result["fetch_error_type"]=type(exc).__name__
         evidence.append(result)
