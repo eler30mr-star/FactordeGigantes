@@ -36,7 +36,7 @@ class StoryboardTests(unittest.TestCase):
     def test_single_news_blocks_all_storytelling(self):
         research,market=fixture(False)
         result=inspect_episode(research,market)
-        self.assertEqual(result["status"],"blocked_insufficient_corroborration")
+        self.assertEqual(result["status"],"blocked_insufficient_corroboration")
         self.assertEqual(result["scenes"],[])
         self.assertIn("at_least_two_original_documents_required",result["blocking_reasons"])
         self.assertFalse(result["ready_for_render"])
@@ -54,6 +54,16 @@ class StoryboardTests(unittest.TestCase):
         self.assertTrue(all(not x["facts_approved"] for x in result["scenes"]))
         self.assertGreater(result["estimated_narration_words"],1400)
         self.assertFalse(result["factual_approval"])
+        self.assertFalse(result["publication_authorized"])
+
+    def test_no_selection_creates_explicit_block_not_workflow_failure(self):
+        result=inspect_episode({
+            "schema":"fdg_ai_pipeline_v1","selected_wikidata_id":None,
+            "ready_for_script":False,"publication_authorized":False,
+            "facts_verified_automatically":0},
+            {"selected_wikidata_id":None,"research_queue":None})
+        self.assertEqual(result["status"],"blocked_no_market_selection")
+        self.assertEqual(result["scenes"],[])
         self.assertFalse(result["publication_authorized"])
 
     def test_groq_uncertainty_blocks_outline(self):
