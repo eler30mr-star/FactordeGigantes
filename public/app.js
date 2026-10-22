@@ -303,6 +303,38 @@ async function loadMarketResearch() {
     root.append(el);
   }
 }
+async function loadResearchQueue(){
+  const data=await request('/api/market/research-queue');
+  if(!Array.isArray(data.queue))throw Error('No se pudo consultar la selección');
+  const active=data.queue.find(q=>q.state!=='closed');
+  const states={awaiting_sources:'Buscando fuentes',researching:'Investigando',review:'En revisión'};
+  $('research-queue-status').textContent=active?
+    active.title+' · '+(states[active.state]||'Pendiente de investigación'):
+    'Todavía no hay un tema con señales suficientes para investigar.';
+  const root=$('research-queue-results');root.replaceChildren();
+  const ranking=data.latest_selection?.rankings||[];
+  const labels={need_two_recent_youtube_region_samples:'Faltan dos muestras recientes de YouTube',
+    need_three_videos_and_two_channels:'Faltan videos o diversidad de canales',
+    need_recent_wikipedia_window:'Falta una señal independiente reciente'};
+  const numbers=new Intl.NumberFormat('es',{maximumFractionDigits:2});
+  for(const item of ranking.filter(x=>x.eligible_for_research||x.youtube_unique_videos).slice(0,10)){
+    const card=tag('article','job',''),head=tag('div','jobtop','');
+    head.append(tag('strong','',String(item.title)),tag('span','tag',
+      item.wikidata_id===active?.wikidata_id?'En investigación':
+      item.eligible_for_research?'Candidato medido':'Faltan datos'));
+    card.append(head);
+    card.append(tag('p','muted',
+      'Prioridad comparativa: '+(item.market_score===null?'pendiente':numbers.format(item.market_score)+'/100')+
+      ' · videos distintos: '+String(item.youtube_unique_videos)+
+      ' · canales: '+String(item.youtube_distinct_channels)+
+      ' · mediana de vistas por día de antigüedad: '+(item.median_daily_views===null?'sin muestra':numbers.format(item.median_daily_views))));
+    if(item.reasons?.length)card.append(tag('p','muted',item.reasons.map(r=>labels[r]||'Se requieren más datos').join(' · ')));
+    root.append(card);
+  }
+}
+$('research-queue-refresh').addEventListener('click',()=>loadResearchQueue().catch(e=>{
+  $('research-queue-status').textContent=e.message;
+}));
 $("market-research-refresh").addEventListener("click",()=>loadMarketResearch().catch(e=>{
   $("market-research-status").textContent=e.message;
 }));
@@ -610,6 +642,7 @@ $("connect").addEventListener("click",async () => {
     loadOfficialEvidence().catch(e=>{$("official-status").textContent=e.message;});
     loadPdfEvidence().catch(e=>{$("pdf-status").textContent=e.message;});
     loadMarketResearch().catch(e=>{$("market-research-status").textContent=e.message;});
+    loadResearchQueue().catch(e=>{$('research-queue-status').textContent=e.message;});
     loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
     loadYoutubeMarket().catch(e=>{$("youtube-status").textContent=e.message;});
     loadCrossSignals().catch(e=>{$("cross-status").textContent=e.message;});

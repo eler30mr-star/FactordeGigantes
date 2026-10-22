@@ -176,5 +176,15 @@ class RadarResearchPipeline(unittest.TestCase):
                              api_key='x'*20,free_confirmed=True)
         self.assertTrue(out['evidence_manifest'])
 
+    def test_market_choice_is_not_replaced_by_another_company_with_more_text(self):
+        official,primary,pdf=documents()
+        def no_model(prompt):self.fail('Selected company has no evidence')
+        out=run_investigation(pdf,official_report=official,primary_pages_report=primary,
+              provider='qwen_local',local_generate=no_model,selected_qid='Q99999')
+        self.assertEqual(out['status'],'skipped_no_documentary_evidence')
+        self.assertEqual(out['requested_wikidata_id'],'Q99999')
+        self.assertEqual(out['evidence_manifest'],[])
+        self.assertEqual(out['deferred_wikidata_ids'],['Q12345'])
+
 
 if __name__=='__main__':unittest.main()

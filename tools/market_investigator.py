@@ -128,7 +128,7 @@ def prepare_evidence(pdf_report, official_report=None, primary_pages_report=None
     return [{**e,"id":f"E{i+1:03d}"} for i,e in enumerate(expanded)]
 
 
-def select_one_company(evidence):
+def select_one_company(evidence,selected_qid=None):
     """Nunca unir fuentes de dos compañías para una tesis documental.
 
     Ranking determinista basado en evidencia realmente obtenida, NO en
@@ -140,6 +140,11 @@ def select_one_company(evidence):
         if not isinstance(item,dict) or not QID.fullmatch(str(item.get("wikidata_id",""))):
             continue
         groups.setdefault(item["wikidata_id"],[]).append(item)
+    if selected_qid is not None:
+        if not QID.fullmatch(str(selected_qid)):raise ValueError('Selección de mercado inválida')
+        deferred=sorted(q for q in groups if q!=selected_qid)
+        selected=groups.get(selected_qid,[])[:MAX_EVIDENCE]
+        return [{**e,'id':f'E{i+1:03d}'} for i,e in enumerate(selected)],deferred
     if not groups:
         return [],[]
     def score(pair):
@@ -156,18 +161,19 @@ def select_one_company(evidence):
 
 
 def run_investigation(pdf_report,*,official_report=None,primary_pages_report=None,free_confirmed=False,api_key=None,model="gemini-2.5-flash-lite",
-                      runner=run_gemini_free,provider="gemini_free",local_generate=None):
+                      runner=run_gemini_free,provider="gemini_free",local_generate=None,selected_qid=None):
     if provider not in {"gemini_free","qwen_local","disabled"}:
         raise ValueError("Proveedor investigador no permitido")
     all_evidence=prepare_evidence(pdf_report,official_report=official_report,primary_pages_report=primary_pages_report)
-    evidence,deferred=select_one_company(all_evidence)
+    evidence,deferred=select_one_company(all_evidence,selected_qid)
     # Manifiesto documental con pasajes breves para D1, incluso sin LLM.
     # Todo extracto es público, no equivale a confirmación de hechos.
     base={"source_report_day":pdf_report.get("collected_on"),
       "source_provider":"market_official_and_pdf_v1",
       "selected_wikidata_id":evidence[0]["wikidata_id"] if evidence else None,
       "deferred_wikidata_ids":deferred,
-      "selection_method":"evidence_coverage_not_market_selection_v1",
+      "selection_method":"d1_market_research_queue_v1" if selected_qid else "evidence_coverage_not_market_selection_v1",
+      "requested_wikidata_id":selected_qid,
       "evidence_manifest":evidence,"evidence_count":len(evidence),
       "candidate_claims":[],"missing_questions":[],
       "facts_verified_automatically":0,"ready_for_script":False,
@@ -205,6 +211,7 @@ def main():
     p.add_argument("--pdf-report",required=True,type=Path)
     p.add_argument("--official-report",type=Path)
     p.add_argument("--primary-pages-report",type=Path)
+    p.add_argument("--selection",type=Path)
     p.add_argument("--out",required=True,type=Path)
     p.add_argument("--provider",choices=("gemini_free","qwen_local","disabled"),
                    default=os.getenv("RESEARCH_PROVIDER","gemini_free"))
@@ -212,14 +219,16 @@ def main():
     input_data=json.loads(a.pdf_report.read_text(encoding="utf-8"))
     official_data=json.loads(a.official_report.read_text(encoding="utf-8")) if a.official_report else None
     primary_data=json.loads(a.primary_pages_report.read_text(encoding="utf-8")) if a.primary_pages_report else None
+    selection=json.loads(a.selection.read_text(encoding='utf-8')) if a.selection else {}
+    selected_qid=selection.get('selected_wikidata_id')
     authorized=os.getenv("GEMINI_RESEARCH_FREE_CONFIRMED")=="1"
     key=os.getenv("GEMINI_API_KEY")
     try:
-        out=run_investigation(input_data,official_report=official_data,primary_pages_report=primary_data,free_confirmed=authorized,api_key=key,provider=a.provider)
+        out=run_investigation(input_data,official_report=official_data,primary_pages_report=primary_data,free_confirmed=authorized,api_key=key,provider=a.provider,selected_qid=selected_qid)
     except (OSError,ValueError,RuntimeError,KeyError,TypeError) as exc:
         # Nunca registrar cuerpo remoto, token de cabecera o prompt sin consentimiento.
         evidence,deferred=select_one_company(
-            prepare_evidence(input_data,official_report=official_data,primary_pages_report=primary_data))
+            prepare_evidence(input_data,official_report=official_data,primary_pages_report=primary_data),selected_qid)
         out={"status":"research_provider_failure","error_type":type(exc).__name__,
              "provider":None,
              "selected_wikidata_id":evidence[0]["wikidata_id"] if evidence else None,

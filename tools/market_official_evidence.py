@@ -106,7 +106,12 @@ def select_documentary_excerpt(blocks):
     best=max(ranked)
     return best[2][:300],"generic_candidate"
 
-def collect_official_evidence(wiki,entities,*,fetcher=fetch_public,previous_report=None):
+def collect_official_evidence(wiki,entities,*,fetcher=fetch_public,previous_report=None,selected_qid=None):
+    if selected_qid is not None:
+        if not isinstance(selected_qid,str) or not QID.fullmatch(selected_qid):
+            raise ValueError('Selección de mercado inválida')
+        wiki={**wiki,'candidates':[c for c in wiki.get('candidates',[]) if c.get('wikidata_id')==selected_qid]}
+        entities={**entities,'candidates':[c for c in entities.get('candidates',[]) if c.get('wikidata_id')==selected_qid]}
     excluded_ids=[];excluded_hosts=[]
     if previous_report is not None:
         validate_batch(previous_report,wiki.get("collected_on"))
@@ -196,15 +201,18 @@ def main():
     p.add_argument("--out",required=True,type=Path)
     p.add_argument("--previous-report",type=Path)
     p.add_argument("--combine-report",type=Path)
+    p.add_argument("--selection",type=Path)
     a=p.parse_args()
     previous=json.loads(a.previous_report.read_text(encoding="utf-8")) if a.previous_report else None
+    selection=json.loads(a.selection.read_text(encoding='utf-8')) if a.selection else {}
     if a.combine_report:
         if previous is None:raise ValueError("Falta primera tanda")
         r=combine_batches(previous,json.loads(a.combine_report.read_text(encoding="utf-8")))
     else:
         r=collect_official_evidence(
           json.loads(a.companies.read_text(encoding="utf-8")),
-          json.loads(a.news_entities.read_text(encoding="utf-8")),previous_report=previous)
+          json.loads(a.news_entities.read_text(encoding="utf-8")),previous_report=previous,
+          selected_qid=selection.get('selected_wikidata_id'))
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(r,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("SITIOS_CORPORATIVOS_EXAMINADOS:",r["attempted"],

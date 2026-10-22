@@ -111,12 +111,42 @@ jobs:
         run: |
           python -m tools.push_news_entity_assess --mode entities \
             --input dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json
+      - name: Medir competencia YouTube con presupuesto explícito y limitado
+        env:
+          YOUTUBE_DATA_API_KEY: ${{ secrets.YOUTUBE_DATA_API_KEY }}
+          # Propietario autorizó conectar la clave el 2026-10-22. Máximo
+          # cuatro búsquedas y cuatro lecturas; la variable 0 sigue deteniendo API.
+          YOUTUBE_MARKET_BUDGET_ENABLED: ${{ vars.YOUTUBE_MARKET_BUDGET_ENABLED || '1' }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python - <<'PY'
+          import os
+          print('YOUTUBE_CLAVE_CONFIGURADA:',len(os.getenv('YOUTUBE_DATA_API_KEY',''))>=20)
+          print('YOUTUBE_CUOTA_AUTORIZADA:',os.getenv('YOUTUBE_MARKET_BUDGET_ENABLED')=='1')
+          PY
+          python -m unittest discover -s tests -p test_youtube_market_study.py -v
+          # Sin clave o aprobación de cuota, no realiza llamadas ni inventa resultados.
+          timeout -k 5s 120s python -m tools.youtube_market_study \
+            --discovery dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
+            --out dist/radar/YOUTUBE_MUESTRAS_NO_CALIFICADAS.json
+          if [ -f dist/radar/YOUTUBE_MUESTRAS_NO_CALIFICADAS.json ]; then
+            python -m tools.push_youtube_study \
+              --input dist/radar/YOUTUBE_MUESTRAS_NO_CALIFICADAS.json
+          else
+            echo "YOUTUBE_D1_SIN_CAMBIOS: falta clave, autorización de cuota o candidatos"
+          fi
+      - name: Elegir qué investigar desde las observaciones reales en D1
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m tools.push_market_selection --out dist/radar/SELECCION_INVESTIGACION_D1.json
       - name: Recuperar sitios corporativos candidatos de Wikidata P856 con DNS seguro
         run: |
           python -m unittest discover -s tests -p test_market_official_evidence.py -v
           timeout -k 5s 75s python -m tools.market_official_evidence \
             --companies dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
             --news-entities dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json \
+            --selection dist/radar/SELECCION_INVESTIGACION_D1.json \
             --out dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json
       - name: Persistir hashes y URLs corporativas con identidad temporal GitHub
         env:
@@ -132,6 +162,7 @@ jobs:
           timeout -k 5s 75s python -m tools.market_official_evidence \
             --companies dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
             --news-entities dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json \
+            --selection dist/radar/SELECCION_INVESTIGACION_D1.json \
             --previous-report dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
             --out dist/radar/PAGINAS_OFICIALES_SEGUNDA_TANDA.json
       - name: Persistir segunda tanda y consolidar contexto local sin alterar contratos D1
@@ -143,6 +174,7 @@ jobs:
           python -m tools.market_official_evidence \
             --companies dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
             --news-entities dist/radar/ENTIDADES_DE_NOTICIAS_NO_CONFIRMADAS.json \
+            --selection dist/radar/SELECCION_INVESTIGACION_D1.json \
             --previous-report dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
             --combine-report dist/radar/PAGINAS_OFICIALES_SEGUNDA_TANDA.json \
             --out dist/radar/PAGINAS_OFICIALES_CONTEXTO_LOCAL.json
@@ -177,7 +209,8 @@ jobs:
           evidence,_=select_one_company(prepare_evidence(
               read('PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json'),
               read('PAGINAS_OFICIALES_CONTEXTO_LOCAL.json'),
-              read('PAGINAS_INVERSORES_NO_CORROBORADAS.json')))
+              read('PAGINAS_INVERSORES_NO_CORROBORADAS.json')),
+              read('SELECCION_INVESTIGACION_D1.json').get('selected_wikidata_id'))
           provider=os.environ['RESEARCH_PROVIDER']
           assert provider in {'qwen_local','gemini_free','disabled'}
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
@@ -197,6 +230,7 @@ jobs:
           python -m unittest discover -s tests -p test_market_investigator.py -v
           timeout -k 10s 420s python -m tools.market_investigator \
             --pdf-report dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json \
+            --selection dist/radar/SELECCION_INVESTIGACION_D1.json \
             --official-report dist/radar/PAGINAS_OFICIALES_CONTEXTO_LOCAL.json \
             --primary-pages-report dist/radar/PAGINAS_INVERSORES_NO_CORROBORADAS.json \
             --out dist/radar/INVESTIGACION_IA_NO_APROBADA.json
@@ -228,30 +262,6 @@ jobs:
         run: |
           python -m tools.push_market_cross \
             --input dist/radar/COINCIDENCIAS_EMPRESA_NOTICIA_SIN_VERIFICAR.json
-      - name: Medir competencia YouTube con presupuesto explícito y limitado
-        env:
-          YOUTUBE_DATA_API_KEY: ${{ secrets.YOUTUBE_DATA_API_KEY }}
-          # Propietario autorizó conectar la clave el 2026-10-22. Máximo
-          # cuatro búsquedas y cuatro lecturas; la variable 0 sigue deteniendo API.
-          YOUTUBE_MARKET_BUDGET_ENABLED: ${{ vars.YOUTUBE_MARKET_BUDGET_ENABLED || '1' }}
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-        run: |
-          python - <<'PY'
-          import os
-          print('YOUTUBE_CLAVE_CONFIGURADA:',len(os.getenv('YOUTUBE_DATA_API_KEY',''))>=20)
-          print('YOUTUBE_CUOTA_AUTORIZADA:',os.getenv('YOUTUBE_MARKET_BUDGET_ENABLED')=='1')
-          PY
-          python -m unittest discover -s tests -p test_youtube_market_study.py -v
-          # Sin clave o aprobación de cuota, no realiza llamadas ni inventa resultados.
-          timeout -k 5s 120s python -m tools.youtube_market_study \
-            --discovery dist/radar/EMPRESAS_DESCUBIERTAS_NO_CLASIFICADAS.json \
-            --out dist/radar/YOUTUBE_MUESTRAS_NO_CALIFICADAS.json
-          if [ -f dist/radar/YOUTUBE_MUESTRAS_NO_CALIFICADAS.json ]; then
-            python -m tools.push_youtube_study \
-              --input dist/radar/YOUTUBE_MUESTRAS_NO_CALIFICADAS.json
-          else
-            echo "YOUTUBE_D1_SIN_CAMBIOS: falta clave, autorización de cuota o candidatos"
-          fi
       - name: Evaluar oportunidades desde D1 y registrar bloqueos reales
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}

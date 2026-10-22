@@ -1,4 +1,5 @@
 import {verifyMarketOIDC} from "./github-oidc.mjs";
+import {selectResearchFromD1,readResearchQueue} from "./market-research-selection.mjs";
 import {storeNewsEntities} from "./news-entity-ingest.mjs";
 import {storeOfficialEvidence,readOfficialEvidence} from "./market-official-ingest.mjs";
 import {storePdfEvidence,readPdfEvidence} from "./market-pdf-ingest.mjs";
@@ -127,13 +128,23 @@ async function handle(request,env) {
   const ingestOfficial=parts[1]==="market" && parts[2]==="official" && parts[3]==="ingest" && parts.length===4;
   const ingestPdf=parts[1]==="market" && parts[2]==="pdf" && parts[3]==="ingest" && parts.length===4;
   const ingestResearch=parts[1]==="market" && parts[2]==="research" && parts[3]==="ingest" && parts.length===4;
+  const runResearchSelection=url.pathname==='/api/market/research-selection/run';
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
-  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch) {
+  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
   } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  if(runResearchSelection){
+    if(method!=='POST')return err('Método no admitido',405);
+    return json(await selectResearchFromD1(env.DB),201);
+  }
+  if(url.pathname==='/api/market/research-queue'){
+    if(method!=='GET')return err('Método no admitido',405);
+    const out=await readResearchQueue(env.DB);
+    return out.error?err(out.error,out.status):json(out);
+  }
   if (ingest) {
     if (method !== "POST") return err("Método no admitido",405);
     try {return json(await persistMarketReport(env.DB,await parseBody(request)),201);}
