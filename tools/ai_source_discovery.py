@@ -84,6 +84,34 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     if not qid:
         out["status"] = "skipped_no_selection"
         return out
+    # La selección D1 informa qué enlaces ya fallaron y qué pasajes se
+    # observaron anteriormente. Sólo usarlos para ampliar el dossier cuando
+    # se consiga al menos UNA fuente nueva. Así evitamos gasto IA redundante.
+    previous_urls = selection.get("prior_attempted_urls", [])
+    previous_passages = selection.get("prior_evidence_manifest", [])
+    if (not isinstance(previous_urls,list) or len(previous_urls)>8 or
+            not isinstance(previous_passages,list) or len(previous_passages)>4):
+        raise ValueError("Historial de fuentes excede el presupuesto")
+    for url in previous_urls:
+        validate_url(url)
+    previous_urls = set(previous_urls)
+    preserved = []
+    for passage in previous_passages:
+        if (not isinstance(passage,dict) or passage.get("wikidata_id")!=qid or
+                not isinstance(passage.get("url"),str) or
+                not isinstance(passage.get("excerpt"),str) or
+                len(passage["excerpt"])<90 or len(passage["excerpt"])>320 or
+                not isinstance(passage.get("document_sha256"),str) or
+                not re.fullmatch(r"[0-9a-f]{64}",passage["document_sha256"]) or
+                passage.get("source_class") not in
+                    {"potential_official_primary","potential_official_pdf",
+                     "public_authority_candidate","public_document_candidate"}):
+            raise ValueError("Fuente histórica D1 sin procedencia admitida")
+        validate_url(passage["url"])
+        preserved.append(passage)
+    out["stages"].append({"provider":"d1_history","role":"avoid_duplicate_sources",
+                          "status":"success" if previous_urls else "empty",
+                          "result_count":len(previous_urls)})
     leads = []
     try:
         leads.extend(wikipedia_links(title, fetcher=wiki_fetcher))
@@ -111,7 +139,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             validate_url(url)
             # URL completa observada, sin fragmentos y sin credenciales.
             url = url.split("#", 1)[0]
-            if url in seen:
+            if url in seen or url in previous_urls:
                 continue
             seen.add(url)
             eligible.append({**lead, "url": url})
@@ -222,7 +250,22 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         "public_authority_domains_with_text": len(regulatory_hits),
         "budget_exhausted": len(out["source_documents"]) >= MAX_DOCUMENTS,
     }
+    new_fragments=out["evidence_manifest"]
+    # Conservar citas viejas para comparar sólo si una nueva lectura real
+    # amplió la base informativa. Nunca recircular el mismo dossier a Gemini.
+    if new_fragments:
+        keys={(e["url"],e["document_sha256"],e.get("page"),e["excerpt"])
+              for e in new_fragments}
+        for old in preserved:
+            key=(old["url"],old["document_sha256"],old.get("page"),old["excerpt"])
+            if key not in keys:
+                keys.add(key)
+                new_fragments.append(old)
+            if len(new_fragments)>=MAX_EVIDENCE:
+                break
+    out["retrieval_budget"]["new_fragments"]=len(out["evidence_manifest"]) if not preserved else (
+        len(out["evidence_manifest"])-sum(e in preserved for e in out["evidence_manifest"]))
     out["evidence_manifest"] = [{**e, "id": f"E{i+1:03d}"}
-                                for i, e in enumerate(out["evidence_manifest"][:MAX_EVIDENCE])]
-    out["status"] = "sources_collected" if out["evidence_manifest"] else "skipped_no_documentary_evidence"
+                                for i, e in enumerate(new_fragments[:MAX_EVIDENCE])]
+    out["status"] = "sources_collected" if out["retrieval_budget"]["documents_with_relevant_text"] else "skipped_no_documentary_evidence"
     return out
