@@ -76,6 +76,21 @@ class InvestigatorTests(unittest.TestCase):
         self.assertEqual(outcome["deferred_wikidata_ids"],deferred)
         self.assertEqual(len(outcome["evidence_manifest"]),1)
 
+    def test_generic_promotional_excerpt_is_not_used_as_factual_evidence(self):
+        official={"provider":"wikidata_p856_safe_official_fetch_v1",
+          "primary_facts_verified":0,"ready_for_youtube":False,
+          "evidence":[{"wikidata_id":"Q53268","company":"Toyota",
+            "status":"candidate_page_readable",
+            "resolved_url":"https://global.toyota/",
+            "content_sha256":"b"*64,"excerpt_quality":"generic_candidate",
+            "short_excerpt":"Discover our brand and read corporate advertising information that is too superficial for a professional documentary investigation."}]}
+        sources=prepare_evidence(report(False),official_report=official)
+        self.assertEqual(sources,[])
+        def must_not_call(*args,**kwargs):self.fail("Never invoke the model for advertising")
+        outcome=run_investigation(report(False),official_report=official,
+          free_confirmed=True,api_key="x"*20,runner=must_not_call)
+        self.assertEqual(outcome["status"],"skipped_no_documentary_evidence")
+
     def test_valid_candidate_output_propagates_only_unverified_statements(self):
         def model(topic,evidence,**kw):
             self.assertEqual(topic,"Empresa de prueba")
