@@ -179,6 +179,71 @@ class DiscoveryTests(unittest.TestCase):
         self.assertTrue(out["evidence_manifest"])
         self.assertFalse(out["source_documents"][0]["full_document_text_read"])
 
+    def test_history_prevents_repeating_failed_urls_and_merges_only_new_evidence(self):
+        previous={**evidence()[0],"id":"E001","company":TITLE}
+        selection={**SELECTION,
+                   "prior_attempted_urls":["https://blocked.gov/empresa-ejemplo",
+                                           "https://reporter.example/old-story"],
+                   "prior_evidence_manifest":[previous]}
+        urls=["https://blocked.gov/empresa-ejemplo",
+              "https://reporter.example/old-story",
+              "https://fresh.example/empresa-ejemplo-new-study"]
+        def wiki(*a,**kw):
+            return (json.dumps({"parse":{"externallinks":urls}}).encode(),
+                    "https://en.wikipedia.org/w/api.php","application/json")
+        fetched=[]
+        def document(url,**kwargs):
+            fetched.append(url)
+            return ("<p>"+TEXT+"</p>").encode(),url,"text/html"
+        result=discover_sources(selection,clients=self.clients(),
+                                wiki_fetcher=wiki,document_fetcher=document)
+        self.assertEqual(fetched,["https://fresh.example/empresa-ejemplo-new-study"])
+        self.assertEqual(result["retrieval_budget"]["new_fragments"],1)
+        self.assertEqual(result["retrieval_budget"]["attempted"],1)
+        self.assertEqual({e["url"] for e in result["evidence_manifest"]},
+                         {previous["url"],"https://fresh.example/empresa-ejemplo-new-study"})
+        self.assertEqual([e["id"] for e in result["evidence_manifest"]],["E001","E002"])
+        self.assertEqual(result["status"],"sources_collected")
+
+    def test_same_document_not_resubmitted_to_ai_without_new_sources(self):
+        prior={**evidence()[0],"id":"E001","company":TITLE}
+        selection={**SELECTION,
+                   "prior_attempted_urls":["https://www.justice.gov/example"],
+                   "prior_evidence_manifest":[prior]}
+        def wiki(*a,**kw):
+            return (json.dumps({"parse":{"externallinks":[
+                    "https://www.justice.gov/example"]}}).encode(),
+                    "https://en.wikipedia.org/w/api.php","application/json")
+        result=discover_sources(selection,clients=self.clients(),
+          wiki_fetcher=wiki,
+          document_fetcher=lambda *_args,**_kw:self.fail("Se repite fuente antigua"))
+        self.assertEqual(result["status"],"skipped_no_documentary_evidence")
+        self.assertEqual(result["evidence_manifest"],[])
+        self.assertEqual(result["retrieval_budget"]["new_fragments"],0)
+        self.assertEqual(result["retrieval_budget"]["attempted"],0)
+
+    def test_more_requests_continue_past_blocked_authorities(self):
+        links=[f"https://agency{i}.gov/empresa-ejemplo" for i in range(6)]
+        links+=["https://independent1.example/empresa-ejemplo",
+                "https://independent2.example/empresa-ejemplo"]
+        def wiki(*a,**kw):
+            return (json.dumps({"parse":{"externallinks":links}}).encode(),
+                    "https://en.wikipedia.org/w/api.php","application/json")
+        fetched=[]
+        def document(url,**kw):
+            fetched.append(url)
+            if "agency" in url:
+                raise OSError("Fuente bloqueada")
+            return ("<p>"+TEXT+"</p>").encode(),url,"text/html"
+        result=discover_sources(SELECTION,clients=self.clients(),
+            wiki_fetcher=wiki,document_fetcher=document)
+        self.assertEqual(result["retrieval_budget"]["attempted"],len(fetched))
+        self.assertLessEqual(len(fetched),8)
+        self.assertGreaterEqual(len({e["url"] for e in result["evidence_manifest"]}),2)
+        self.assertEqual(result["retrieval_budget"]["independent_domains_with_text"],2)
+        self.assertFalse(result["ready_for_script"])
+        self.assertEqual(result["facts_verified_automatically"],0)
+
     def test_cross_company_evidence_is_not_reused(self):
         s = sources()
         s["evidence_manifest"].append({**evidence()[0], "wikidata_id": "Q200"})
