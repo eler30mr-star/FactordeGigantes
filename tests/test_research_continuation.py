@@ -3,7 +3,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from tools.ai_clients import FreeClients
+from tools.ai_clients import FreeClients,ProviderError
 from tools.ai_source_discovery import discover_sources,document_references,research_targets
 from tools.ai_research_pipeline import source_report,validate_report_locally,analyze_sources,gate_duplicate_research
 
@@ -84,6 +84,27 @@ class ContinuationTests(unittest.TestCase):
         self.assertIn('no hechos aprobados',prompt)
         self.assertIn('dos documentos de emisores distintos',prompt)
         self.assertIn('un acuerdo de pago con un pago ya ejecutado',prompt)
+
+    def test_targeted_search_precedes_general_links_even_when_wikipedia_has_same_url(self):
+        target='https://z-target.example/empresa-ejemplo'
+        targets=[{'claim_index':1,'statement':TEXT,'cited_urls':[], 'gaps':['only_one_document']}]
+        class Search:
+            def search(self,provider,query):
+                if provider!='tavily':raise ProviderError('missing_key')
+                return [{'url':target,'title':'Documento dirigido','discovered_by':'tavily'}]
+        wiki=[{'url':f'https://a{i}.example/empresa-ejemplo','discovered_by':'wikipedia_external_links'} for i in range(12)]
+        wiki.append({'url':target,'discovered_by':'wikipedia_external_links'})
+        calls=[]
+        def fetch(url,**_):
+            calls.append(url)
+            return ('<p>'+TEXT+'</p>').encode(),url,'text/html'
+        with patch('tools.ai_source_discovery.wikipedia_links',return_value=wiki):
+            result=discover_sources({**SELECTION,'prior_research_targets':targets},clients=Search(),document_fetcher=fetch)
+        self.assertEqual(calls[0],target)
+        self.assertEqual(len(calls),5)  # Límite de documentos secundarios intacto.
+        self.assertEqual(len(set(calls)),5)
+        self.assertEqual(next(d for d in result['source_documents'] if d['url']==target)['discovered_by'],'tavily')
+        validate_report_locally(source_report(result))
 
 
 if __name__=='__main__':unittest.main()

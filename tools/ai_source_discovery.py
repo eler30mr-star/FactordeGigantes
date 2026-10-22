@@ -261,7 +261,16 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             validate_url(url)
             # URL completa observada, sin fragmentos y sin credenciales.
             url = url.split("#", 1)[0]
-            if url in seen or url in previous_urls and url not in expand_urls:
+            if url in seen:
+                # La misma URL puede aparecer antes en Wikipedia. Conservar la
+                # pista dirigida para que no pierda prioridad por deduplicación.
+                if targets and lead.get('discovered_by') in ('tavily','exa'):
+                    for i,existing in enumerate(eligible):
+                        if existing['url']==url and url not in expand_urls:
+                            eligible[i]={**lead,'url':url}
+                            break
+                continue
+            if url in previous_urls and url not in expand_urls:
                 continue
             seen.add(url)
             eligible.append({**lead, "url": url})
@@ -283,7 +292,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         # sin poder abrir el documento original. Probar primero el editor original.
         archive = parsed.hostname in {"web.archive.org", "archive.today",
                                      "archive.ph", "wayback.archive-it.org"}
-        return (-int(lead["url"] in expand_urls), -int(regulatory_host(parsed.hostname)), int(archive), -int(relevant),
+        targeted=bool(targets) and lead.get('discovered_by') in ('tavily','exa')
+        return (-int(lead["url"] in expand_urls), -int(targeted), -int(regulatory_host(parsed.hostname)), int(archive), -int(relevant),
                 -int(parsed.path.lower().endswith(".pdf")), lead["url"])
 
     # Intercalar gobierno/justicia con publicaciones independientes. El orden
@@ -385,6 +395,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     attempted_documents=list(out["source_documents"])
     out["source_documents"]=sorted(
         attempted_documents,key=lambda r: (r.get("status")!="text_extracted",
+                                           -int(bool(targets) and r.get('discovered_by') in ('tavily','exa')),
                                            r.get("url","")))[:4]
     out["retrieval_budget"] = {
         "max_documents": MAX_DOCUMENTS,
