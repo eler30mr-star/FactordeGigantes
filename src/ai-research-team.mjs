@@ -113,25 +113,34 @@ export function validateAiReport(r,now=new Date()){
    throw new RangeError('Análisis documental no puede aprobar hechos');
   const actualDocs=new Set(r.evidence_manifest.map(e=>e.url));
   const actualHosts=new Set(r.evidence_manifest.map(e=>new URL(e.url).hostname));
+  const primaryClasses=new Set(['public_authority_candidate',
+    'potential_official_primary','potential_official_pdf']);
   const regulatoryHosts=new Set(r.evidence_manifest
     .filter(e=>e.source_class==='public_authority_candidate')
     .map(e=>new URL(e.url).hostname));
+  const originalPrimaryHosts=new Set(r.evidence_manifest
+    .filter(e=>primaryClasses.has(e.source_class))
+    .map(e=>new URL(e.url).hostname));
   if(q.unique_documents!==actualDocs.size||q.independent_domains!==actualHosts.size||
-     q.regulatory_primary_domains!==regulatoryHosts.size)
+     q.regulatory_primary_domains!==regulatoryHosts.size||
+     (q.original_primary_domains!==undefined&&
+      q.original_primary_domains!==originalPrimaryHosts.size))
     throw new RangeError('Conteo de fuentes de investigación incoherente');
   const byId=new Map(r.evidence_manifest.map(e=>[e.id,e]));
   for(const [idx,row] of q.claim_gaps.entries()){
    const cited=r.candidate_claims[idx].evidence_ids.map(id=>byId.get(id));
    const docs=new Set(cited.map(e=>e.url));
    const hosts=new Set([...docs].map(url=>new URL(url).hostname));
-   const primary=cited.some(e=>e.source_class==='public_authority_candidate');
+   const regulatory=cited.some(e=>e.source_class==='public_authority_candidate');
+   const primary=cited.some(e=>primaryClasses.has(e.source_class));
    const gaps=[];
    if(docs.size<2)gaps.push('only_one_document');
    if(hosts.size<2)gaps.push('no_independent_domain');
-   if(!primary)gaps.push('no_regulatory_primary_document');
+   if(!primary)gaps.push('no_original_primary_document');
    if(!row||row.claim_index!==idx+1||row.verification_state!=='requires_corroboration'||
       !Array.isArray(row.gaps)||row.gaps.length!==gaps.length||
-      row.gaps.some(g=>!gaps.includes(g))||row.regulatory_primary_cited!==primary||
+      row.gaps.some(g=>!gaps.includes(g))||row.regulatory_primary_cited!==regulatory||
+      (row.original_primary_cited!==undefined&&row.original_primary_cited!==primary)||
       row.cited_documents!==docs.size||row.independent_domains!==hosts.size)
      throw new RangeError('Corroboración no sustentada en los documentos citados');
   }
