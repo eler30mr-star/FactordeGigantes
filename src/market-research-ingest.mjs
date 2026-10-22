@@ -57,6 +57,18 @@ export function validateMarketResearch(report,now=Date.now()){
   evidence.push([id,e.wikidata_id,e.company,url,e.document_sha256,
      pdf?"corporate_pdf_candidate":"corporate_page_candidate",e.page,e.excerpt]);
  }
+ // Un expediente corresponde a una sola empresa: no fusionar citas de negocios
+ // diferentes en una misma afirmación de IA.
+ const entityIds=new Set(evidence.map(row=>row[1]));
+ if(entityIds.size>1)throw new RangeError("Investigación mezcla compañías diferentes");
+ if(r.selected_wikidata_id!==undefined &&
+   r.selected_wikidata_id!==null &&
+   (entityIds.size!==1||!entityIds.has(r.selected_wikidata_id)))
+   throw new RangeError("Empresa investigada no coincide con las citas");
+ if(r.deferred_wikidata_ids!==undefined&&
+   (!Array.isArray(r.deferred_wikidata_ids)||r.deferred_wikidata_ids.length>24||
+     r.deferred_wikidata_ids.some(qid=>typeof qid!=="string"||!QID.test(qid)||entityIds.has(qid))))
+   throw new RangeError("Empresas diferidas inconsistentes");
  const claims=[],citations=[];
  for(let i=0;i<r.candidate_claims.length;i++){
   const c=r.candidate_claims[i];
