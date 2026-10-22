@@ -13,7 +13,9 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 MAX_BODY = 180_000
 MODELS = {
-    "gemini": "gemini-3.8-flash",
+    # Gemini 3.5 Flash-Lite ofrece Free Tier en la tarifa oficial.
+    # No usar Gemini 3.8 Flash ni modalidades Priority/Flex/Batches.
+    "gemini": "gemini-3.5-flash-lite",
     "groq": "openai/gpt-oss-120b",
     "mistral": "mistral-small-latest",
     "openrouter": "openrouter/free",
