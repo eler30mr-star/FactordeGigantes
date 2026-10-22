@@ -106,24 +106,33 @@ export async function selectResearchFromD1(db,now=new Date()){
  // por el contrato original de report_json y se limita a siete días.
  let prior_attempted_urls=[],prior_evidence_manifest=[];
  if(queue?.state==='awaiting_sources'){
-  const previous=await db.prepare(
-   "SELECT report_json FROM market_ai_pipeline_runs WHERE wikidata_id=? AND collected_on>=? ORDER BY created_at DESC,rowid DESC LIMIT 1"
-  ).bind(queue.wikidata_id,old).first();
-  if(previous){
-   const record=JSON.parse(previous.report_json);
-   if(record.selected_wikidata_id===queue.wikidata_id){
-    const attempted=record.retrieval_budget?.attempted_urls||
-      (record.source_documents||[]).map(v=>v.url);
-    prior_attempted_urls=attempted
-      .filter(v=>typeof v==='string'&&v.startsWith('https://')).slice(0,8);
-    prior_evidence_manifest=(record.evidence_manifest||[])
-      .filter(v=>v.wikidata_id===queue.wikidata_id&&
-        typeof v.url==='string'&&v.url.startsWith('https://')&&
-        typeof v.excerpt==='string'&&v.excerpt.length>=90&&
-        typeof v.document_sha256==='string'&&/^[0-9a-f]{64}$/.test(v.document_sha256))
-      .slice(0,4);
+  // Una corrida reciente sin fuentes no debe borrar citas de la anterior.
+  // Recuperar hasta cinco informes del mismo tema y reutilizar solamente
+  // identidades y URLs observadas, sin aprobar ni verificar hechos.
+  const history=await db.prepare(
+   "SELECT report_json FROM market_ai_pipeline_runs WHERE wikidata_id=? AND collected_on>=? ORDER BY created_at DESC,rowid DESC LIMIT 5"
+  ).bind(queue.wikidata_id,old).all();
+  const urls=new Set(),citations=new Set();
+  for(const entry of history.results||[]){
+   const record=JSON.parse(entry.report_json);
+   if(record.selected_wikidata_id!==queue.wikidata_id)continue;
+   const attempted=Array.isArray(record.retrieval_budget?.attempted_urls)
+     ?record.retrieval_budget.attempted_urls
+     :(record.source_documents||[]).map(v=>v.url);
+   for(const url of attempted){
+    if(typeof url==='string'&&url.startsWith('https://')&&urls.size<8)urls.add(url);
+   }
+   for(const v of record.evidence_manifest||[]){
+    if(v.wikidata_id!==queue.wikidata_id||
+       typeof v.url!=='string'||!v.url.startsWith('https://')||
+       typeof v.excerpt!=='string'||v.excerpt.length<90||
+       typeof v.document_sha256!=='string'||!/^[0-9a-f]{64}$/.test(v.document_sha256))continue;
+    const key=v.url+'|'+v.document_sha256;
+    if(citations.has(key)||prior_evidence_manifest.length===4)continue;
+    citations.add(key);prior_evidence_manifest.push(v);
    }
   }
+  prior_attempted_urls=[...urls];
  }
  return {ok:true,stored_in:'d1',run_id:id,...snapshot,
    selected_wikidata_id:queue?.wikidata_id??null,research_queue:queue??null,
