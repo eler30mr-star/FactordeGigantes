@@ -41,6 +41,47 @@ class NewsSourceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             gdelt_articles("Empresa Ejemplo\nmalicious",fetcher=invalid)
 
+class LiveSourceIntegration(unittest.TestCase):
+    def test_gdelt_fills_sources_when_wikipedia_and_paid_search_are_unavailable(self):
+        from tools.ai_source_discovery import discover_sources
+        import json
+        company="Empresa Ejemplo"
+        qid="Q100"
+        selection={"selected_wikidata_id":qid,
+            "research_queue":{"wikidata_id":qid,"title":company}}
+        urls=["https://independent.example/news-empresa-ejemplo",
+              "https://reporter.example/empresa-ejemplo-report"]
+        class NoPaidSearch:
+            def search(self,*args,**kw):
+                from tools.ai_clients import ProviderError
+                raise ProviderError("missing_key")
+        def wiki(*args,**kw):
+            raise OSError("Referencia no disponible")
+        def gdelt(url,timeout):
+            self.assertEqual(timeout,12)
+            return json.dumps({"articles":[
+                {"url":u,"title":company+" se investiga en fuentes distintas"} for u in urls
+            ]}).encode(),url,"application/json"
+        accessed=[]
+        def download(url,timeout):
+            accessed.append(url)
+            html=("<html><main><p>"+company+
+                  " documenta en su informe público distintos hechos de innovación "
+                  "empresarial que deberán verificarse en documentos originales "
+                  "e independientes antes de producir el documental.</p></main></html>")
+            return html.encode(),url,"text/html"
+        result=discover_sources(selection,clients=NoPaidSearch(),
+            wiki_fetcher=wiki,document_fetcher=download,gdelt_fetcher=gdelt)
+        self.assertEqual(set(accessed),set(urls))
+        self.assertEqual(len({x["url"] for x in result["evidence_manifest"]}),2)
+        self.assertEqual(result["retrieval_budget"]["attempted"],2)
+        self.assertEqual(result["status"],"sources_collected")
+        self.assertTrue(any(s["provider"]=="gdelt" and s["status"]=="success"
+                            for s in result["stages"]))
+        self.assertFalse(result["ready_for_script"])
+        self.assertFalse(result["publication_authorized"])
+
+
 class ResearchFreshness(unittest.TestCase):
     def test_prior_citations_only_block_identical_documents(self):
         a=example(1)
