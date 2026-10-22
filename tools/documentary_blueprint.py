@@ -22,6 +22,22 @@ def inspect_episode(ai,selection):
         raise ValueError("Se requiere expediente original de Factor de Gigantes")
     qid=ai.get("selected_wikidata_id")
     queue=selection.get("research_queue") or {}
+    if (ai.get("publication_authorized") is not False or
+        ai.get("ready_for_script") is not False or
+        ai.get("facts_verified_automatically")!=0):
+        raise ValueError("Informe IA declaró autorizaciones incompatibles")
+    if qid is None and selection.get("selected_wikidata_id") is None:
+        return {"schema":"fdg_documentary_blueprint_v1",
+                "status":"blocked_no_market_selection","wikidata_id":None,
+                "company":None,"selected_from_real_market":False,
+                "source_document_count":0,"independent_domains":0,
+                "regulatory_domains":0,"candidate_claim_count":0,"review_count":0,
+                "target_duration_seconds":TARGET_SECONDS,"target_narration_wpm":WPM,
+                "estimated_narration_words":0,"scenes":[],
+                "blocking_reasons":["no_market_candidate_with_real_evidence"],
+                "verified_claim_count":0,"factual_approval":False,
+                "voice_license_verified":False,"visual_rights_verified":False,
+                "ready_for_render":False,"publication_authorized":False}
     if (not isinstance(qid,str) or not QID.fullmatch(qid) or
         qid!=selection.get("selected_wikidata_id") or
         queue.get("wikidata_id")!=qid):
@@ -29,11 +45,6 @@ def inspect_episode(ai,selection):
     company=ai.get("company")
     if not isinstance(company,str) or not 3<=len(company.strip())<=130:
         raise ValueError("Empresa sin título canónico")
-    if (ai.get("publication_authorized") is not False or
-        ai.get("ready_for_script") is not False or
-        ai.get("facts_verified_automatically")!=0):
-        raise ValueError("Informe IA declaró autorizaciones incompatibles")
-
     evidence=ai.get("evidence_manifest",[])
     claims=ai.get("candidate_claims",[])
     reviews=ai.get("reviews",[])
@@ -83,7 +94,7 @@ def inspect_episode(ai,selection):
         cited={index[key]["url"] for key in refs}
         cited_hosts={urlsplit(u).hostname for u in cited}
         if len(cited)<2 or len(cited_hosts)<2:
-            gaps.append("claim_"+str(pos)+"_not_independently_corroborrated")
+            gaps.append("claim_"+str(pos)+"_not_independently_corroborated")
         claim_to_refs.append(list(refs))
     for row in quality.get("claim_gaps",[]):
         if isinstance(row,dict) and row.get("gaps"):
@@ -100,7 +111,7 @@ def inspect_episode(ai,selection):
           "voice_license_verified":False,"visual_rights_verified":False,
           "ready_for_render":False,"publication_authorized":False}
     if reasons:
-        return {**base,"status":"blocked_insufficient_corroborration",
+        return {**base,"status":"blocked_insufficient_corroboration",
                 "blocking_reasons":reasons,"scenes":[],"estimated_narration_words":0}
     # Estructura derivada de afirmaciones CITADAS, no diálogo fabricado ni
     # escenas BlackBerry prefijadas. Son objetivos de escenas aún sin guion.
