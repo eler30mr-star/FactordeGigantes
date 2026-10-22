@@ -136,6 +136,12 @@ jobs:
             --pdf-report dist/radar/PDF_CORPORATIVOS_CITAS_NO_CORROBORADAS.json \
             --official-report dist/radar/PAGINAS_OFICIALES_CANDIDATAS_SIN_VERIFICAR.json \
             --out dist/radar/INVESTIGACION_IA_NO_APROBADA.json
+      - name: Persistir evidencias, preguntas y afirmaciones del investigador en D1
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m tools.push_news_entity_assess --mode research \
+            --input dist/radar/INVESTIGACION_IA_NO_APROBADA.json
       - name: Relacionar empresas y titulares como hipótesis verificables
         run: |
           python -m unittest discover -s tests -p test_market_news_join.py -v
