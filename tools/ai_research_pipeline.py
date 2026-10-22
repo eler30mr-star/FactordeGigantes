@@ -15,6 +15,7 @@ from pathlib import Path
 from tools.ai_clients import FreeClients, MODELS, ProviderError, readiness
 from tools.ai_control import ControlClient
 from tools.ai_source_discovery import discover_sources, selection_identity
+from tools.research_engine import fetch_public
 from tools.market_investigator import prepare_evidence, select_one_company
 from tools.research_providers import parse_candidate_output, request_document, run_qwen_local
 
@@ -208,6 +209,32 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
     return report
 
 
+
+def gate_duplicate_research(selection, evidence):
+    """No consumir Gemini/Groq sobre el mismo documento sin contenido nuevo.
+
+    Usa URL/hash/página/extracto del último informe persistido, no respuestas
+    imaginadas ni similitud superficial. Es una puerta de ahorro, NO verificación.
+    """
+    if not isinstance(selection,dict) or not isinstance(evidence,list):
+        raise ValueError("Selección y evidencia requeridas")
+    prev=selection.get("prior_evidence_manifest") or []
+    if not isinstance(prev,list) or len(prev)>4:
+        raise ValueError("Historial documental fuera de límite")
+    def identity(e):
+        return (e.get("url"),e.get("document_sha256"),
+                e.get("page"),e.get("excerpt"))
+    old={identity(e) for e in prev if isinstance(e,dict)}
+    if not old:
+        return evidence,{"reason":"first_observation_or_missing_history",
+                         "new_unique_passages":len({identity(e) for e in evidence})}
+    fresh={identity(e) for e in evidence}-old
+    if not fresh:
+        return [],{"reason":"unchanged_documentary_sources","new_unique_passages":0}
+    return evidence,{"reason":"new_documentary_sources",
+                     "new_unique_passages":len(fresh)}
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("mode", choices=("discover", "analyze"))
@@ -225,11 +252,15 @@ def main():
         if not a.selection:
             p.error("Se requiere selección D1")
         selection = read(a.selection)
-        result = discover_sources(selection, clients=clients)
-        result["evidence_manifest"] = combine_evidence(result, read(a.pdf), read(a.official),
-                                                       read(a.primary), selection_identity(selection)[0])
+        result = discover_sources(selection, clients=clients, gdelt_fetcher=fetch_public)
+        evidence = combine_evidence(result, read(a.pdf), read(a.official),
+                                    read(a.primary), selection_identity(selection)[0])
+        result["evidence_manifest"], audit=gate_duplicate_research(selection,evidence)
+        result["research_freshness"]=audit
         if result["evidence_manifest"]:
             result["status"] = "sources_collected"
+        else:
+            result["status"] = "skipped_no_documentary_evidence"
     else:
         if not a.sources:
             p.error("Se requieren fuentes")
