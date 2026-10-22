@@ -241,14 +241,22 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         # partida para contraste. No los declaramos hechos verificados.
         if len(useful_urls) >= 2 and len(useful_hosts) >= 2 and regulatory_hits:
             break
-    out["source_documents"] = out["source_documents"][:MAX_DOCUMENTS]
+    # El Worker publicado acepta cuatro filas de descarga por informe.
+    # Mantener compatibilidad mientras se despliega el nuevo validador:
+    # conservar preferentemente documentos con texto y transmitir todas las
+    # URLs intentadas en metadata acotada; no perder los pasajes observados.
+    attempted_documents=list(out["source_documents"])
+    out["source_documents"]=sorted(
+        attempted_documents,key=lambda r: (r.get("status")!="text_extracted",
+                                           r.get("url","")))[:4]
     out["retrieval_budget"] = {
         "max_documents": MAX_DOCUMENTS,
-        "attempted": len(out["source_documents"]),
+        "attempted": len(attempted_documents),
+        "attempted_urls": [row["url"] for row in attempted_documents],
         "documents_with_relevant_text": len(useful_urls),
         "independent_domains_with_text": len(useful_hosts),
         "public_authority_domains_with_text": len(regulatory_hits),
-        "budget_exhausted": len(out["source_documents"]) >= MAX_DOCUMENTS,
+        "budget_exhausted": len(attempted_documents) >= MAX_DOCUMENTS,
     }
     new_fragments=out["evidence_manifest"]
     new_count=len(new_fragments)
