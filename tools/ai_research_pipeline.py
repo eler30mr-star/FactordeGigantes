@@ -75,6 +75,40 @@ def combine_evidence(discovered, pdf, official, primary, selected_qid):
     return out
 
 
+def evidence_gaps(evidence, claims):
+    """Matriz reproducible de debilidades. Una segunda IA no verifica hechos.
+
+    Por cada afirmación exigir revisión independiente de fuentes y de fechas.
+    Dos extractos del mismo documento NO son dos fuentes.
+    """
+    from urllib.parse import urlsplit
+    all_urls={e["url"] for e in evidence}
+    all_hosts={urlsplit(u).hostname for u in all_urls}
+    authority_hosts={urlsplit(e["url"]).hostname for e in evidence
+                     if e.get("source_class")=="public_authority_candidate"}
+    by_id={e["id"]:e for e in evidence}
+    pending=[]
+    for idx,claim in enumerate(claims,1):
+        refs=[by_id[x] for x in claim["evidence_ids"] if x in by_id]
+        urls={e["url"] for e in refs}
+        hosts={urlsplit(u).hostname for u in urls}
+        original_primary=any(e.get("source_class")=="public_authority_candidate"
+                             for e in refs)
+        reasons=[]
+        if len(urls)<2:reasons.append("only_one_document")
+        if len(hosts)<2:reasons.append("no_independent_domain")
+        if not original_primary:reasons.append("no_regulatory_primary_document")
+        pending.append({"claim_index":idx,"cited_documents":len(urls),
+                        "independent_domains":len(hosts),
+                        "regulatory_primary_cited":original_primary,
+                        "gaps":reasons,"verification_state":"requires_corroboration"})
+    return {"unique_documents":len(all_urls),"independent_domains":len(all_hosts),
+            "regulatory_primary_domains":len(authority_hosts),
+            "claims_requiring_review":len(pending),
+            "claim_gaps":pending,
+            "all_claims_verified":False,"ready_for_script":False}
+
+
 def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
     evidence = sources["evidence_manifest"]
     report = {"schema": "fdg_ai_pipeline_v1", "collected_on": sources["collected_on"],
@@ -82,6 +116,7 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
               "evidence_manifest": evidence, "source_documents": sources["source_documents"],
               "stages": list(sources["stages"]), "candidate_claims": [], "missing_questions": [],
               "reviews": [], "classification": [], "preliminary_claims": [],
+              "source_quality": evidence_gaps(evidence, []),
               "analysis_provider": None, "facts_verified_automatically": 0,
               "ready_for_script": False, "ready_for_youtube": False, "publication_authorized": False}
     if not evidence:
@@ -154,6 +189,7 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
         report["candidate_claims"] = result["candidate_claims"]
         report["missing_questions"] = result["missing_questions"]
         report["analysis_provider"] = chosen
+        report["source_quality"] = evidence_gaps(evidence, report["candidate_claims"])
     if report["candidate_claims"]:
         prompt = review_prompt(evidence, report["candidate_claims"])
         try:
