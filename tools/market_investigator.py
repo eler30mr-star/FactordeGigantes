@@ -7,13 +7,14 @@ explícita de modalidad sin facturación, no se llama a API alguna.
 from __future__ import annotations
 import argparse,hashlib,json,os,re
 from pathlib import Path
+from urllib.parse import urlsplit
 from tools.research_providers import run_gemini_free
 
 MAX_EVIDENCE=10
 QID=re.compile(r"^Q[1-9][0-9]*$")
 SHA=re.compile(r"^[0-9a-f]{64}$")
 
-def prepare_evidence(pdf_report, official_report=None):
+def prepare_evidence(pdf_report, official_report=None, primary_pages_report=None):
     if not isinstance(pdf_report,dict) or pdf_report.get("provider")!="official_pdf_evidence_v1" or \
       pdf_report.get("verified_claim_count")!=0 or pdf_report.get("publication_authorized") is not False:
         raise ValueError("Únicamente PDFs de radar sin autorización editorial")
@@ -63,6 +64,37 @@ def prepare_evidence(pdf_report, official_report=None):
                "excerpt":excerpt[:300],"document_sha256":sha,
                "wikidata_id":qid,"company":doc.get("company",""),
                "source_class":"potential_official_primary"})
+    if primary_pages_report is not None:
+        if (not isinstance(primary_pages_report,dict) or
+            primary_pages_report.get("provider")!="official_investor_pages_v1" or
+            primary_pages_report.get("facts_verified")!=0 or
+            primary_pages_report.get("rights_verified") is not False or
+            primary_pages_report.get("ready_for_youtube") is not False or
+            primary_pages_report.get("collected_on")!=pdf_report.get("collected_on")):
+            raise ValueError("Páginas corporativas adicionales sin procedencia")
+        for page in primary_pages_report.get("pages",[])[:3]:
+            if len(items)>=MAX_EVIDENCE:break
+            if (page.get("status")!="excerpt_candidate" or
+                page.get("excerpt_quality")!="documentary_candidate"):
+                continue
+            qid=page.get("wikidata_id")
+            url=page.get("resolved_url")
+            origin=page.get("origin_url")
+            digest=page.get("content_sha256")
+            excerpt=page.get("short_excerpt")
+            if (not QID.fullmatch(str(qid or "")) or not SHA.fullmatch(str(digest or "")) or
+                not isinstance(url,str) or not isinstance(origin,str) or
+                not isinstance(excerpt,str) or len(excerpt.strip())<90):
+                continue
+            if (urlsplit(url).scheme!="https" or urlsplit(origin).scheme!="https" or
+                urlsplit(url).hostname!=urlsplit(origin).hostname):
+                continue
+            items.append({"id":f"E{len(items)+1:03d}",
+              "source_id":qid+"-investor-page",
+              "claim_id":"documentary_candidate","url":url,"page":None,
+              "excerpt":excerpt[:300],"document_sha256":digest,
+              "wikidata_id":qid,"company":page.get("company",""),
+              "source_class":"potential_official_primary"})
     return items
 
 
@@ -93,9 +125,9 @@ def select_one_company(evidence):
     return ordered,deferred
 
 
-def run_investigation(pdf_report,*,official_report=None,free_confirmed=False,api_key=None,model="gemini-2.5-flash-lite",
+def run_investigation(pdf_report,*,official_report=None,primary_pages_report=None,free_confirmed=False,api_key=None,model="gemini-2.5-flash-lite",
                       runner=run_gemini_free):
-    all_evidence=prepare_evidence(pdf_report,official_report=official_report)
+    all_evidence=prepare_evidence(pdf_report,official_report=official_report,primary_pages_report=primary_pages_report)
     evidence,deferred=select_one_company(all_evidence)
     # Manifiesto documental con pasajes breves para D1, incluso sin LLM.
     # Todo extracto es público, no equivale a confirmación de hechos.
@@ -128,18 +160,20 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument("--pdf-report",required=True,type=Path)
     p.add_argument("--official-report",type=Path)
+    p.add_argument("--primary-pages-report",type=Path)
     p.add_argument("--out",required=True,type=Path)
     a=p.parse_args()
     input_data=json.loads(a.pdf_report.read_text(encoding="utf-8"))
     official_data=json.loads(a.official_report.read_text(encoding="utf-8")) if a.official_report else None
+    primary_data=json.loads(a.primary_pages_report.read_text(encoding="utf-8")) if a.primary_pages_report else None
     authorized=os.getenv("GEMINI_RESEARCH_FREE_CONFIRMED")=="1"
     key=os.getenv("GEMINI_API_KEY")
     try:
-        out=run_investigation(input_data,official_report=official_data,free_confirmed=authorized,api_key=key)
+        out=run_investigation(input_data,official_report=official_data,primary_pages_report=primary_data,free_confirmed=authorized,api_key=key)
     except (OSError,ValueError,RuntimeError,KeyError,TypeError) as exc:
         # Nunca registrar cuerpo remoto, token de cabecera o prompt sin consentimiento.
         evidence,deferred=select_one_company(
-            prepare_evidence(input_data,official_report=official_data))
+            prepare_evidence(input_data,official_report=official_data,primary_pages_report=primary_data))
         out={"status":"research_provider_failure","error_type":type(exc).__name__,
              "selected_wikidata_id":evidence[0]["wikidata_id"] if evidence else None,
              "deferred_wikidata_ids":deferred,
