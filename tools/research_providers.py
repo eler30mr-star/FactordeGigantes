@@ -62,6 +62,12 @@ def request_document(topic,evidence,*,targets=None):
         "No inventes URLs, años, cifras ni identificadores. Formula hasta 8 "
         "afirmaciones candidatas de una frase con evidence_ids de la lista; "
         "Prioriza hechos respaldados por dos documentos de emisores distintos; "
+        "Agrupa los pasajes que expresan el mismo hecho en UNA afirmación con sus citas: "
+        "no repitas la fundación de una empresa ni una acusación con otra redacción "
+        "para llenar ocho espacios. Formula menos afirmaciones si no hay hechos distintos. "
+        "Compara primero los pasajes antes de escribir cada hecho; si dos sostienen "
+        "la misma afirmación, conserva ambos identificadores. Una instrucción al jurado "
+        "o un documento de cargos no es una sentencia ni acredita una condena. "
         "cita ambos sólo si cada pasaje respalda la misma afirmación. No añadas "
         "citas de relleno ni confundas una acusación con una condena, un acuerdo "
         "de pago con un pago ya ejecutado ni periodos distintos. "
@@ -85,7 +91,7 @@ def parse_candidate_output(response_text,evidence,provider):
     if not isinstance(obj,dict) or not isinstance(obj.get("claims"),list) or not isinstance(obj.get("missing_questions"),list):
         raise ValueError("El modelo no devolvió el contrato JSON")
     known={e["id"] for e in evidence}
-    accepted=[]
+    accepted=[];by_statement={}
     for item in obj["claims"][:8]:
         if not isinstance(item,dict) or not isinstance(item.get("statement"),str) or not isinstance(item.get("evidence_ids"),list):
             raise ValueError("Afirmación sin esquema válido")
@@ -95,11 +101,19 @@ def parse_candidate_output(response_text,evidence,provider):
             raise ValueError("Una afirmación cita evidencia inexistente")
         if len(refs)>8:
             raise ValueError("Demasiados soportes para una afirmación")
+        key=' '.join(re.findall(r'\w+',claim.casefold()))
+        if key in by_statement:
+            prior=by_statement[key]
+            combined=list(dict.fromkeys(prior['evidence_ids']+refs))
+            if len(combined)>8:raise ValueError('Demasiados soportes para una afirmación consolidada')
+            prior['evidence_ids']=combined
+            continue
         accepted.append({
             "statement":claim,"evidence_ids":list(dict.fromkeys(refs)),
             "status":"candidate_unverified",
             "human_verified":False
         })
+        by_statement[key]=accepted[-1]
     questions=[x.strip()[:220] for x in obj["missing_questions"][:8] if isinstance(x,str) and x.strip()]
     return {
         "provider":provider,"candidate_claims":accepted,

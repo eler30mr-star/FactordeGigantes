@@ -16,7 +16,8 @@ def research_summary(report):
         "retrieval_budget": report.get("retrieval_budget"),
         "source_documents": [{k: d[k] for k in (
             "url", "resolved_url", "status", "mime", "bytes_read", "readable_blocks",
-            "entity_name_in_payload", "first_block_preview", "error_type", "discovered_by") if k in d}
+            "entity_name_in_payload", "first_block_preview", "error_type", "discovered_by",
+            "discovered_from", "discovered_from_page", "citation_links_scanned", "reference_urls") if k in d}
             for d in report.get("source_documents", [])[:8]],
         "evidence": [{k: e[k] for k in ("id", "url", "excerpt", "page", "source_class",
                      "document_sha256", "selection_method", "entity_context_excerpt") if k in e}

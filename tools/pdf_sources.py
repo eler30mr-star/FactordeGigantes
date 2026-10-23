@@ -61,6 +61,26 @@ def fetch_document_public(url: str, *, timeout: int = 14):
         return raw, final_url, mime
 
 
+def clean_pdf_layout(text):
+    """Quitar sólo secuencias de numeración marginal, sin eliminar cifras sueltas."""
+    lines=text.splitlines();remove=set();start=0
+    while start<len(lines):
+        m=re.fullmatch(r'\s*(\d{1,2})\s*',lines[start])
+        if not m or not 1<=int(m.group(1))<=28:
+            start+=1;continue
+        end=start+1;previous=int(m.group(1))
+        while end<len(lines):
+            item=re.fullmatch(r'\s*(\d{1,2})\s*',lines[end])
+            if not item or int(item.group(1))!=previous+1 or int(item.group(1))>28:break
+            previous+=1;end+=1
+        if end-start>=8:remove.update(range(start,end))
+        start=end
+    # Se excluye únicamente el pie completo de localización judicial. Cuando
+    # comparte línea con contenido, se conserva para no borrar una frase.
+    return '\n'.join(line for i,line in enumerate(lines) if i not in remove and
+        not re.fullmatch(r'\s*Case\s+[\w:.-]+\s+Document\s+\d+\s+Filed\s+[\d/]+\s+Page\s+\d+\s+of\s+\d+\s*',line))
+
+
 def pdf_page_blocks(raw: bytes, *, max_pages=None, scan_pages=None) -> tuple[list[str], list[int], int]:
     """Lista de bloques textuales, página real (base 1) y total de páginas."""
     if not isinstance(raw, bytes) or not raw.startswith(b"%PDF-"):
@@ -91,7 +111,7 @@ def pdf_page_blocks(raw: bytes, *, max_pages=None, scan_pages=None) -> tuple[lis
             text_total += len(page_text)
             if text_total > MAX_PDF_TEXT:
                 raise ValueError("Extracción PDF excede presupuesto textual")
-            page_text = page_text.replace("\x00", " ")
+            page_text = clean_pdf_layout(page_text.replace("\x00", " "))
             for part in re.split(r"(?<=\.)\s+|\n{2,}", page_text):
                 block = re.sub(r"\s+", " ", part).strip()
                 if len(block) < 35:

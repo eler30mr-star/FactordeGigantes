@@ -42,6 +42,14 @@ CI tiene un job independiente que codifica medios reales: movimiento con
 audio, congelamiento/silencio, negro con audio, ausencia de audio y archivo
 truncado. No ejecuta el radar ni crea nuevas tomas Qwen.
 
+El job prepara FFmpeg/ffprobe con `tools/setup_ci_ffmpeg.sh`: build BtbN
+`autobuild-2026-09-30-13-08`, binarios Linux64 GPL 8.1 y SHA256 fijado en código
+y verificado antes de extraerlos. El digest se contrastó con la metadata de
+GitHub Releases. Se usa el build mensual (retención documentada de dos años),
+no una URL `latest` mutable; la caché conserva el archivo verificado. Esto
+evita que el espejo APT de Ubuntu agote el tiempo del job. La descarga tiene
+tiempos acotados y las pruebas audiovisuales siguen siendo obligatorias.
+
 ```sh
 FDG_MEDIA_QA_INTEGRATION=1 python -m unittest tests.test_av_quality -v
 ```

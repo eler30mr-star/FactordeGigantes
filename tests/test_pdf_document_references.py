@@ -10,6 +10,7 @@ from tools.ai_clients import FreeClients
 from tools.ai_source_discovery import discover_sources, document_references
 from tools.ai_research_pipeline import source_report, validate_report_locally
 from tools.pdf_sources import pdf_link_annotations
+from tools.pdf_sources import clean_pdf_layout
 from tools.research_source_plan import search_plan, select_passages
 
 TEXT = 'Empresa Ejemplo comunicó en 2018 una investigación de sus operaciones; el documento necesita contraste independiente y revisión del contexto legal antes de narrarlo.'
@@ -25,6 +26,29 @@ def pdf_with_links(urls):
 
 
 class PdfReferencesTests(unittest.TestCase):
+    def test_legal_margin_sequence_is_removed_but_fact_numbers_are_retained(self):
+        text='\n'.join(['Instrucciones al jurado',*map(str,range(1,29)),
+                        'El periodo investigado fue de 2010 a 2015.',
+                        '2018','4','Importe mencionado: 452 millones.',
+                        'Case 5:18-cr-00258-EJD Document 1006 Filed 09/07/21 Page 2 of 4'])
+        result=clean_pdf_layout(text)
+        self.assertNotIn('1\n2\n3',result)
+        self.assertIn('2010 a 2015',result)
+        self.assertIn('2018\n4',result)
+        self.assertIn('452 millones',result)
+        self.assertNotIn('Document 1006',result)
+
+    def test_identical_candidate_statements_merge_citations_without_approval(self):
+        import json
+        from tools.research_providers import parse_candidate_output
+        parsed=parse_candidate_output(json.dumps({'claims':[
+            {'statement':'La empresa presentó un documento en 2018.', 'evidence_ids':['E001']},
+            {'statement':'La empresa presentó un documento en 2018!', 'evidence_ids':['E002']}],
+            'missing_questions':[]}),[{'id':'E001'},{'id':'E002'}],'fixture')
+        self.assertEqual(len(parsed['candidate_claims']),1)
+        self.assertEqual(parsed['candidate_claims'][0]['evidence_ids'],['E001','E002'])
+        self.assertFalse(parsed['candidate_claims'][0]['human_verified'])
+
     def test_annotations_keep_literal_url_and_page_and_reject_untrusted_hosts(self):
         original = 'https://www.justice.gov/company-original'
         raw = pdf_with_links([original, 'https://sec.gov.attacker.example/bad',

@@ -23,10 +23,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Preparar FFmpeg para pruebas sobre archivos reales
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
+      - name: Reutilizar archivo FFmpeg verificado
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/fdg-ffmpeg/ffmpeg.tar.xz
+          key: ffmpeg-linux64-97ce978979194b5cf7e06a5e68020dbdaa7a4f3294c5452b6a1bc347100dbb79
+      - name: Preparar FFmpeg fijado para pruebas sobre archivos reales
+        run: bash tools/setup_ci_ffmpeg.sh
       - name: Verificar detección de exportaciones defectuosas sin IA ni voz nueva
         env:
           FDG_MEDIA_QA_INTEGRATION: '1'
