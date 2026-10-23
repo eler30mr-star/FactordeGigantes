@@ -89,7 +89,7 @@ class ContinuationTests(unittest.TestCase):
         target='https://z-target.example/empresa-ejemplo'
         targets=[{'claim_index':1,'statement':TEXT,'cited_urls':[], 'gaps':['only_one_document']}]
         class Search:
-            def search(self,provider,query):
+            def search(self,provider,query,**filters):
                 if provider!='tavily':raise ProviderError('missing_key')
                 return [{'url':target,'title':'Documento dirigido','discovered_by':'tavily'}]
         wiki=[{'url':f'https://a{i}.example/empresa-ejemplo','discovered_by':'wikipedia_external_links'} for i in range(12)]
@@ -108,7 +108,7 @@ class ContinuationTests(unittest.TestCase):
 
     def test_wikipedia_from_search_history_or_redirect_never_becomes_evidence(self):
         class Search:
-            def search(self,provider,query):
+            def search(self,provider,query,**filters):
                 if provider!='tavily':raise ProviderError('missing_key')
                 return [{'url':u,'discovered_by':'tavily'} for u in
                         ['https://es.wikipedia.org/wiki/Empresa','https://reporter.example/redirect']]

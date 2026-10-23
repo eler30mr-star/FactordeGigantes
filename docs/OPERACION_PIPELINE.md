@@ -23,6 +23,26 @@ exigen respaldo regulatorio candidato; otros hechos pueden apoyarse en
 documentación corporativa original y contraste independiente. Ninguna de esas
 condiciones constituye verificación factual automática ni concede aprobación.
 
+La continuación prioriza los vacíos regulatorios y después los originales
+primarios. Mantiene dos consultas básicas por buscador: la primera puede
+restringirse a las autoridades registradas en `src/regulatory-authorities.json`;
+la segunda excluye el emisor ya citado para buscar contraste. Ese registro no
+es exhaustivo ni acredita jurisdicción o independencia editorial. Los filtros
+no activan Exa ni cambian cuotas o facturación. Tavily documenta esos parámetros
+en su [SDK oficial](https://github.com/tavily-ai/tavily-python/blob/main/tavily/tavily.py).
+
+El lector elige hasta tres pasajes por documento según los hechos pendientes,
+con ventanas literales de hasta 320 caracteres y página/bloque originales.
+Puede usar contexto de los dos bloques anteriores de la misma página; conserva
+ese contexto como cita aparte y no cruza páginas PDF para asignar entidad.
+La coincidencia de palabras o cifras es recuperación, nunca verificación.
+
+Los informes guardan el plan de búsqueda y un diagnóstico de fuentes, pasajes,
+afirmaciones, revisión y vacíos. El resumen usa campos públicos seleccionados,
+sin variables de entorno, credenciales ni cuerpos de errores remotos. Queda
+en el artefacto y en la línea `INVESTIGACION_DIAGNOSTICO` de Actions para poder
+explicar un bloqueo incluso si no hay acceso administrativo directo a D1.
+
 ## Guionista reanudable
 
 Cuando la investigación supera la puerta documental, el workflow encadena

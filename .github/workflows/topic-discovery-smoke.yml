@@ -80,7 +80,8 @@ jobs:
           OPENROUTER_RESEARCH_FREE_CONFIRMED: ${{ vars.OPENROUTER_RESEARCH_FREE_CONFIRMED }}
         run: |
           python -m tools.documentary_script --run-id "$SCRIPT_RUN_ID" \
-            --out dist/script/GUION_DOCUMENTAL_NO_APROBADO.json
+            --out dist/script/GUION_DOCUMENTAL_NO_APROBADO.json \
+            --diagnostics-out dist/script/DIAGNOSTICO_INVESTIGACION.json
       - name: Preparar tareas de voz canónica y recursos por escena sin producir
         run: |
           python -m tools.documentary_production_plan \

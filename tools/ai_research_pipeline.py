@@ -20,6 +20,7 @@ from tools.ai_source_discovery import discover_sources, selection_identity, norm
 from tools.research_engine import fetch_public
 from tools.market_investigator import prepare_evidence, select_one_company
 from tools.research_providers import parse_candidate_output, request_document, run_qwen_local
+from tools.research_diagnostics import research_summary
 CLAIM_POLICY = json.loads((Path(__file__).resolve().parents[1] / "src/research-claim-policy.json").read_text(encoding="utf-8"))
 
 
@@ -135,6 +136,7 @@ def source_report(sources):
               "retrieval_budget": sources.get("retrieval_budget"),
               "research_freshness": sources.get("research_freshness"),
               "research_targets": sources.get("research_targets", []),
+              "discovery_plan": sources.get("discovery_plan", []),
               "stages": list(sources["stages"]), "candidate_claims": [], "missing_questions": [],
               "reviews": [], "classification": [], "preliminary_claims": [],
               "source_quality": evidence_gaps(evidence, []),
@@ -326,6 +328,10 @@ def main():
         a.out.with_suffix(".receipt.json").write_text(
             json.dumps(stored,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
         print("EQUIPO_IA_D1:", stored["run_id"])
+        summary = research_summary(result)
+        a.out.with_suffix('.diagnostics.json').write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        print("INVESTIGACION_DIAGNOSTICO:", json.dumps(summary, ensure_ascii=False))
     print("EQUIPO_IA_ESTADO:", result["status"], "PASAJES:", len(result["evidence_manifest"]))
     for stage in result["stages"]:
         print("IA_FUNCION:", stage["provider"], stage["role"], stage["status"])

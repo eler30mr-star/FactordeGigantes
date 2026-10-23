@@ -18,6 +18,7 @@ from urllib.parse import urlencode, urlsplit, urljoin
 from tools.ai_clients import ProviderError
 from tools.pdf_sources import analyze_document, fetch_document_public
 from tools.research_engine import fetch_public, validate_url
+from tools.research_source_plan import search_plan, select_passages
 
 MAX_DOCUMENTS = 8
 MAX_PRIMARY_ATTEMPTS = 5
@@ -244,16 +245,14 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         except (OSError,ValueError,TypeError,KeyError,TimeoutError):
             out["stages"].append({"provider":"gdelt","role":"discover",
                                   "status":"source_unavailable"})
-    queries = [f'"{title}" regulator court complaint financial statements',
-               f'"{title}" history annual report investigation original documents']
-    if targets:
-        # Siguen siendo dos búsquedas por proveedor: sustituir, no multiplicar.
-        queries = [f'"{title}" ' + t["statement"][:220] for t in targets[:2]]
+    queries = search_plan(title, targets, REGULATORY_HOSTS)
+    out["discovery_plan"] = queries
     for provider in ("tavily", "exa"):
         found = []
         try:
             for query in queries:
-                found.extend(clients.search(provider, query))
+                filters = {k: query[k] for k in ("include_domains", "exclude_domains") if k in query}
+                found.extend(clients.search(provider, query["query"], **filters))
             state = {"status": "success", "result_count": len(found)}
         except ProviderError as exc:
             state = {"status": exc.code}
@@ -291,9 +290,6 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     generic = {"the", "and", "company", "corporation", "group", "holding", "holdings",
                "inc", "limited", "ltd", "llc", "empresa", "compania", "grupo", "sociedad"}
     words = [w for w in re.findall(r"\w+", normalized(title)) if len(w) >= 3 and w not in generic]
-    def mentions(text):
-        tokens = set(re.findall(r"\w+", normalized(text)))
-        return normalized(title) in normalized(text) or any(w in tokens for w in words)
     def rank(lead):
         parsed = urlsplit(lead["url"])
         path = normalized(parsed.path + " " + (lead.get("title") if isinstance(lead.get("title"), str) else ""))
@@ -362,25 +358,13 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                            "first_block_preview": str(next(iter(analysis["blocks"]), ""))[:160]})
             digest = hashlib.sha256(raw).hexdigest()
             fragments = []
-            for index, block in enumerate(analysis["blocks"]):
-                text = " ".join(block.split())
-                if len(text) < 90 or not mentions(text):
-                    continue
-                # Mantener el nombre en el fragmento, incluso si aparece al final.
-                start = next((m.start() for m in re.finditer(r"\b\w+", text)
-                              if any(normalized(m.group()).startswith(w) for w in words)), 0)
-                excerpt = text[max(0, start - 80):max(0, start - 80) + 320]
-                if len(excerpt) < 90:
-                    excerpt = text[-320:]
+            for passage in select_passages(analysis, title, targets):
                 fragments.append({"id": "", "wikidata_id": qid, "company": title,
                     "url": resolved, "document_sha256": digest,
-                    "page": analysis["page_map"][index], "block_index": index,
-                    "excerpt": excerpt, "source_id": qid + "-observed-document",
+                    **passage, "source_id": qid + "-observed-document",
                     "claim_id": "documentary_candidate",
                     "source_class": "public_authority_candidate" if regulatory_host(urlsplit(resolved).hostname)
                                     else "public_document_candidate"})
-                if len(fragments) >= 3:
-                    break
             record.update({"status": "text_extracted" if fragments else "no_relevant_passages",
                            "resolved_url": resolved, "sha256": digest,
                            "pages_total": analysis["total_pages"],

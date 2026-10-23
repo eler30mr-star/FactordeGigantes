@@ -170,6 +170,7 @@ def main():
     source.add_argument('--run-id')
     p.add_argument('--selection',type=Path)
     p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--diagnostics-out',type=Path)
     a=p.parse_args()
     control=None
     if a.run_id:
@@ -203,6 +204,12 @@ def main():
         a.out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         print('GUION_DOCUMENTAL:',result['status'],'ESCENAS: 0')
         return
+    if a.diagnostics_out:
+        from tools.research_diagnostics import research_summary
+        summary=research_summary(research)
+        a.diagnostics_out.parent.mkdir(parents=True,exist_ok=True)
+        a.diagnostics_out.write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        print('INVESTIGACION_DIAGNOSTICO:',json.dumps(summary,ensure_ascii=False))
     # Construir el control OIDC sólo cuando el dossier supera la puerta:
     # una investigación bloqueada nunca necesita credenciales ni reserva.
     blueprint=inspect_episode(research,selection)

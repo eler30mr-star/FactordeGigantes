@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
@@ -100,18 +101,30 @@ class FreeClients:
             self.blocked.add(provider)
             raise
 
-    def search(self, provider, query):
+    def search(self, provider, query, *, include_domains=None, exclude_domains=None):
+        filters = {}
+        for name, values in (("include_domains", include_domains), ("exclude_domains", exclude_domains)):
+            if values is None:
+                continue
+            if (not isinstance(values, list) or len(values) > 20 or
+                    any(not isinstance(v, str) or len(v) > 253 or
+                        not re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,63}", v)
+                        for v in values)):
+                raise ValueError("Filtro de dominios inválido")
+            filters[name] = list(dict.fromkeys(values))
         key = self.env.get(KEYS[provider], "")
         if provider == "tavily":
             body = {"query": query, "search_depth": "basic", "max_results": 5,
                     "auto_parameters": False, "include_answer": False,
-                    "include_raw_content": False, "include_images": False}
+                    "include_raw_content": False, "include_images": False, **filters}
             reply = self.request(provider, "discover", "https://api.tavily.com/search",
                                  body, {"Authorization": "Bearer " + key})
         elif provider == "exa":
             # Sin Contents, Answer, Agent, Monitors ni búsquedas profundas.
             reply = self.request(provider, "discover", "https://api.exa.ai/search",
-                                 {"query": query, "type": "auto", "numResults": 5},
+                                 {"query": query, "type": "auto", "numResults": 5,
+                                  **{("includeDomains" if k == "include_domains" else "excludeDomains"): v
+                                     for k, v in filters.items()}},
                                  {"x-api-key": key})
         else:
             raise ValueError("No es un buscador")
