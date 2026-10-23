@@ -1621,3 +1621,11 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - Pendiente CI y una prueba `[script-e2e]` del nuevo paso contra el contexto real, sin repetir radar. Si el dossier continúa insuficiente, debe quedar bloqueado sin generación de guion.
 - Acceso Cloudflare: la conexión negó la cuenta de producción con HTTP 403 e informó una cuenta diferente. No se cambiaron cuentas ni datos. La descarga del artefacto firmado al entorno no se completó; no se atribuye inspección íntegra del expediente.
 - **Para terminar:** originales legibles y contraste de afirmaciones reales, guion real aceptable, revisión factual/derechos, voz canónica auditada, visuales con licencia, montaje y QA del MP4 de 8–14 minutos. El puente implementado no acredita esas aceptaciones.
+
+
+### Integración comprobada del puente de producción
+
+- Commit `802eb10537f6347b8239dbd78b6a2defb4154196` sincronizado directamente en main. CI [40008940033](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40008940033): `success`, incluidos `checks`, QA audiovisual FFmpeg y disparador `live-script`. Smoke HTTP y autenticación del renderizador aprobados en CI.
+- Prueba real [40008990029](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40008990029): `success`, sólo job `documentary-script`; radar, perfil e investigación no se repitieron. Logs: `GUION_DOCUMENTAL: blocked_insufficient_research ESCENAS: 0`; `PLAN_PRODUCCION: blocked_script_unavailable TOMAS_PLANIFICADAS: 0 TOMAS_GENERADAS: 0`. El camino bloqueado quedó verificado con contexto real OIDC; no acredita el camino positivo con dossier suficiente ni un documental terminado.
+- Artefacto de revisión confirmado: `fdg-guion-documental-revision`, ID `12524489941`, 1446 bytes, SHA256 `3e638e5c6b3d8677d40c1b49e7e955d431fb4dcd3ef54417dd4c05037816b637`, caduca el 2026-10-28. CLI local también conserva bloqueos. El fixture positivo planifica 48 tomas en seis escenas y 522 segundos estimados, sin generar audio ni validar contenido real.
+- No hizo falta despliegue Worker ni migración D1: herramientas Python y workflow se ejecutaron desde el commit exacto. Pendiente principal sin cambios: evidencia suficiente del episodio real y aceptación factual antes de guion/voz/visuales/render.
