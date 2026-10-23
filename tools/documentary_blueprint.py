@@ -54,7 +54,7 @@ def inspect_episode(ai,selection):
         raise ValueError("Exceso de citas o afirmaciones")
     index={e.get("id"):e for e in evidence if isinstance(e,dict)}
     if len(index)!=len(evidence):raise ValueError("Citas repetidas")
-    sources=set();domains=set();regulators=set();primary_sources=set()
+    sources=set();domains=set();regulators=set();primary_sources=set();content_hashes=set()
     for e in evidence:
         if e.get("wikidata_id")!=qid or e.get("company")!=company or \
             not isinstance(e.get("url"),str) or not e["url"].startswith("https://") or \
@@ -64,6 +64,7 @@ def inspect_episode(ai,selection):
         host=urlsplit(e["url"]).hostname
         if not host or host=="localhost":raise ValueError("Dominio inválido")
         sources.add((e["url"],e["document_sha256"]))
+        content_hashes.add(e["document_sha256"])
         domains.add(host)
         if e.get("source_class")=="public_authority_candidate":
             regulators.add(host)
@@ -75,6 +76,7 @@ def inspect_episode(ai,selection):
     if len(by_claim)!=len(reviews):raise ValueError("Revisión duplicada")
     gaps=[]
     if len(sources)<2:gaps.append("at_least_two_original_documents_required")
+    if len(content_hashes)<2:gaps.append("at_least_two_distinct_document_contents_required")
     if len(domains)<2:gaps.append("at_least_two_independent_domains_required")
     if not primary_sources:gaps.append("original_primary_document_required")
     if len(claims)<MIN_CLAIMS:gaps.append("insufficient_distinct_claims")
@@ -99,6 +101,8 @@ def inspect_episode(ai,selection):
         cited_hosts={urlsplit(u).hostname for u in cited}
         if len(cited)<2 or len(cited_hosts)<2:
             gaps.append("claim_"+str(pos)+"_not_independently_corroborated")
+        if len({index[key]["document_sha256"] for key in refs})<2:
+            gaps.append("claim_"+str(pos)+"_same_document_content_reused")
         claim_to_refs.append(list(refs))
     for row in quality.get("claim_gaps",[]):
         if isinstance(row,dict) and row.get("gaps"):
@@ -108,6 +112,7 @@ def inspect_episode(ai,selection):
     base={"schema":"fdg_documentary_blueprint_v1","company":company,
           "wikidata_id":qid,"selected_from_real_market":True,
           "source_document_count":len(sources),"independent_domains":len(domains),
+          "distinct_document_contents":len(content_hashes),
           "regulatory_domains":len(regulators),"original_primary_domains":len(primary_sources),
           "candidate_claim_count":len(claims),"review_count":len(reviews),
           "target_duration_seconds":TARGET_SECONDS,"target_narration_wpm":WPM,

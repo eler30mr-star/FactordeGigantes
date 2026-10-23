@@ -43,6 +43,20 @@ sin variables de entorno, credenciales ni cuerpos de errores remotos. Queda
 en el artefacto y en la línea `INVESTIGACION_DIAGNOSTICO` de Actions para poder
 explicar un bloqueo incluso si no hay acceso administrativo directo a D1.
 
+Las referencias regulatorias también se extraen de anotaciones PDF Link/URI
+y de URLs HTTPS literales en los bloques leídos, con página de procedencia.
+No se ejecutan acciones del PDF, no se convierten enlaces HTTP en HTTPS y no
+se adivinan rutas. Máximo doce referencias por documento; todas las descargas
+siguen contando dentro de ocho. Se permite una segunda URL observada de una
+autoridad registrada sólo si la primera no dio pasajes relevantes, sin superar
+cinco intentos de categoría primaria ni dos del mismo hostname. Una lectura
+útil cierra nuevos intentos del mismo hostname en ese ciclo.
+
+El lector separa bibliografías con varias URLs de los pasajes factuales. El
+plan documental exige también contenidos con hashes distintos: un PDF idéntico
+en dos dominios no equivale a dos originales. Hashes distintos tampoco prueban
+independencia editorial o respaldo semántico; esa revisión continúa pendiente.
+
 ## Guionista reanudable
 
 Cuando la investigación supera la puerta documental, el workflow encadena

@@ -109,6 +109,42 @@ def pdf_page_blocks(raw: bytes, *, max_pages=None, scan_pages=None) -> tuple[lis
     return blocks, pages, page_count
 
 
+def pdf_link_annotations(raw: bytes, *, max_pages=350, scan_pages=12):
+    """URLs literales de anotaciones Link/URI, sin ejecutar acciones del PDF."""
+    if not isinstance(raw, bytes) or not raw.startswith(b'%PDF-') or len(raw)>MAX_PDF_BYTES:
+        raise ValueError('PDF fuera del presupuesto de referencias')
+    if (type(scan_pages) is not int or not 1<=scan_pages<=35 or
+            type(max_pages) is not int or not 1<=max_pages<=350):
+        raise ValueError('Presupuesto de referencias PDF inválido')
+    from pypdf import PdfReader
+    from pypdf.errors import PyPdfError
+    try:
+        reader=PdfReader(BytesIO(raw),strict=True)
+        if reader.is_encrypted or not 1<=len(reader.pages)<=max_pages:
+            raise ValueError('PDF cifrado o demasiado extenso')
+    except PyPdfError:
+        raise ValueError('No se pudieron leer las referencias PDF') from None
+    links=[]
+    for n,page in enumerate(reader.pages,1):
+        if n>scan_pages:break
+        annotations=page.get('/Annots',[])
+        if not isinstance(annotations,list):continue
+        for ref in annotations[:64]:
+            try:
+                item=ref.get_object()
+                action=item.get('/A')
+                if hasattr(action,'get_object'):action=action.get_object()
+                if item.get('/Subtype')!='/Link' or not isinstance(action,dict) or action.get('/S')!='/URI':
+                    continue
+                url=action.get('/URI')
+                if isinstance(url,str) and len(url)<=1000:
+                    links.append({'url':url,'page':n})
+                if len(links)>=64:return links
+            except (ValueError,TypeError,KeyError,AttributeError,RecursionError,PyPdfError):
+                continue
+    return links
+
+
 def analyze_document(raw: bytes, mime: str, *, pdf_max_pages=None, pdf_scan_pages=None):
     """Contrato uniforme para HTML y PDF: bloques, páginas por bloque, total."""
     if mime.split(";", 1)[0].strip().lower() == "application/pdf":

@@ -89,6 +89,16 @@ class StoryboardTests(unittest.TestCase):
         self.assertEqual(result["scenes"],[])
         self.assertIn("claim_3_lacks_supported_review",result["blocking_reasons"])
 
+    def test_identical_document_mirrored_on_two_domains_is_not_two_originals(self):
+        research, market = fixture(True)
+        research['evidence_manifest'][1]['document_sha256'] = research['evidence_manifest'][0]['document_sha256']
+        result = inspect_episode(research, market)
+        self.assertEqual(result['status'], 'blocked_insufficient_corroboration')
+        self.assertEqual(result['distinct_document_contents'], 1)
+        self.assertIn('at_least_two_distinct_document_contents_required', result['blocking_reasons'])
+        self.assertIn('claim_1_same_document_content_reused', result['blocking_reasons'])
+        self.assertEqual(result['scenes'], [])
+
     def test_cross_company_or_nonexistent_citation_rejected(self):
         research,market=fixture(True)
         market["research_queue"]["wikidata_id"]="Q200"

@@ -59,34 +59,47 @@ def research_targets(selection):
     return targets
 
 
-def document_references(raw, base):
+def document_references(raw, base, *, mime='text/html', analysis=None):
     """Seguir sólo URLs de autoridades observadas en el documento descargado.
 
     El enlace aporta una pista, nunca prueba de un hecho. El lector público
     valida DNS y redirecciones al descargar; todo cuenta en el límite de ocho.
     """
+    urls=[]
+    def observe(href, page=None):
+        if not isinstance(href,str) or len(urls)>=12:return
+        try:
+            url=urljoin(base,href).split('#',1)[0]
+            validate_url(url)
+        except (ValueError,TypeError):return
+        if regulatory_host(urlsplit(url).hostname) and all(r['url']!=url for r in urls):
+            urls.append({'url':url,**({'discovered_from_page':page} if page else {})})
     class Links(HTMLParser):
         def __init__(self):
             super().__init__(convert_charrefs=True)
-            self.urls = []
         def handle_starttag(self, tag, attrs):
-            if tag != "a" or len(self.urls) >= 12:
+            if tag != "a" or len(urls) >= 12:
                 return
             href = dict(attrs).get("href")
             if not href:
                 return
-            try:
-                url = urljoin(base, href).split("#", 1)[0]
-                validate_url(url)
-            except (ValueError, TypeError):
-                return
-            if regulatory_host(urlsplit(url).hostname) and url not in self.urls:
-                self.urls.append(url)
-    parser = Links()
-    parser.feed(raw.decode("utf-8", errors="replace"))
-    return [{"url": url, "title": "Referencia original enlazada por el documento",
+            observe(href)
+    if 'pdf' in mime:
+        from tools.pdf_sources import pdf_link_annotations
+        try:
+            for ref in pdf_link_annotations(raw):observe(ref['url'],ref['page'])
+        except (ValueError,TypeError,KeyError):
+            pass  # Una anotación defectuosa no borra el texto ya extraído.
+        if analysis:
+            for block,page in zip(analysis['blocks'],analysis['page_map']):
+                for href in re.findall(r'https://[^\s<>\[\]{}"\x27]+',block):
+                    observe(href.rstrip('.,;:)'),page)
+    else:
+        parser = Links()
+        parser.feed(raw.decode("utf-8", errors="replace"))
+    return [{**ref, "title": "Referencia original enlazada por el documento",
              "discovered_by": "document_citations", "discovered_from": base}
-            for url in parser.urls]
+            for ref in urls]
 
 
 def normalized(text):
@@ -328,7 +341,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             continue
         host = urlsplit(lead["url"]).hostname
         kind = "primary" if primary_host(host) else "secondary"
-        if per_host[host] >= MAX_PER_HOST or per_kind[kind] >= (
+        host_limit = 2 if regulatory_host(host) and host not in useful_hosts else MAX_PER_HOST
+        if per_host[host] >= host_limit or per_kind[kind] >= (
                 MAX_PRIMARY_ATTEMPTS if kind == "primary" else MAX_SECONDARY_ATTEMPTS):
             continue
         per_host[host] += 1
@@ -343,8 +357,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             if primary_host(host) and not primary_host(urlsplit(resolved).hostname):
                 raise ValueError("Redirección fuera de autoridad pública")
             analysis = analyze_document(raw, mime, pdf_max_pages=350, pdf_scan_pages=12)
-            if "html" in mime:
-                references = document_references(raw, resolved)
+            if "html" in mime or "pdf" in mime:
+                references = document_references(raw, resolved, mime=mime, analysis=analysis)
                 record.update({"citation_links_scanned": True,
                                "reference_urls": [r["url"] for r in references]})
                 for reference in reversed(references):

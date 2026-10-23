@@ -32,9 +32,20 @@ def search_plan(title, targets, regulatory_domains):
     target = ordered[0]
     query = f'"{title}" ' + target["statement"][:220]
     regulatory = "no_regulatory_primary_document" in target["gaps"]
+    official_query = query + " original annual report"
+    if regulatory:
+        statement=normalized(target['statement'])
+        legal_terms=[term for pattern,term in (
+            (r'fraud', 'fraud'), (r'imput|acus|indict|carg', 'indictment'),
+            (r'conden|sentenc|convict', 'conviction sentencing'),
+            (r'acuerd|settlement|restitu', 'settlement restitution'),
+            (r'demand|complaint', 'complaint')) if re.search(pattern,statement)]
+        years=list(dict.fromkeys(re.findall(r'\b(?:19|20)\d{2}\b',statement)))
+        # La frase española completa devolvía BOE/DOJ ajenos al tema. Buscar
+        # la entidad canónica y conceptos legales, sin inventar hechos ni URLs.
+        official_query=' '.join([f'"{title}"',*legal_terms,*years,'court official'])
     primary = {"intent": "find_regulatory_original" if regulatory else "find_primary_original",
-               "target_claim_index": target["claim_index"], "query": query +
-               (" court complaint settlement judgment" if regulatory else " original annual report"),
+               "target_claim_index": target["claim_index"], "query": official_query,
                "exclude_domains": excluded}
     if regulatory:
         primary["include_domains"] = sorted(regulatory_domains)[:20]
@@ -62,6 +73,8 @@ def select_passages(analysis, title, targets, limit=3):
     for i, text in enumerate(blocks):
         if len(text) < 90:
             continue
+        if len(re.findall(r'https?://',text))>=2:
+            continue  # Bibliografía: sirve para descubrir enlaces, no como hecho.
         context = next((j for j in range(max(0, i-2), i+1) if j in named and
                         analysis["page_map"][j] == analysis["page_map"][i]), None)
         if i not in named and context is None:
