@@ -52,6 +52,29 @@ El resultado se conserva como `GUION_DOCUMENTAL_NO_APROBADO.json` en el
 artefacto `fdg-guion-documental-revision`, con retención de cinco días.
 No se acredita la calidad de un documental real por pasar pruebas con fixtures.
 
+### Del borrador a las tareas de producción
+
+La misma fase `script` prepara `PLAN_PRODUCCION_NO_APROBADO.json` mediante
+`tools/documentary_production_plan.py`. Si la investigación impide escribir
+el guion, conserva ese bloqueo y deja cero escenas y cero tomas planificadas.
+Para un borrador válido prepara tomas de hasta 260 caracteres y solicitudes
+de recursos visuales por párrafo, con los identificadores de hechos y citas.
+Los cortes conservan todos los caracteres, posiciones y hashes del texto;
+el paquete queda ligado al hash del guion y del expediente investigador.
+
+La referencia exigida procede de `tools/approved_voice.py`. Registrar su hash
+no acredita que se haya inspeccionado el MP3 en esa ejecución ni su licencia.
+No se carga Qwen-TTS ni se descargan imágenes; los recursos siguen pendientes
+y no hay audio nuevo. Antes de ejecutar las tareas se requieren revisión
+factual, derechos de voz y visuales y aprobación humana de render. Las
+duraciones siguen siendo estimaciones hasta disponer de audio real.
+
+```sh
+python -m tools.documentary_production_plan \
+  --script dist/script/GUION_DOCUMENTAL_NO_APROBADO.json \
+  --out dist/script/PLAN_PRODUCCION_NO_APROBADO.json
+```
+
 ## Cuotas y producción
 
 El propietario confirmó el 2026-10-22 que PAYGO de Tavily está desactivado.

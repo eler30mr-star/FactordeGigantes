@@ -81,6 +81,11 @@ jobs:
         run: |
           python -m tools.documentary_script --run-id "$SCRIPT_RUN_ID" \
             --out dist/script/GUION_DOCUMENTAL_NO_APROBADO.json
+      - name: Preparar tareas de voz canónica y recursos por escena sin producir
+        run: |
+          python -m tools.documentary_production_plan \
+            --script dist/script/GUION_DOCUMENTAL_NO_APROBADO.json \
+            --out dist/script/PLAN_PRODUCCION_NO_APROBADO.json
       - name: Conservar borrador o bloqueo verificable para revisión
         if: always()
         uses: actions/upload-artifact@v4
