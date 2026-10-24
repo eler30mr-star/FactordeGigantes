@@ -158,8 +158,9 @@ proveedores mantengan las mismas condiciones gratuitas indefinidamente.
 
 ## Guion al panel (migración 0014)
 
-Después de aplicar `0014_autonomous_script_drafts.sql` y desplegar el Worker,
-activar `AUTONOMOUS_SCRIPT_INGEST_ENABLED=1` en variables Actions. El paso
+Migración `0014_autonomous_script_drafts.sql` y Worker desplegados el 2026-10-24.
+La importación Actions queda activada por defecto; `AUTONOMOUS_SCRIPT_INGEST_ENABLED=0`
+la desactiva de forma explícita. El paso
 `tools.push_documentary_draft` usa OIDC, sin claves nuevas. Sólo acepta borradores
 trazables de expedientes activos con fuentes suficientes. Trabajo y expediente
 quedan pendientes de revisión humana. El mismo artefacto puede reimportarse sin

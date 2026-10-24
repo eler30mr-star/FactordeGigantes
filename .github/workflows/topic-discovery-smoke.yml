@@ -131,8 +131,8 @@ jobs:
             --out dist/script/GUION_DOCUMENTAL_NO_APROBADO.json \
             --diagnostics-out dist/script/DIAGNOSTICO_INVESTIGACION.json
       - name: Guardar guion aceptable como trabajo pendiente en el panel
-        # Activar sólo después de migración 0014 y despliegue comprobados.
-        if: vars.AUTONOMOUS_SCRIPT_INGEST_ENABLED == '1'
+        # 0014 y Worker desplegados; un 0 explícito permite desactivar.
+        if: vars.AUTONOMOUS_SCRIPT_INGEST_ENABLED != '0'
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
         run: |

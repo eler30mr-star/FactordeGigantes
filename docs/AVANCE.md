@@ -1733,3 +1733,12 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 
 - CI del primer bloque `476c67a877a5a5dd8609b19fe57ae677d7f4736b`: [40132985120](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40132985120), success. Se completa la reanudación: `script-context` devuelve el guion original ya importado; el CLI lo reutiliza antes de construir clientes o reservar cuota. Ediciones humanas siguen en su expediente y no se sustituyen.
 - Una regresión Python adicional confirma cero generación/reservas en reintento; el contrato SQLite comprueba recuperación exacta del guion y job_id original. Suite local: **328 Python con FFmpeg y 90 Node aprobadas**. Despliegue de 0014 y del Worker aún pendiente en este punto del historial.
+
+
+### Despliegue real de integración guion → panel
+
+- Código `068ffeee71536394e71d15d9be52698814bea7c6`, CI [40133084536](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40133084536) **success**. Suite final local: 328 Python con FFmpeg; 90 casos Node aprobados.
+- Aplicada migración aditiva 0014 en D1 de producción mediante API Cloudflare autenticada. Tabla e índice creados sin borrar ni reconstruir tablas. D1 anterior no utiliza `d1_migrations`; no se inventa un registro Wrangler. Verificación posterior de tabla, conteos y claves foráneas.
+- PUT Worker oficial aceptado HTTP 200 a las 21:11:35 UTC. Entrada `src/worker.js`; 22 módulos, JSON empaquetado como módulos constantes, sin cambiar lógica. Se conservaron todos los bindings mediante `inherit` estricto y los assets con `keep_assets:true`; tres secretos permanecen en Cloudflare, sin leer ni copiar valores. Fecha de compatibilidad permanece 2026-10-20; clasificación Cloudflare mantiene bandera 0.
+- ID devuelto de despliegue: `d1b3f05edffa4718a4eb3760eef8397a`; etag `0302fa889df844e661ebcdf70604623650d60730ec161555fc19ba5103269932`. La migración no crea documentales de prueba en producción. Se habilita por defecto la importación Actions; un 0 explícito en `AUTONOMOUS_SCRIPT_INGEST_ENABLED` la desactiva.
+- Se solicita prueba real `[script-e2e]` desde el expediente activo para comprobar contexto, guardas OIDC y rechazo de investigación insuficiente, sin nuevas inferencias. Un rechazo correcto no acredita importación positiva de un documental real; esa aceptación requiere dossier suficiente. Aún no hay MP4 autónomo aceptable.
