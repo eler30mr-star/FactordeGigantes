@@ -277,7 +277,9 @@ class TeamTests(unittest.TestCase):
                 return {"candidates": [{"content": {"parts": [{"text": candidate()}]}}]}
             self.assertIn("api.groq.com", url)
             review = {"reviews": [{"claim_index": 1, "assessment": "insufficient_context",
-                                    "evidence_ids": ["E001"], "reason": "Hace falta conocer el desenlace posterior."}]}
+                                    "evidence_ids": ["E001"], "reason": "Hace falta conocer el desenlace posterior.",
+                                    "source_assessments":[{"evidence_id":"E001","assessment":"insufficient_context",
+                                                           "reason":"Hace falta contexto del desenlace."}]}]}
             return {"choices": [{"message": {"content": json.dumps(review)}}]}
         clients = FreeClients(env=configured("gemini", "groq", "mistral", "openrouter"),
                               reserve=lambda *_: True, transport=transport)

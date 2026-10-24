@@ -7,6 +7,7 @@ import unittest
 from test_ai_research_team import sources, candidate, configured, TEXT
 from tools.ai_clients import FreeClients
 from tools.ai_research_pipeline import analyze_sources, parse_review, assign_reviewed_support, validate_report_locally
+from tools.review_candidates import review_tasks
 
 
 def context():
@@ -26,6 +27,30 @@ def review(*, assessment='supported_by_excerpt', ids=('E001','E002')):
 
 
 class SupportAssignmentTests(unittest.TestCase):
+    def test_reviewer_cannot_omit_selected_independent_comparison(self):
+        evidence=context()['evidence_manifest']
+        row=review(ids=('E001',))
+        with self.assertRaises(ValueError):
+            parse_review(json.dumps({'reviews':[row]}),evidence,self.claims(),
+                         expected_tasks=review_tasks(evidence,self.claims()))
+
+    def test_insufficient_alternative_is_evaluated_but_never_added_as_support(self):
+        evidence=context()['evidence_manifest']
+        evidence.append({**evidence[1],'id':'E003','url':'https://other.example/unrelated',
+                         'document_sha256':'c'*64})
+        row=review()
+        row['source_assessments'].append({'evidence_id':'E003','assessment':'insufficient_context',
+                                         'reason':'No describe el hecho completo.'})
+        parsed=parse_review(json.dumps({'reviews':[row]}),evidence,self.claims(),
+                            expected_tasks=review_tasks(evidence,self.claims()))
+        self.assertEqual(assign_reviewed_support(self.claims(),parsed)[0]['evidence_ids'],['E001','E002'])
+
+    def test_comparison_candidates_remain_bounded_when_original_has_eight_citations(self):
+        evidence=[{**context()['evidence_manifest'][0],'id':f'E{i:03d}',
+                   'url':f'https://source{i}.example/report','document_sha256':str(i)*64} for i in range(1,10)]
+        claim={**self.claims()[0],'evidence_ids':[e['id'] for e in evidence[:8]]}
+        self.assertEqual(review_tasks(evidence,[claim])[0]['inspect_evidence_ids'],claim['evidence_ids'])
+
     def claims(self):
         return [{'statement':TEXT,'evidence_ids':['E001'],'status':'candidate_unverified','human_verified':False}]
 

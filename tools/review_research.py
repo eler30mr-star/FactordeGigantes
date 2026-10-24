@@ -17,9 +17,7 @@ from tools.ai_research_pipeline import (
 from tools.documentary_script import revalidate_source_metadata
 from tools.documentary_blueprint import inspect_episode
 from tools.research_diagnostics import research_summary
-
-METHOD='per_excerpt_support_v1'
-
+from tools.review_candidates import review_tasks, METHOD
 
 def review_existing(research, *, clients, source_run_id):
     if not isinstance(source_run_id,str) or not re.fullmatch(r'ai-[a-f0-9]{28}',source_run_id):
@@ -40,7 +38,8 @@ def review_existing(research, *, clients, source_run_id):
     prompt=review_prompt(report['evidence_manifest'],report['candidate_claims'])
     try:
         text,metadata=clients.generate('groq',prompt,max_output_tokens=3200)
-        reviews=parse_review(text,report['evidence_manifest'],report['candidate_claims'])
+        reviews=parse_review(text,report['evidence_manifest'],report['candidate_claims'],
+            expected_tasks=review_tasks(report['evidence_manifest'],report['candidate_claims']))
         if not all('source_assessments' in row for row in reviews):
             raise ValueError('Falta matriz por pasaje')
     except ProviderError as exc:

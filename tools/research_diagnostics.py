@@ -24,6 +24,8 @@ def research_summary(report):
                      for e in report.get("evidence_manifest", [])[:10]],
         "claims": [{"claim_index": n, "statement": c["statement"], "evidence_ids": c["evidence_ids"],
                     "analysis_evidence_ids": c.get("analysis_evidence_ids", c["evidence_ids"]),
+                    "source_assessments": next((r.get('source_assessments',[]) for r in report.get('reviews',[])
+                                                if r['claim_index']==n),[]),
                     "gaps": by_claim.get(n, {}).get("gaps", []),
                     "review_assessment": reviews.get(n, "not_reviewed")}
                    for n, c in enumerate(report.get("candidate_claims", [])[:8], 1)],

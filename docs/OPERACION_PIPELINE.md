@@ -70,12 +70,15 @@ independencia editorial o respaldo semántico; esa revisión continúa pendiente
 La fase `review`, con `research_run_id=latest` o un ID activo, reutiliza el
 contexto D1 por el mismo OIDC restringido. Hace como máximo una llamada Groq
 con modalidad gratuita y reserva D1; no repite radar, búsquedas, Qwen ni Gemini.
-Si ese expediente ya contiene el contrato `per_excerpt_support_v1`, se omite
+Si ese expediente ya contiene el contrato vigente `per_excerpt_support_v2`, se omite
 sin nueva reserva ni escritura. Un bloqueo de cuota/proveedor se conserva.
 
-Groq evalúa cada pasaje propuesto como apoyo. Sólo se amplían las citas de una
-afirmación si todos los pasajes listados la respaldan, la matriz es consistente
-y conserva sus citas iniciales. El texto del hecho no cambia, las citas del
+El sistema fija qué pasajes debe comparar Groq, buscando alternativas de otros
+dominios/documentos por coincidencias textuales y de fechas. Ese orden es sólo
+recuperación de candidatos. Una respuesta que omite comparaciones se rechaza.
+Sólo se incorporan pasajes evaluados como apoyo completo, con matriz consistente
+y conservando las citas iniciales. Los pasajes insuficientes quedan evaluados
+sin convertirse en apoyo; una contradicción impide ampliar. El texto no cambia y las citas del
 analizador quedan en `analysis_evidence_ids` y la matriz se recalcula. Una
 contradicción, contexto insuficiente o revisión histórica sin matriz no amplía
 citas. Esto es apoyo candidato evaluado por IA, nunca verificación humana.
