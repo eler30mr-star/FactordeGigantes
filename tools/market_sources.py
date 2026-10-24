@@ -22,6 +22,10 @@ ID=re.compile(r"^[A-Za-z0-9_-]{11}$")
 WIKI_TITLE=re.compile(r"^[^\n#?]{2,120}$")
 
 
+class SourcePayloadTooLarge(ValueError):
+    """Límite de bytes excedido; permite reducir un lote sin elevar el límite."""
+
+
 class YoutubeApiError(RuntimeError):
     """Diagnóstico permitido; nunca conserva URL, clave o mensaje de Google."""
     def __init__(self,method,status,reason):
@@ -55,7 +59,7 @@ def get_json(url, *, request=None):
             raise ValueError("Proveedor devolvió estado no válido")
         raw=response.read(MAX_PAYLOAD+1)
     if len(raw)>MAX_PAYLOAD:
-        raise ValueError("Respuesta de fuente demasiado grande")
+        raise SourcePayloadTooLarge("Respuesta de fuente demasiado grande")
     return json.loads(raw.decode("utf-8"))
 
 

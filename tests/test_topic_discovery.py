@@ -1,7 +1,9 @@
 """Ensayos offline del descubridor SIN lista estática de empresas."""
 import unittest
+from unittest.mock import patch
 from urllib.parse import urlsplit,parse_qs
 from tools.topic_discovery import discover,COMPANY_TYPES
+from tools.market_sources import SourcePayloadTooLarge
 
 DAY="2026-10-21"
 QCOMPANY=next(iter(COMPANY_TYPES))
@@ -37,6 +39,65 @@ def fake_fetch(url):
     raise AssertionError("URL externa inesperada: "+path.hostname)
 
 class AutonomousDiscoveryTests(unittest.TestCase):
+    def test_real_transport_uses_typed_oversize_error_and_bounded_read(self):
+        from tools.market_sources import get_json
+        class Response:
+            status=200
+            def __enter__(self):return self
+            def __exit__(self,*args):pass
+            def read(self,n):
+                self.limit=n
+                return b'x'*n
+        response=Response()
+        with patch('tools.market_sources.MAX_PAYLOAD',16), \
+             patch('tools.market_sources.urlopen',return_value=response):
+            with self.assertRaises(SourcePayloadTooLarge):get_json('https://www.wikidata.org/w/api.php')
+        self.assertEqual(response.limit,17)
+
+    def adaptive_fetch(self, *, max_titles=2, oversized_title=None):
+        calls=[]
+        def fetch(url):
+            if urlsplit(url).hostname=='wikimedia.org':
+                return {'items':[{'articles':[{'article':f'Empresa_{i}', 'rank':i+1,
+                    'views':1000-i} for i in range(5)]}]}
+            q=parse_qs(urlsplit(url).query)
+            self.assertEqual(q['sitefilter'],['eswiki'])
+            titles=q['titles'][0].split('|');calls.append(titles)
+            if len(titles)>max_titles or oversized_title in titles:
+                raise SourcePayloadTooLarge('Límite estricto de bytes')
+            return {'entities':{f'Q{101+int(t[-1])}':{
+                'id':f'Q{101+int(t[-1])}',
+                'claims':{'P31':[{'mainsnak':{'datavalue':{'value':{'id':QCOMPANY}}}}]},
+                'sitelinks':{'eswiki':{'title':t}}} for t in titles}}
+        return fetch,calls
+
+    def test_oversized_batch_splits_without_increasing_byte_or_request_limits(self):
+        fetch,calls=self.adaptive_fetch()
+        result=discover(today=DAY,languages=('es',),fetch=fetch,limit=5,max_requests=8)
+        self.assertEqual(result['company_candidates_count'],5)
+        self.assertEqual(result['wikidata_requests'],len(calls))
+        self.assertEqual(len(calls),5)
+        self.assertEqual(result['wikidata_titles_classified'],5)
+        self.assertEqual(result['wikidata_titles_unprocessed'],0)
+        self.assertEqual(result['discovery_coverage'],'complete')
+        self.assertFalse(result['ready_for_script'])
+
+    def test_single_giant_entity_is_skipped_and_others_still_classified(self):
+        fetch,calls=self.adaptive_fetch(max_titles=1,oversized_title='Empresa_0')
+        result=discover(today=DAY,languages=('es',),fetch=fetch,limit=5,max_requests=12)
+        self.assertEqual(result['company_candidates_count'],4)
+        self.assertEqual(result['wikidata_oversized_titles_skipped'],1)
+        self.assertEqual(result['wikidata_requests'],len(calls))
+
+    def test_failed_split_attempts_also_consume_budget(self):
+        fetch,calls=self.adaptive_fetch(max_titles=1)
+        result=discover(today=DAY,languages=('es',),fetch=fetch,limit=5,max_requests=2)
+        self.assertEqual(result['wikidata_requests'],2)
+        self.assertEqual(len(calls),2)
+        self.assertEqual(result['wikidata_titles_classified'],0)
+        self.assertEqual(result['wikidata_titles_unprocessed'],5)
+        self.assertEqual(result['company_candidates_count'],0)
+
     def test_discovers_company_without_names_supplied_by_human(self):
         result=discover(today=DAY,fetch=fake_fetch,limit=10)
         self.assertEqual(result["company_candidates_count"],1)
@@ -124,3 +185,4 @@ class AutonomousDiscoveryTests(unittest.TestCase):
 
 if __name__=="__main__":
     unittest.main()
+

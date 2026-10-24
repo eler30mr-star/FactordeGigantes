@@ -23,6 +23,7 @@ def research_summary(report):
                      "document_sha256", "selection_method", "entity_context_excerpt") if k in e}
                      for e in report.get("evidence_manifest", [])[:10]],
         "claims": [{"claim_index": n, "statement": c["statement"], "evidence_ids": c["evidence_ids"],
+                    "analysis_evidence_ids": c.get("analysis_evidence_ids", c["evidence_ids"]),
                     "gaps": by_claim.get(n, {}).get("gaps", []),
                     "review_assessment": reviews.get(n, "not_reviewed")}
                    for n, c in enumerate(report.get("candidate_claims", [])[:8], 1)],

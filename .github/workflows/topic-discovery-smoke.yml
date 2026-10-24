@@ -5,7 +5,7 @@ on:
       phase:
         description: 'Investigar o reanudar únicamente el borrador desde D1'
         type: choice
-        options: [research, script, profile]
+        options: [research, review, script, profile]
         default: research
       research_run_id:
         description: 'Expediente ai-... o latest para la cola activa'
@@ -22,6 +22,49 @@ concurrency:
   group: fdg-topic-discovery-market
   cancel-in-progress: false
 jobs:
+  review-existing:
+    if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.phase == 'review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    outputs:
+      script_run_id: ${{ steps.review.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Reanudar sólo el contraste por pasaje desde D1
+        id: review
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RESEARCH_RUN_ID: ${{ inputs.research_run_id || 'latest' }}
+          RESEARCH_PROVIDER: ${{ vars.RESEARCH_PROVIDER || 'team' }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_RESEARCH_FREE_CONFIRMED: ${{ vars.GROQ_RESEARCH_FREE_CONFIRMED || '1' }}
+        run: python -m tools.review_research --run-id "$RESEARCH_RUN_ID" --out dist/review/REVISION_NO_APROBADA.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fdg-revision-reanudable
+          path: dist/review/
+          retention-days: 5
+          if-no-files-found: warn
+  script-after-review:
+    needs: review-existing
+    if: needs.review-existing.outputs.script_run_id != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Encadenar borrador sólo si la revisión tiene fuentes suficientes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SCRIPT_RUN_ID: ${{ needs.review-existing.outputs.script_run_id }}
+        run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=script -f research_run_id="$SCRIPT_RUN_ID"
   search-provider-profile:
     if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.phase == 'profile'
     runs-on: ubuntu-latest
@@ -96,7 +139,7 @@ jobs:
           retention-days: 5
           if-no-files-found: warn
   topic-discovery:
-    if: github.event.repository.private == false && inputs.phase != 'script' && inputs.phase != 'profile'
+    if: github.event.repository.private == false && inputs.phase != 'script' && inputs.phase != 'profile' && inputs.phase != 'review'
     runs-on: ubuntu-latest
     timeout-minutes: 22
     outputs:

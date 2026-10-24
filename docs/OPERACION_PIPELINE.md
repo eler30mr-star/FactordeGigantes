@@ -1,12 +1,18 @@
 # Operación del pipeline de Factor de Gigantes
 
-El workflow `FDG - radar diario empresas y noticias` tiene dos fases en `main`.
+El workflow `FDG - radar diario empresas y noticias` separa investigación,
+revisión, guion y comprobación de perfil en `main`.
 La selección del episodio sigue procediendo de señales observadas y de D1.
 No es necesario proporcionar fuentes o escribir un episodio manualmente.
 
 ## Investigación y continuación
 
 La fase predeterminada `research` mantiene el radar diario y la ejecución manual.
+Si un lote Wikidata supera el límite de cinco MB, se divide sin elevar ese
+límite; cada intento fallido consume también el máximo de consultas. Una
+entidad individual demasiado grande se omite y se registra; la cobertura
+pendiente queda explícita. Las respuestas se filtran al sitelink del idioma
+solicitado para evitar traer cientos de enlaces ajenos a esa clasificación.
 Recupera de cinco expedientes de la misma entidad las URL intentadas, hasta
 ocho afirmaciones pendientes y cuatro pasajes históricos. Conserva hasta 40 URL
 de historial; el límite por corrida continúa siendo ocho descargas documentales.
@@ -58,6 +64,29 @@ en dos dominios no equivale a dos originales. Hashes distintos tampoco prueban
 independencia editorial o respaldo semántico; esa revisión continúa pendiente.
 
 ## Guionista reanudable
+
+### Revisión independiente por pasaje
+
+La fase `review`, con `research_run_id=latest` o un ID activo, reutiliza el
+contexto D1 por el mismo OIDC restringido. Hace como máximo una llamada Groq
+con modalidad gratuita y reserva D1; no repite radar, búsquedas, Qwen ni Gemini.
+Si ese expediente ya contiene el contrato `per_excerpt_support_v1`, se omite
+sin nueva reserva ni escritura. Un bloqueo de cuota/proveedor se conserva.
+
+Groq evalúa cada pasaje propuesto como apoyo. Sólo se amplían las citas de una
+afirmación si todos los pasajes listados la respaldan, la matriz es consistente
+y conserva sus citas iniciales. El texto del hecho no cambia, las citas del
+analizador quedan en `analysis_evidence_ids` y la matriz se recalcula. Una
+contradicción, contexto insuficiente o revisión histórica sin matriz no amplía
+citas. Esto es apoyo candidato evaluado por IA, nunca verificación humana.
+
+Se conserva el cálculo antes de intentar persistir, y el recibo confirma el
+nuevo expediente sin modificar el original. La fecha original de los documentos
+se mantiene; la revisión registra su propia fecha y el hash de procedencia.
+Sólo si el blueprint pasa su puerta se encadena el guionista. El artefacto
+`fdg-revision-reanudable` conserva el informe o bloqueo durante cinco días.
+
+### Redacción del borrador
 
 Cuando la investigación supera la puerta documental, el workflow encadena
 automáticamente una ejecución independiente de guion con el identificador

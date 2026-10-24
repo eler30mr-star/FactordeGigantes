@@ -7,13 +7,14 @@ activa IA de pago, render ni publicación y pasa luego al radar de mercado.
 """
 from __future__ import annotations
 import argparse
+from collections import deque
 from datetime import date, timedelta
 import json
 from pathlib import Path
 import re
 from urllib.parse import urlencode, urlsplit, quote, unquote
 
-from tools.market_sources import get_json
+from tools.market_sources import get_json, SourcePayloadTooLarge
 
 TOP_URL="https://wikimedia.org/api/rest_v1/metrics/pageviews/top/"
 WIKIDATA_URL="https://www.wikidata.org/w/api.php"
@@ -86,6 +87,7 @@ def read_entities(lang,titles,*,fetch=get_json):
         "sites":lang+"wiki",
         "titles":"|".join(titles),
         "props":"claims|sitelinks|labels",
+        "sitefilter":lang+"wiki",
         "languages":"es|en",
         "format":"json",
     })
@@ -140,18 +142,35 @@ def discover(*, today=None,languages=LANGUAGES,limit=120,max_requests=8,fetch=ge
     candidates={}
     total_queries=0
     total_titles=0
+    oversized_batches=[]
+    classified_titles=0
+    skipped_oversized_titles=0
+    unprocessed_titles=0
     for lang in languages:
         top_url,articles=daily_top(lang,day,fetch=fetch,limit=limit)
         sources.append({"language":lang,"top_url":top_url,"article_count":len(articles),
                         "observed_top_day":day.isoformat()})
         total_titles+=len(articles)
         stats={a["title"]:a for a in articles}
-        for offset in range(0,len(articles),CHUNK_SIZE):
-            if total_queries>=max_requests:
-                break
-            subset=[a["title"] for a in articles[offset:offset+CHUNK_SIZE]]
-            entities=read_entities(lang,subset,fetch=fetch)
+        pending=deque([a["title"] for a in articles[offset:offset+CHUNK_SIZE]]
+                      for offset in range(0,len(articles),CHUNK_SIZE))
+        while pending and total_queries<max_requests:
+            subset=pending.popleft()
+            # Cada intento, incluso uno rechazado por tamaño, consume el
+            # presupuesto. Un título desmesurado no debe tumbar todo el radar.
             total_queries+=1
+            try:
+                entities=read_entities(lang,subset,fetch=fetch)
+            except SourcePayloadTooLarge:
+                oversized_batches.append({'language':lang,'batch_size':len(subset),
+                    'outcome':'split' if len(subset)>1 else 'skipped_oversized_entity'})
+                if len(subset)>1:
+                    middle=len(subset)//2
+                    pending.appendleft(subset[middle:]);pending.appendleft(subset[:middle])
+                else:
+                    skipped_oversized_titles+=1
+                continue
+            classified_titles+=len(subset)
             for entity in entities.values():
                 if not isinstance(entity,dict) or not re.fullmatch(r"Q[1-9][0-9]*",str(entity.get("id",""))):
                     continue
@@ -191,6 +210,7 @@ def discover(*, today=None,languages=LANGUAGES,limit=120,max_requests=8,fetch=ge
                     candidates[key]["discovery_signals"].append(observed)
             if len(candidates)>=MAX_ENTRIES:
                 break
+        unprocessed_titles+=sum(map(len,pending))
         if len(candidates)>=MAX_ENTRIES:
             break
     ordered=sorted(candidates.values(),
@@ -222,6 +242,11 @@ def discover(*, today=None,languages=LANGUAGES,limit=120,max_requests=8,fetch=ge
         "data_day":day.isoformat(),
         "articles_considered":total_titles,
         "wikidata_requests":total_queries,
+        "wikidata_titles_classified":classified_titles,
+        "wikidata_oversized_batches":oversized_batches,
+        "wikidata_oversized_titles_skipped":skipped_oversized_titles,
+        "wikidata_titles_unprocessed":unprocessed_titles,
+        "discovery_coverage":"partial" if skipped_oversized_titles or unprocessed_titles else "complete",
         "sources":sources,
         "candidates":ordered,
         "company_candidates_count":len(ordered),
@@ -259,3 +284,4 @@ def main():
 
 if __name__=="__main__":
     main()
+
