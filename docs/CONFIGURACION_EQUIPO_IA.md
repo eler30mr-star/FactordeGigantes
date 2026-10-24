@@ -170,3 +170,14 @@ frente al renderizador de previsualización.
 
 El cron de las 00:20 UTC sólo reanuda revisión (19:20 America/Lima). El radar
 principal mantiene las 10:17 UTC. Las cuotas D1 originales no cambian.
+
+
+## Continuar contraste desde D1
+
+`phase=corroborate` en `topic-discovery-smoke.yml` busca fuentes de los vacíos del
+expediente activo y compara pasajes. Reutiliza afirmaciones y citas; no invoca
+Qwen/Gemini ni repite el radar. Usa Tavily/Exa sólo si ya están configurados y
+confirmados gratis, con dos búsquedas y el presupuesto D1 existente. Groq revisa
+una vez como máximo. Si no hay cuota, las fuentes nuevas quedan en D1 para la
+revisión siguiente. Cron 00:40 UTC (19:40 America/Lima), tras revisión 00:20 UTC.
+No crea trabajos ni autoriza render/publicación por descubrir nuevas fuentes.
