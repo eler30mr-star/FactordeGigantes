@@ -66,6 +66,9 @@ class CorroborationTests(unittest.TestCase):
         self.assertEqual(report['corroboration_continuation']['review_pending_reason'],'budget_denied')
         self.assertEqual(report['candidate_claims'][0]['evidence_ids'],['E001'])
         self.assertEqual(report['reviews'],[])
+        retry=continue_corroboration(report,source_run_id=RUN,clients=self.client([]),
+                                    discover=lambda *a,**k:self.fail('No descartar ni volver a buscar antes de revisión'))
+        self.assertEqual(retry['status'],'awaiting_saved_passage_review')
         self.assertEqual(report['corroboration_continuation']['source_run_id'],RUN)
         resumed=review_existing(report,clients=self.client(calls),source_run_id=RUN)
         self.assertEqual(resumed['status'],'review_completed_candidate_only')
@@ -132,6 +135,14 @@ class CorroborationTests(unittest.TestCase):
         result=continue_corroboration(old,source_run_id=RUN,clients=self.client([]),
                                      discover=lambda *a,**k:self.fail('No buscar con capacidad llena'))
         self.assertEqual(result['status'],'blocked_evidence_capacity')
+
+    def test_old_navigation_scan_can_be_reopened_once_and_new_scan_is_reused(self):
+        from tools.ai_source_discovery import CITATION_SCAN_METHOD
+        old=research();url=old['evidence_manifest'][0]['url']
+        old['retrieval_budget']={'citation_scanned_urls':[url]}
+        self.assertIn(url,continuation_selection(old)[0]['citation_expansion_urls'])
+        old['retrieval_budget']['citation_scan_method']=CITATION_SCAN_METHOD
+        self.assertNotIn(url,continuation_selection(old)[0]['citation_expansion_urls'])
 
     def test_cli_saves_new_sources_before_network_persistence_and_respects_human_review(self):
         with tempfile.TemporaryDirectory() as folder:

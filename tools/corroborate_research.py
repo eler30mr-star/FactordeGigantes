@@ -16,13 +16,14 @@ import re
 
 from tools.ai_clients import FreeClients
 from tools.ai_control import ControlClient
-from tools.ai_source_discovery import discover_sources
+from tools.ai_source_discovery import discover_sources, CITATION_SCAN_METHOD
 from tools.ai_research_pipeline import evidence_gaps, validate_report_locally
 from tools.documentary_script import revalidate_source_metadata
 from tools.documentary_blueprint import inspect_episode
 from tools.research_source_plan import prioritized_targets
 from tools.research_diagnostics import research_summary
 from tools.review_research import review_existing
+from tools.review_candidates import METHOD as REVIEW_METHOD
 from tools.research_engine import fetch_public
 
 METHOD = 'corroboration_continuation_v1'
@@ -59,7 +60,12 @@ def continuation_selection(research):
         *(research.get('retrieval_budget') or {}).get('attempted_urls', []),
         *(e['url'] for e in research['evidence_manifest']),
     ]))[-40:]
-    scanned = set((research.get('retrieval_budget') or {}).get('citation_scanned_urls', []))
+    scanned = set(previous.get('ranked_citation_scanned_urls', []))
+    budget=research.get('retrieval_budget') or {}
+    if budget.get('citation_scan_method') == CITATION_SCAN_METHOD:
+        scanned.update(budget.get('citation_scanned_urls', []))
+    scanned.update(d.get('url') for d in research.get('source_documents', [])
+                   if d.get('citation_scan_method') == CITATION_SCAN_METHOD)
     expansions = [u for u in (target or {}).get('cited_urls', []) if u not in scanned][:2]
     return {'selected_wikidata_id': research['selected_wikidata_id'],
             'research_queue': {'wikidata_id': research['selected_wikidata_id'], 'title': research['company']},
@@ -116,6 +122,9 @@ def continue_corroboration(research, *, source_run_id, clients, discover=discove
             'publication_authorized': False, 'report': None}
     if not report['candidate_claims']:
         return {**base, 'status': 'blocked_no_candidate_claims'}
+    previous = report.get('corroboration_continuation') or {}
+    if previous.get('new_passages', 0) and report.get('support_review_method') != REVIEW_METHOD:
+        return {**base, 'status': 'awaiting_saved_passage_review'}
     selection, progress = continuation_selection(report)
     if progress['target_claim_index'] is None:
         return {**base, 'status': 'skipped_no_source_gaps'}
@@ -126,7 +135,6 @@ def continue_corroboration(research, *, source_run_id, clients, discover=discove
         return {**base, 'status': 'blocked_evidence_capacity'}
     discovered = discover(selection, clients=clients, gdelt_fetcher=fetch_public)
     evidence, claims, count = merge_passages(report, discovered)
-    previous = report.get('corroboration_continuation') or {}
     budget = discovered['retrieval_budget']
     progress.update(method=METHOD, source_run_id=source_run_id,
         source_collected_on=research['collected_on'], research_inference_repeated=False,
@@ -134,6 +142,11 @@ def continue_corroboration(research, *, source_run_id, clients, discover=discove
         visited_target_indices=list(dict.fromkeys(progress['visited_target_indices']+[progress['target_claim_index']])),
         attempted_urls=list(dict.fromkeys([
             *previous.get('attempted_urls', []), *selection['prior_attempted_urls'], *budget['attempted_urls']]))[-40:],
+        ranked_citation_scanned_urls=list(dict.fromkeys([
+            *previous.get('ranked_citation_scanned_urls', []),
+            *(budget.get('citation_scanned_urls', []) if budget.get('citation_scan_method') == CITATION_SCAN_METHOD else []),
+            *(d['url'] for d in discovered['source_documents']
+              if d.get('citation_scan_method') == CITATION_SCAN_METHOD)]))[-40:],
         new_passages=count)
     report.update(evidence_manifest=evidence, candidate_claims=claims,
         collected_on=datetime.now(timezone.utc).date().isoformat(),

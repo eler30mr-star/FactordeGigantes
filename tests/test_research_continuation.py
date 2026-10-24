@@ -12,6 +12,16 @@ SELECTION = {"selected_wikidata_id":"Q100","research_queue":{"wikidata_id":"Q100
 
 
 class ContinuationTests(unittest.TestCase):
+    def test_document_links_after_long_official_menus_are_ranked_before_cutoff(self):
+        raw=(''.join(f'<a href="https://www.justice.gov/navigation/{n}">Menú</a>' for n in range(50))+
+             '<a href="https://www.justice.gov/files/complaint.pdf">Empresa Ejemplo: documento original</a>'+
+             '<a href="https://www.justice.gov/usao/pr/company-example">Otra compañía</a>').encode()
+        refs=document_references(raw,'https://reporter.example/study',entity='Empresa Ejemplo')
+        self.assertEqual(len(refs),12)
+        self.assertEqual(refs[0]['url'],'https://www.justice.gov/files/complaint.pdf')
+        self.assertEqual(refs[0]['anchor_text'],'Empresa Ejemplo: documento original')
+        self.assertNotIn('https://reporter.example/study',[r['url'] for r in refs])
+
     def test_reopening_an_article_for_links_does_not_count_dynamic_html_as_new_evidence(self):
         old={'url':'https://reporter.example/original','document_sha256':'a'*64}
         changed={**old,'document_sha256':'b'*64,'excerpt':TEXT}

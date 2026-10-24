@@ -59,47 +59,64 @@ def research_targets(selection):
     return targets
 
 
-def document_references(raw, base, *, mime='text/html', analysis=None):
-    """Seguir sólo URLs de autoridades observadas en el documento descargado.
+CITATION_SCAN_METHOD = 'ranked_regulatory_links_v2'
 
-    El enlace aporta una pista, nunca prueba de un hecho. El lector público
-    valida DNS y redirecciones al descargar; todo cuenta en el límite de ocho.
+
+def document_references(raw, base, *, mime='text/html', analysis=None, entity=''):
+    """Ordenar enlaces observados antes de limitar: los menús no son documentos.
+
+    Sólo devuelve pistas de autoridades conocidas, nunca hechos ni URLs
+    adivinadas. Descarga y redirecciones conservan el presupuesto existente.
     """
-    urls=[]
-    def observe(href, page=None):
-        if not isinstance(href,str) or len(urls)>=12:return
+    urls = {}
+    def observe(href, page=None, label=''):
+        if not isinstance(href,str):return
         try:
             url=urljoin(base,href).split('#',1)[0]
             validate_url(url)
         except (ValueError,TypeError):return
-        if regulatory_host(urlsplit(url).hostname) and all(r['url']!=url for r in urls):
-            urls.append({'url':url,**({'discovered_from_page':page} if page else {})})
+        if url == base.split('#',1)[0] or not regulatory_host(urlsplit(url).hostname):return
+        if url not in urls and len(urls)<800:
+            urls[url]={'url':url,**({'discovered_from_page':page} if page else {})}
+        if url in urls and label:
+            urls[url]['anchor_text']=' '.join(label.split())[:200]
     class Links(HTMLParser):
         def __init__(self):
             super().__init__(convert_charrefs=True)
-        def handle_starttag(self, tag, attrs):
-            if tag != "a" or len(urls) >= 12:
-                return
-            href = dict(attrs).get("href")
-            if not href:
-                return
-            observe(href)
+            self.href=None;self.label=[]
+        def handle_starttag(self,tag,attrs):
+            if tag=='a':
+                self.href=dict(attrs).get('href');self.label=[]
+                observe(self.href)
+        def handle_data(self,data):
+            if self.href and sum(map(len,self.label))<400:self.label.append(data)
+        def handle_endtag(self,tag):
+            if tag=='a':
+                observe(self.href,label=' '.join(self.label))
+                self.href=None;self.label=[]
     if 'pdf' in mime:
         from tools.pdf_sources import pdf_link_annotations
         try:
             for ref in pdf_link_annotations(raw):observe(ref['url'],ref['page'])
-        except (ValueError,TypeError,KeyError):
-            pass  # Una anotación defectuosa no borra el texto ya extraído.
+        except (ValueError,TypeError,KeyError):pass
         if analysis:
             for block,page in zip(analysis['blocks'],analysis['page_map']):
                 for href in re.findall(r'https://[^\s<>\[\]{}"\x27]+',block):
                     observe(href.rstrip('.,;:)'),page)
     else:
-        parser = Links()
-        parser.feed(raw.decode("utf-8", errors="replace"))
-    return [{**ref, "title": "Referencia original enlazada por el documento",
-             "discovered_by": "document_citations", "discovered_from": base}
-            for ref in urls]
+        parser=Links();parser.feed(raw.decode('utf-8',errors='replace'));parser.close()
+    entity_words={w for w in re.findall(r'\w{3,}',normalized(entity))
+                  if w not in {'the','and','empresa','company','group','inc','corporation'}}
+    def rank(ref):
+        path=urlsplit(ref['url']).path
+        text=normalized(path+' '+ref.get('anchor_text',''))
+        related=bool(entity_words & set(re.findall(r'\w{3,}',text)))
+        resource=bool(re.search(r'complaint|indict|sentenc|judgment|inspection|press-release|/pr/|\.pdf$',normalized(path)))
+        return (-int(related),-int(resource))
+    # sort estable: mantener orden documental cuando no existe mejor pista.
+    return [{**ref,'title':ref.get('anchor_text') or 'Referencia original enlazada por el documento',
+             'discovered_by':'document_citations','discovered_from':base}
+            for ref in sorted(urls.values(),key=rank)[:12]]
 
 
 def normalized(text):
@@ -358,8 +375,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                 raise ValueError("Redirección fuera de autoridad pública")
             analysis = analyze_document(raw, mime, pdf_max_pages=350, pdf_scan_pages=12)
             if "html" in mime or "pdf" in mime:
-                references = document_references(raw, resolved, mime=mime, analysis=analysis)
-                record.update({"citation_links_scanned": True,
+                references = document_references(raw, resolved, mime=mime, analysis=analysis, entity=title)
+                record.update({"citation_links_scanned": True, "citation_scan_method": CITATION_SCAN_METHOD,
                                "reference_urls": [r["url"] for r in references]})
                 for reference in reversed(references):
                     if reference["url"] not in attempted_urls and reference["url"] not in followed and len(followed) < 16:
@@ -416,6 +433,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         "public_authority_domains_with_text": len(regulatory_hits),
         "budget_exhausted": len(attempted_documents) >= MAX_DOCUMENTS,
         "citation_scanned_urls": [d["url"] for d in attempted_documents if d.get("citation_links_scanned")],
+        "citation_scan_method": CITATION_SCAN_METHOD,
     }
     new_fragments=out["evidence_manifest"]
     new_count=len(new_fragments)
