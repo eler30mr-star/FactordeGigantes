@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
-import {evidenceLinkSha256,prepareEditorialDraft,storeAutonomousDraft} from '../src/autonomous-script-drafts.mjs';
+import {evidenceLinkSha256,prepareEditorialDraft,storeAutonomousDraft,readEditorialScriptContext} from '../src/autonomous-script-drafts.mjs';
 import {storeAiReport,readScriptContext} from '../src/ai-research-team.mjs';
 import {validateDossier} from '../src/editorial.mjs';
 import worker from '../src/worker.js';
@@ -79,6 +79,9 @@ test('dos importaciones simultáneas producen un trabajo y un evento, sin sobres
  raw.prepare("UPDATE jobs SET title='Edición editorial humana',status='review'").run();
  raw.prepare("UPDATE editorial_dossiers SET editor_attested=1,editor_name='Editora de prueba'").run();
  assert.equal((await storeAutonomousDraft(db,body)).created,false);
+ const context=await readEditorialScriptContext(db,runId);
+ assert.deepEqual(context.existing_script_draft.script,script);
+ assert.equal(context.existing_script_draft.job_id,receipts[0].job_id);
  assert.equal(raw.prepare('SELECT title FROM jobs').get().title,'Edición editorial humana');
  assert.equal(raw.prepare('SELECT editor_attested FROM editorial_dossiers').get().editor_attested,1);
  assert.equal(raw.prepare('SELECT COUNT(*) n FROM jobs').get().n,1);

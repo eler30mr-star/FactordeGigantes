@@ -2,6 +2,9 @@
 import copy
 import json
 import unittest
+from unittest.mock import patch
+from pathlib import Path
+import tempfile
 
 from test_documentary_blueprint import fixture
 from tools.ai_clients import FreeClients, ProviderError
@@ -17,6 +20,22 @@ def narrative():
 
 
 class ScriptTests(unittest.TestCase):
+    def test_existing_d1_draft_is_reused_without_reservation_or_generation(self):
+        from tools.documentary_script import main
+        research,selection=fixture()
+        result=write_script(research,selection,clients=self.configured(),research_run_id='ai-'+'a'*28)
+        context={'ok':True,'run_id':result['source_research_run_id'],'research':research,'selection':selection,
+                 'existing_script_draft':{'job_id':'existing-job','script':result}}
+        with tempfile.TemporaryDirectory() as directory:
+            out=Path(directory)/'draft.json'
+            with patch('sys.argv',['documentary_script','--run-id','latest','--out',str(out)]), \
+                 patch('tools.ai_control.ControlClient') as client, \
+                 patch('tools.documentary_script.FreeClients',side_effect=AssertionError('No regenerar')):
+                client.return_value.script_context.return_value=context
+                main()
+                self.assertEqual(json.loads(out.read_text()),result)
+                client.return_value.reserve.assert_not_called()
+
     def test_historical_metadata_is_revalidated_without_changing_original(self):
         research,selection=fixture()
         research['evidence_manifest'][0]['url']='https://pmc.ncbi.nlm.nih.gov/articles/example/'

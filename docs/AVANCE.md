@@ -1727,3 +1727,9 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - Validación local: **327 Python aprobadas, con integración FFmpeg activada; 90 casos Node aprobados**, incluidos seis contratos Python→JS→SQLite real, concurrencia, rollback, permisos y conservación de edición humana. El doble de pruebas editorial se actualiza para reconocer la nueva consulta de origen; trabajos anteriores conservan sus pruebas.
 - Conexión de producción finalmente verificada con `martin30.eler@gmail.com`: lectura real de Worker/settings y D1 correcta. Respaldo Time Travel previo: `000000ee-00000000-0000510e-847c51789e199a19f91a0960c76bcbff`. Versión Worker anterior: `c306704e-d6b6-4c14-b1ca-6d39e06b02d9`. Antes de esta entrega no se ha aplicado 0014 ni desplegado el código nuevo; se registrará la aceptación real aparte.
 - Lectura D1 independiente confirma expediente `ai-225176fc3823f126c31f8f885413`, cinco candidatos y cola `awaiting_sources`; un trabajo previo. Reservas de hoy: Gemini 1, Groq 4, Tavily 2. Groq llegó al límite del proyecto: no se repite la inferencia ni se aumenta el tope. Falta dossier suficiente, guion real aceptable, derechos/tomas/visuales y MP4 profesional de 8–14 minutos; proyecto incompleto.
+
+
+### Evitar regeneración al reintentar guion importado
+
+- CI del primer bloque `476c67a877a5a5dd8609b19fe57ae677d7f4736b`: [40132985120](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40132985120), success. Se completa la reanudación: `script-context` devuelve el guion original ya importado; el CLI lo reutiliza antes de construir clientes o reservar cuota. Ediciones humanas siguen en su expediente y no se sustituyen.
+- Una regresión Python adicional confirma cero generación/reservas en reintento; el contrato SQLite comprueba recuperación exacta del guion y job_id original. Suite local: **328 Python con FFmpeg y 90 Node aprobadas**. Despliegue de 0014 y del Worker aún pendiente en este punto del historial.

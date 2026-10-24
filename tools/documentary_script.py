@@ -188,6 +188,17 @@ def main():
             print('GUION_DOCUMENTAL:',result['status'],'ESCENAS: 0')
             return
         research,selection=context['research'],context['selection']
+        previous=context.get('existing_script_draft')
+        if previous:
+            result=previous['script']
+            if (result.get('source_research_run_id') != context['run_id'] or
+                result.get('status') != 'editorial_draft_unapproved' or
+                result.get('publication_authorized') is not False or result.get('ready_for_render') is not False):
+                raise ValueError('Guion persistido incompatible')
+            a.out.parent.mkdir(parents=True,exist_ok=True)
+            a.out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+            print('GUION_DOCUMENTAL: reutilizado desde D1, sin inferencia; trabajo',previous['job_id'])
+            return
     else:
         if not a.selection:p.error('--selection es obligatorio con --research')
         research=json.loads(a.research.read_text(encoding='utf-8-sig'))

@@ -1,4 +1,4 @@
-import {storeAutonomousDraft,hasAutonomousOrigin} from './autonomous-script-drafts.mjs';
+import {storeAutonomousDraft,hasAutonomousOrigin,readEditorialScriptContext} from './autonomous-script-drafts.mjs';
 import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from "./ai-research-team.mjs";
 import {selectResearchFromD1,readResearchQueue} from "./market-research-selection.mjs";
@@ -158,7 +158,7 @@ async function handle(request,env) {
         const result=await storeAutonomousDraft(env.DB,body);
         return json(result,result.ok?201:result.status);
       }
-      if(url.pathname==='/api/market/ai-pipeline/script-context')return json(await readScriptContext(env.DB,body.run_id));
+      if(url.pathname==='/api/market/ai-pipeline/script-context')return json(await readEditorialScriptContext(env.DB,body.run_id));
       if(url.pathname==='/api/market/ai-budget/reserve')
         return json(await reserveAiBudget(env.DB,body.provider,body.request_id));
       if(url.pathname==='/api/market/ai-classify')return json(await classifyWithCloudflare(env,body));

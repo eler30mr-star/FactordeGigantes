@@ -136,6 +136,15 @@ export async function hasAutonomousOrigin(db,jobId){
  catch(e){if(/no such table.*autonomous_script_drafts/i.test(String(e?.message||e)))return false;throw e;}
 }
 
+export async function readEditorialScriptContext(db,runId){
+ const context=await readScriptContext(db,runId);
+ if(!context.ok)return context;
+ const previous=await db.prepare('SELECT job_id,script_json FROM autonomous_script_drafts WHERE research_run_id=?')
+  .bind(context.run_id).first();
+ if(previous)context.existing_script_draft={job_id:previous.job_id,script:JSON.parse(previous.script_json)};
+ return context;
+}
+
 export async function storeAutonomousDraft(db,body){
  if(!body||typeof body.research_run_id!=='string'||!/^ai-[a-f0-9]{28}$/.test(body.research_run_id))fail('Falta expediente original');
  const context=await readScriptContext(db,body.research_run_id);
