@@ -26,7 +26,7 @@ def review_existing(research, *, clients, source_run_id):
     validate_report_locally(report)
     base={'schema':'fdg_review_resumption_v1','source_run_id':source_run_id,
           'research_inference_repeated':False,'source_downloads':0,
-          'publication_authorized':False,'report':None}
+          'review_inference_calls':0,'publication_authorized':False,'report':None}
     if not report['candidate_claims']:
         return {**base,'status':'blocked_no_candidate_claims'}
     if (report.get('support_review_method')==METHOD and
@@ -34,8 +34,17 @@ def review_existing(research, *, clients, source_run_id):
             all('source_assessments' in row for row in report['reviews'])):
         parse_review(json.dumps({'reviews':report['reviews']}),
                      report['evidence_manifest'],report['candidate_claims'])
+        reconciled=assign_reviewed_support(report['candidate_claims'],report['reviews'])
+        if reconciled!=report['candidate_claims']:
+            report['candidate_claims']=reconciled
+            report['source_quality']=evidence_gaps(report['evidence_manifest'],reconciled)
+            report['support_assignment_reconciliation']={'method':'active_support_from_matrix_v1',
+                'source_run_id':source_run_id,'review_inference_calls':0}
+            validate_report_locally(report)
+            return {**base,'status':'support_reconciled_without_inference','report':report}
         return {**base,'status':'skipped_already_reviewed'}
     prompt=review_prompt(report['evidence_manifest'],report['candidate_claims'])
+    previous_calls=clients.calls['groq']
     try:
         text,metadata=clients.generate('groq',prompt,max_output_tokens=3200)
         reviews=parse_review(text,report['evidence_manifest'],report['candidate_claims'],
@@ -43,11 +52,14 @@ def review_existing(research, *, clients, source_run_id):
         if not all('source_assessments' in row for row in reviews):
             raise ValueError('Falta matriz por pasaje')
     except ProviderError as exc:
-        return {**base,'status':'blocked_provider','reason':exc.code}
+        return {**base,'status':'blocked_provider','reason':exc.code,
+                'review_inference_calls':clients.calls['groq']-previous_calls}
     except ReviewContractError as exc:
-        return {**base,'status':'blocked_invalid_review','reason':exc.code}
+        return {**base,'status':'blocked_invalid_review','reason':exc.code,
+                'review_inference_calls':clients.calls['groq']-previous_calls}
     except (ValueError,TypeError,KeyError):
-        return {**base,'status':'blocked_invalid_review','reason':'per_excerpt_contract_failed'}
+        return {**base,'status':'blocked_invalid_review','reason':'per_excerpt_contract_failed',
+                'review_inference_calls':clients.calls['groq']-previous_calls}
     old_stage=next((s for s in report['stages'] if s['provider']=='groq'),{})
     report['stages']=[s for s in report['stages'] if s['provider']!='groq']+[{
         'provider':'groq','role':'review','status':'success',
@@ -62,7 +74,7 @@ def review_existing(research, *, clients, source_run_id):
         'source_collected_on':research['collected_on'],
         'previous_review_prompt_sha256':old_stage.get('prompt_sha256')}
     validate_report_locally(report)
-    return {**base,'status':'review_completed_candidate_only','report':report}
+    return {**base,'status':'review_completed_candidate_only','review_inference_calls':1,'report':report}
 
 
 def main():
@@ -94,7 +106,7 @@ def main():
     args.out.parent.mkdir(parents=True,exist_ok=True)
     args.out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print('REVISION_REANUDADA:',result['status'],'MOTIVO:',result.get('reason','none'),
-          'DESCARGAS: 0','QWEN_GEMINI_REPETIDOS: NO')
+          'GROQ_SOLICITUDES:',result.get('review_inference_calls',0),'DESCARGAS: 0','QWEN_GEMINI_REPETIDOS: NO')
 
 
 if __name__=='__main__':main()

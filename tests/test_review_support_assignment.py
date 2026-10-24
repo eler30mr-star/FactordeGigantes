@@ -88,10 +88,14 @@ class SupportAssignmentTests(unittest.TestCase):
                 context()['evidence_manifest'],self.claims())
             self.assertEqual(assign_reviewed_support(self.claims(),parsed)[0]['evidence_ids'],['E001'])
 
-    def test_missing_original_support_is_not_silently_replaced(self):
+    def test_reassigned_support_keeps_original_citations_auditable(self):
         parsed=parse_review(json.dumps({'reviews':[review(ids=('E002',))]}),
             context()['evidence_manifest'],self.claims())
-        self.assertEqual(assign_reviewed_support(self.claims(),parsed)[0]['evidence_ids'],['E001'])
+        result=assign_reviewed_support(self.claims(),parsed)[0]
+        self.assertEqual(result['evidence_ids'],['E002'])
+        self.assertEqual(result['analysis_evidence_ids'],['E001'])
+        self.assertEqual(result['removed_support_evidence_ids'],['E001'])
+        self.assertFalse(result['human_verified'])
 
     def test_invalid_matrix_missing_invented_duplicate_or_self_verified_is_rejected(self):
         for mutate in (

@@ -10,12 +10,35 @@ from test_ai_research_team import candidate, configured
 from test_review_support_assignment import context, review
 from tools.ai_clients import FreeClients, ProviderError
 from tools.ai_research_pipeline import analyze_sources, validate_report_locally
+from tools.ai_research_pipeline import parse_review,evidence_gaps
+from tools.review_candidates import METHOD
 from tools.review_research import review_existing, main
 
 RUN='ai-'+'a'*28
 
 
 class ReviewResumeTests(unittest.TestCase):
+    def test_old_active_citations_are_reconciled_without_any_inference(self):
+        report=self.research()
+        report['candidate_claims'][0]['evidence_ids']=['E001','E002']
+        row=review(ids=('E001','E002'))
+        row['source_assessments'][1]['assessment']='insufficient_context'
+        report['reviews']=parse_review(json.dumps({'reviews':[row]}),
+            report['evidence_manifest'],report['candidate_claims'])
+        next(s for s in report['stages'] if s['provider']=='groq')['status']='success'
+        report['source_quality']=evidence_gaps(report['evidence_manifest'],report['candidate_claims'])
+        report['support_review_method']=METHOD
+        client=FreeClients(env=configured('groq'),reserve=lambda *_:self.fail('No debe invocar IA'))
+        result=review_existing(report,clients=client,source_run_id=RUN)
+        self.assertEqual(result['status'],'support_reconciled_without_inference')
+        self.assertEqual(result['review_inference_calls'],0)
+        corrected=result['report']
+        self.assertEqual(corrected['candidate_claims'][0]['evidence_ids'],['E001'])
+        self.assertEqual(corrected['candidate_claims'][0]['analysis_evidence_ids'],['E001','E002'])
+        self.assertIn('only_one_document',corrected['source_quality']['claim_gaps'][0]['gaps'])
+        self.assertEqual(review_existing(corrected,clients=client,source_run_id=RUN)['status'],
+                         'skipped_already_reviewed')
+
     def research(self):
         return analyze_sources(context(),clients=FreeClients(env={},reserve=lambda *_:False),
                                local_generate=lambda _:candidate())

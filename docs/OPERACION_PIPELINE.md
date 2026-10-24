@@ -71,13 +71,17 @@ La fase `review`, con `research_run_id=latest` o un ID activo, reutiliza el
 contexto D1 por el mismo OIDC restringido. Hace como máximo una llamada Groq
 con modalidad gratuita y reserva D1; no repite radar, búsquedas, Qwen ni Gemini.
 Si ese expediente ya contiene el contrato vigente `per_excerpt_support_v2`, se omite
-sin nueva reserva ni escritura. Un bloqueo de cuota/proveedor se conserva.
+sin nueva reserva ni escritura. Antes de omitir, reconcilia las citas activas
+contra la matriz guardada: si hay una corrección pendiente la persiste una vez,
+sin inferencia ni reserva. Un bloqueo de cuota/proveedor se conserva.
 
 El sistema fija qué pasajes debe comparar Groq, buscando alternativas de otros
 dominios/documentos por coincidencias textuales y de fechas. Ese orden es sólo
 recuperación de candidatos. Una respuesta que omite comparaciones se rechaza.
 Sólo se incorporan pasajes evaluados como apoyo completo, con matriz consistente
-y conservando las citas iniciales. Los pasajes insuficientes quedan evaluados
+y conservando las citas iniciales como procedencia en `analysis_evidence_ids`.
+Las citas activas se reducen si un pasaje original no respalda el hecho completo;
+`removed_support_evidence_ids` permite auditar esa reducción. Los pasajes insuficientes quedan evaluados
 sin convertirse en apoyo; una contradicción impide ampliar. El texto no cambia y las citas del
 analizador quedan en `analysis_evidence_ids` y la matriz se recalcula. Una
 contradicción, contexto insuficiente o revisión histórica sin matriz no amplía

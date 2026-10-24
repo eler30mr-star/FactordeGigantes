@@ -111,7 +111,7 @@ def parse_review(text, evidence, claims, *, expected_tasks=None):
 def assign_reviewed_support(claims, reviews):
     """Ampliar citas candidatas sólo con evaluación explícita de CADA pasaje.
 
-    No modifica el hecho, no elimina sus citas iniciales ni acredita verdad.
+    No modifica el hecho; conserva citas iniciales como procedencia, no apoyo.
     Los informes históricos sin matriz conservan su asignación original.
     """
     by_claim={r['claim_index']:r for r in reviews}
@@ -124,9 +124,10 @@ def assign_reviewed_support(claims, reviews):
                 not any(e['assessment']=='contradicted_by_excerpt' for e in matrix)):
             support=list(dict.fromkeys(e['evidence_id'] for e in matrix
                 if e['assessment']=='supported_by_excerpt' and e['human_verified'] is False))
-            if set(claim['evidence_ids']).issubset(support) and set(support)==set(review['evidence_ids']):
+            if support and set(support)==set(review['evidence_ids']):
                 if set(support)!=set(claim['evidence_ids']):
                     result['analysis_evidence_ids']=list(claim.get('analysis_evidence_ids',claim['evidence_ids']))
+                    result['removed_support_evidence_ids']=[ref for ref in claim['evidence_ids'] if ref not in support]
                     result['evidence_ids']=support
                     result['citation_assignment']='review_supported_candidates_unverified'
         out.append(result)
