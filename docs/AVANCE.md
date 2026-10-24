@@ -1784,3 +1784,10 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - D1 después del reintento conserva como último expediente `ai-6eba409cc681623b49ce3452361f`, cinco candidatos. Las reservas permanecen Gemini 1 / Groq 4 / Tavily 4; el reintento no gastó nuevas búsquedas ni inferencias. Sigue un trabajo previo y cero guiones autónomos importados. La validación local del MP3 canónico pasó con su SHA original.
 - Ocho regresiones nuevas en este bloque; suite Python completa **336 aprobadas con FFmpeg**, más los contratos Node y QA de CI. Cambios publicados sólo en main; ningún secreto, voz, permiso factual, derecho audiovisual o autorización de publicación fue sustituido.
 - Siguiente ejecución programada: revisión a las 00:20 UTC (19:20 America/Lima), tras reinicio UTC de cuota; continuación de fuentes a las 00:40 UTC. GitHub puede demorar los cron. La revisión pendiente aún no ocurrió: cuatro pasajes nuevos no equivalen a cuatro hechos corroborados. Sigue pendiente dossier suficiente, guion real, narración/visuales y MP4 de 8–14 minutos.
+
+
+### 2026-10-24 — Cambio explícito de estrategia ordenado por el propietario
+
+- El propietario indica que Codex realice directamente investigaciones y búsquedas de prueba; las demás IA se probarán en la versión final integrada. Esta instrucción reemplaza la secuencia previa de disparar revisiones y búsquedas reales durante cada avance.
+- Todos los jobs de proveedores del workflow oficial requieren ahora `FINAL_AI_INTEGRATION_ENABLED=1`; sin esa variable quedan desactivados, incluidos cron, análisis, revisiones, búsquedas y guionista. Se conservan implementación, secretos y cuotas para la prueba final. No se incrementa ningún límite ni se invoca un proveedor para validar este cambio.
+- La meta de desarrollo es cerrar el motor genérico de episodio completo con material de prueba investigado directamente por Codex. No se presentará ese material como resultado autónomo de las IA ni como autorización comercial/publicación. La voz canónica permanece intacta.

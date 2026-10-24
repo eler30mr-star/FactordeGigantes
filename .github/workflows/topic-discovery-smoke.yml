@@ -12,6 +12,8 @@ on:
         type: string
         default: latest
   schedule:
+    # Desarrollo: todos los jobs de proveedores requieren FINAL_AI_INTEGRATION_ENABLED=1.
+    # Sólo se habilitarán para la prueba final integrada autorizada.
     # Wikimedia publica rankings diarios con retraso; 1 chequeo al día
     # evita consumo redundante. No hay IA pagada ni subida a YouTube.
     - cron: '17 10 * * *'
@@ -28,7 +30,7 @@ concurrency:
 jobs:
   corroborate-existing:
     if: >-
-      github.event.repository.private == false &&
+      github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1' &&
       ((github.event_name == 'workflow_dispatch' && inputs.phase == 'corroborate') ||
        (github.event_name == 'schedule' && github.event.schedule == '40 0 * * *'))
     runs-on: ubuntu-latest
@@ -80,7 +82,7 @@ jobs:
         run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=script -f research_run_id="$SCRIPT_RUN_ID"
   review-existing:
     if: >-
-      github.event.repository.private == false &&
+      github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1' &&
       ((github.event_name == 'workflow_dispatch' && inputs.phase == 'review') ||
        (github.event_name == 'schedule' && github.event.schedule == '20 0 * * *'))
     runs-on: ubuntu-latest
@@ -125,7 +127,7 @@ jobs:
           SCRIPT_RUN_ID: ${{ needs.review-existing.outputs.script_run_id }}
         run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=script -f research_run_id="$SCRIPT_RUN_ID"
   search-provider-profile:
-    if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.phase == 'profile'
+    if: github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1' && github.event_name == 'workflow_dispatch' && inputs.phase == 'profile'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -158,7 +160,7 @@ jobs:
           SCRIPT_RUN_ID: ${{ needs.topic-discovery.outputs.script_run_id }}
         run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=script -f research_run_id="$SCRIPT_RUN_ID"
   documentary-script:
-    if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.phase == 'script'
+    if: github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1' && github.event_name == 'workflow_dispatch' && inputs.phase == 'script'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -208,7 +210,7 @@ jobs:
           if-no-files-found: warn
   topic-discovery:
     if: >-
-      github.event.repository.private == false && inputs.phase != 'script' &&
+      github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1' && inputs.phase != 'script' &&
       inputs.phase != 'profile' && inputs.phase != 'review' && inputs.phase != 'corroborate' &&
       (github.event_name != 'schedule' || github.event.schedule == '17 10 * * *')
     runs-on: ubuntu-latest
