@@ -1742,3 +1742,9 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - PUT Worker oficial aceptado HTTP 200 a las 21:11:35 UTC. Entrada `src/worker.js`; 22 módulos, JSON empaquetado como módulos constantes, sin cambiar lógica. Se conservaron todos los bindings mediante `inherit` estricto y los assets con `keep_assets:true`; tres secretos permanecen en Cloudflare, sin leer ni copiar valores. Fecha de compatibilidad permanece 2026-10-20; clasificación Cloudflare mantiene bandera 0.
 - ID devuelto de despliegue: `d1b3f05edffa4718a4eb3760eef8397a`; etag `0302fa889df844e661ebcdf70604623650d60730ec161555fc19ba5103269932`. La migración no crea documentales de prueba en producción. Se habilita por defecto la importación Actions; un 0 explícito en `AUTONOMOUS_SCRIPT_INGEST_ENABLED` la desactiva.
 - Se solicita prueba real `[script-e2e]` desde el expediente activo para comprobar contexto, guardas OIDC y rechazo de investigación insuficiente, sin nuevas inferencias. Un rechazo correcto no acredita importación positiva de un documental real; esa aceptación requiere dossier suficiente. Aún no hay MP4 autónomo aceptable.
+
+
+### Ajuste de activación ausente en Actions
+
+- CI [40133182729](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40133182729), success; guionista real [40133208758](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40133208758), success, expediente insuficiente sin generación, cero tomas. La inspección de pasos muestra que la importación se omitió: no se declara probada la nueva ruta.
+- Se cambia la condición a `(vars.AUTONOMOUS_SCRIPT_INGEST_ENABLED || '1') == '1'` para expresar un valor por defecto explícito sin comparación numérica implícita. Un 0 configurado se sigue respetando. Se repite exclusivamente la prueba de script, sin radar ni IA. La lectura del código Worker servido ya contiene la nueva ruta y la reutilización de contexto; bindings y D1 verificados.

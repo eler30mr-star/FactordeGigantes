@@ -132,7 +132,7 @@ jobs:
             --diagnostics-out dist/script/DIAGNOSTICO_INVESTIGACION.json
       - name: Guardar guion aceptable como trabajo pendiente en el panel
         # 0014 y Worker desplegados; un 0 explícito permite desactivar.
-        if: vars.AUTONOMOUS_SCRIPT_INGEST_ENABLED != '0'
+        if: (vars.AUTONOMOUS_SCRIPT_INGEST_ENABLED || '1') == '1'
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
         run: |
