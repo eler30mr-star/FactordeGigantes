@@ -275,6 +275,10 @@ def main():
     args.out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("EMPRESAS_DETECTADAS:",result["company_candidates_count"])
     print("ENTIDADES_OBSERVADAS:",result["articles_considered"],"WIKIDATA_REQUESTS:",result["wikidata_requests"])
+    print('WIKIDATA_COBERTURA:',result['discovery_coverage'],
+          'TITULOS_PROCESADOS:',result['wikidata_titles_classified'],
+          'OMITIDOS_POR_TAMANO:',result['wikidata_oversized_titles_skipped'],
+          'PENDIENTES:',result['wikidata_titles_unprocessed'])
     for record in result["candidates"][:8]:
         print("CANDIDATA:",record["wikidata_id"],record["topic"],"fuentes:",len(record["discovery_signals"]))
     print("SERIES_14_DIAS_REALES:",result["wikipedia_interest_measured_count"])

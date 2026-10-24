@@ -99,11 +99,23 @@ class SupportAssignmentTests(unittest.TestCase):
             lambda r:r['source_assessments'][1].update(evidence_id='E999'),
             lambda r:r['source_assessments'][1].update(evidence_id='E001'),
             lambda r:r['source_assessments'][1].update(human_verified=True),
-            lambda r:r['source_assessments'][1].update(assessment='contradicted_by_excerpt'),
         ):
             row=review();mutate(row)
             with self.assertRaises(ValueError):
                 parse_review(json.dumps({'reviews':[row]}),context()['evidence_manifest'],self.claims())
+
+    def test_positive_summary_cannot_override_a_contradictory_passage(self):
+        row=review();row['source_assessments'][1]['assessment']='contradicted_by_excerpt'
+        parsed=parse_review(json.dumps({'reviews':[row]}),context()['evidence_manifest'],self.claims())
+        self.assertEqual(parsed[0]['assessment'],'contradicted_by_excerpt')
+        self.assertEqual(assign_reviewed_support(self.claims(),parsed)[0]['evidence_ids'],['E001'])
+
+    def test_unclear_passage_is_removed_from_support_ids_without_erasing_assessment(self):
+        row=review();row['source_assessments'][1]['assessment']='insufficient_context'
+        parsed=parse_review(json.dumps({'reviews':[row]}),context()['evidence_manifest'],self.claims())
+        self.assertEqual(parsed[0]['evidence_ids'],['E001'])
+        self.assertEqual(len(parsed[0]['source_assessments']),2)
+        self.assertEqual(assign_reviewed_support(self.claims(),parsed)[0]['evidence_ids'],['E001'])
 
     def test_assignment_preserves_input_and_never_rewrites_statement(self):
         claims=self.claims();original=copy.deepcopy(claims)

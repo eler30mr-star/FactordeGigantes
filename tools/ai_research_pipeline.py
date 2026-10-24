@@ -25,16 +25,25 @@ from tools.review_candidates import review_tasks, METHOD as SUPPORT_METHOD
 CLAIM_POLICY = json.loads((Path(__file__).resolve().parents[1] / "src/research-claim-policy.json").read_text(encoding="utf-8"))
 
 
+class ReviewContractError(ValueError):
+    def __init__(self,code):
+        self.code=code
+        super().__init__(code)
+
+
 def parse_review(text, evidence, claims, *, expected_tasks=None):
-    data = json.loads(text)
+    try:
+        data = json.loads(text)
+    except (ValueError,TypeError):
+        raise ReviewContractError('invalid_review_json') from None
     reviews = data.get("reviews") if isinstance(data, dict) else None
     if not isinstance(reviews, list) or len(reviews) != len(claims):
-        raise ValueError("Revisión incompleta")
+        raise ReviewContractError('review_count_mismatch')
     known, seen = {e["id"] for e in evidence}, set()
     out = []
     for item in reviews:
         if not isinstance(item, dict):
-            raise ValueError("Revisión sin esquema")
+            raise ReviewContractError('invalid_review_object')
         index = item.get("claim_index")
         verdict = item.get("assessment")
         refs, reason = item.get("evidence_ids"), item.get("reason")
@@ -42,42 +51,59 @@ def parse_review(text, evidence, claims, *, expected_tasks=None):
                 or verdict not in {"supported_by_excerpt", "contradicted_by_excerpt", "insufficient_context"}
                 or not isinstance(refs, list) or len(refs) > 8 or
                 any(not isinstance(r, str) or r not in known for r in refs)
-                or verdict != "insufficient_context" and not refs
+                or verdict != "insufficient_context" and not refs and 'source_assessments' not in item
                 or not isinstance(reason, str) or not 8 <= len(reason.strip()) <= 400):
-            raise ValueError("Revisión sin referencias admitidas")
+            raise ReviewContractError('invalid_review_references_or_shape')
         seen.add(index)
         row={"claim_index": index, "assessment": verdict, "evidence_ids": refs,
              "reason": reason.strip(), "human_verified": False}
         if "source_assessments" in item:
             assessments=item["source_assessments"]
             if not isinstance(assessments,list) or len(assessments)>8:
-                raise ValueError('Matriz de apoyo por pasaje incompleta')
+                raise ReviewContractError('invalid_source_matrix_size')
             assessed=set();clean=[]
             for entry in assessments:
-                if not isinstance(entry,dict):raise ValueError('Apoyo documental inválido')
+                if not isinstance(entry,dict):raise ReviewContractError('invalid_source_assessment_object')
                 ref=entry.get('evidence_id');assessment=entry.get('assessment');why=entry.get('reason')
                 if (not isinstance(ref,str) or ref not in known or ref in assessed or
                         assessment not in {'supported_by_excerpt','contradicted_by_excerpt','insufficient_context'} or
                         not isinstance(why,str) or not 8<=len(why.strip())<=220 or
                         entry.get('human_verified',False) is not False):
-                    raise ValueError('Apoyo por pasaje sin procedencia')
+                    raise ReviewContractError('invalid_source_assessment')
                 assessed.add(ref)
                 clean.append({'evidence_id':ref,'assessment':assessment,'reason':why.strip(),
                               'human_verified':False})
-            if not set(refs).issubset(assessed):raise ValueError('La revisión no cubre sus referencias')
+            if not set(refs).issubset(assessed):raise ReviewContractError('unassessed_references')
             judgments={e['assessment'] for e in clean}
             supported={e['evidence_id'] for e in clean if e['assessment']=='supported_by_excerpt'}
             expected=('contradicted_by_excerpt' if 'contradicted_by_excerpt' in judgments else
                       'supported_by_excerpt' if supported else 'insufficient_context')
-            if verdict!=expected or (verdict=='supported_by_excerpt' and set(refs)!=supported):
-                raise ValueError('Veredicto contradice los pasajes evaluados')
             if expected_tasks is not None:
                 task=next(t for t in expected_tasks if t['claim_index']==index)
                 if assessed!=set(task['inspect_evidence_ids']):
-                    raise ValueError('La revisión omitió pasajes de comparación')
+                    raise ReviewContractError('comparison_passages_omitted')
+            # La matriz manda al reducir confianza. Nunca elevar un veredicto
+            # negativo; un resumen positivo no puede ocultar contradicciones.
+            if verdict=='supported_by_excerpt' and expected!='supported_by_excerpt':
+                row['declared_assessment']=verdict
+                row['assessment']=expected
+                row['reason']='La matriz contiene contradicción o apoyo insuficiente; requiere revisión.'
+                row['contract_normalization']='conservative_verdict_downgrade'
+            elif verdict=='supported_by_excerpt' and set(refs)!=supported:
+                row['declared_evidence_ids']=list(refs)
+                row['evidence_ids']=[e['evidence_id'] for e in clean if e['assessment']=='supported_by_excerpt']
+                row['contract_normalization']='support_ids_from_assessed_passages'
+            if row['assessment']=='contradicted_by_excerpt':
+                contradicted=[e['evidence_id'] for e in clean if e['assessment']=='contradicted_by_excerpt']
+                if contradicted:
+                    row['evidence_ids']=contradicted
+                elif not row['evidence_ids']:
+                    row['declared_assessment']=row['assessment']
+                    row['assessment']='insufficient_context'
+                    row['reason']='El veredicto negativo no identifica una cita de contradicción; falta contexto.'
             row['source_assessments']=clean
         elif expected_tasks is not None:
-            raise ValueError('Falta evaluación de los pasajes solicitados')
+            raise ReviewContractError('source_assessments_missing')
         out.append(row)
     return sorted(out, key=lambda r: r["claim_index"])
 
@@ -324,6 +350,9 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
                                      "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(), **metadata})
         except ProviderError as exc:
             report["stages"].append({"provider": "groq", "role": "review", "status": exc.code})
+        except ReviewContractError as exc:
+            report['stages'].append({'provider':'groq','role':'review','status':'invalid_output',
+                                     'contract_failure':exc.code})
         except (ValueError, KeyError, TypeError):
             report["stages"].append({"provider": "groq", "role": "review", "status": "invalid_output"})
     else:

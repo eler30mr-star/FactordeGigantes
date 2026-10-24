@@ -12,6 +12,7 @@ def research_summary(report):
         "unique_documents": quality.get("unique_documents", 0),
         "regulatory_primary_domains": quality.get("regulatory_primary_domains", 0),
         "original_primary_domains": quality.get("original_primary_domains", 0),
+        "review_contract_failures": [s['contract_failure'] for s in report.get('stages',[]) if 'contract_failure' in s],
         "discovery_plan": report.get("discovery_plan", []),
         "retrieval_budget": report.get("retrieval_budget"),
         "source_documents": [{k: d[k] for k in (

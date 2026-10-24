@@ -86,6 +86,11 @@ citas. Esto es apoyo candidato evaluado por IA, nunca verificación humana.
 Se conserva el cálculo antes de intentar persistir, y el recibo confirma el
 nuevo expediente sin modificar el original. La fecha original de los documentos
 se mantiene; la revisión registra su propia fecha y el hash de procedencia.
+Si el resumen positivo contradice su propia matriz, se reduce el veredicto;
+nunca se eleva uno negativo. Los IDs de apoyo se normalizan sólo desde los
+pasajes evaluados positivamente, sin inventar evaluaciones ni aceptar
+comparaciones omitidas. Se conserva la declaración original cuando se corrige
+metadata y los errores de contrato tienen códigos acotados para diagnóstico.
 Sólo si el blueprint pasa su puerta se encadena el guionista. El artefacto
 `fdg-revision-reanudable` conserva el informe o bloqueo durante cinco días.
 

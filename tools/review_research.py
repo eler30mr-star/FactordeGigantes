@@ -12,7 +12,7 @@ import re
 from tools.ai_clients import FreeClients, ProviderError
 from tools.ai_control import ControlClient
 from tools.ai_research_pipeline import (
-    parse_review, review_prompt, assign_reviewed_support, evidence_gaps, validate_report_locally,
+    parse_review, review_prompt, assign_reviewed_support, evidence_gaps, validate_report_locally, ReviewContractError,
 )
 from tools.documentary_script import revalidate_source_metadata
 from tools.documentary_blueprint import inspect_episode
@@ -44,6 +44,8 @@ def review_existing(research, *, clients, source_run_id):
             raise ValueError('Falta matriz por pasaje')
     except ProviderError as exc:
         return {**base,'status':'blocked_provider','reason':exc.code}
+    except ReviewContractError as exc:
+        return {**base,'status':'blocked_invalid_review','reason':exc.code}
     except (ValueError,TypeError,KeyError):
         return {**base,'status':'blocked_invalid_review','reason':'per_excerpt_contract_failed'}
     old_stage=next((s for s in report['stages'] if s['provider']=='groq'),{})
@@ -91,7 +93,8 @@ def main():
                     output.write('run_id='+receipt['run_id']+'\n')
     args.out.parent.mkdir(parents=True,exist_ok=True)
     args.out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    print('REVISION_REANUDADA:',result['status'],'DESCARGAS: 0','QWEN_GEMINI_REPETIDOS: NO')
+    print('REVISION_REANUDADA:',result['status'],'MOTIVO:',result.get('reason','none'),
+          'DESCARGAS: 0','QWEN_GEMINI_REPETIDOS: NO')
 
 
 if __name__=='__main__':main()
