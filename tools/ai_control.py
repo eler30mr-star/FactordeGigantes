@@ -53,3 +53,17 @@ class ControlClient:
         if not isinstance(out.get("ok"), bool) or out.get("automatic_publication_allowed") is not False:
             raise ProviderError("script_context_unconfirmed")
         return out
+
+    def persist_script(self, script):
+        run_id = script.get("source_research_run_id")
+        if not isinstance(run_id, str) or not re.fullmatch(r"ai-[a-f0-9]{28}", run_id):
+            raise ValueError("El guion requiere expediente D1 original")
+        out = self.request("/api/market/ai-pipeline/script-ingest", {
+            "research_run_id": run_id, "script": script})
+        if (out.get("ok") is not True or out.get("stored_in") != "d1"
+                or out.get("research_run_id") != run_id
+                or not re.fullmatch(r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}", str(out.get("job_id", "")))
+                or any(out.get(flag) is not False for flag in (
+                    "automatic_factual_approval", "automatic_render_allowed", "automatic_publication_allowed"))):
+            raise ProviderError("script_persistence_unconfirmed")
+        return out

@@ -54,6 +54,7 @@ class DB {
       bind(...args){this.params=args;return this},
       async first(){
         const p=this.params;
+        if(sql.includes("FROM autonomous_script_drafts"))return null;
         if(sql.includes("FROM editorial_dossiers"))return db.dossiers.get(p[0]) || null;
         if(sql.includes("FROM jobs"))return db.jobs.get(p[0]) || null;
         throw Error("Unknown first statement "+sql);
@@ -212,3 +213,4 @@ test("rechazo HTTP de GitHub restaura approved; timeout no permite reintentos du
     assert.equal(tries,2,"Un resultado de red incierto bloquea reintentos");
   }finally{globalThis.fetch=previous;}
 });
+

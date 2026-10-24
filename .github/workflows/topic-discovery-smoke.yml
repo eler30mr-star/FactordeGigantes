@@ -15,6 +15,8 @@ on:
     # Wikimedia publica rankings diarios con retraso; 1 chequeo al día
     # evita consumo redundante. No hay IA pagada ni subida a YouTube.
     - cron: '17 10 * * *'
+    # Reanuda revisión tras reinicio UTC de cuota, sin repetir radar ni búsquedas.
+    - cron: '20 0 * * *'
 permissions:
   contents: read
   id-token: write
@@ -23,7 +25,10 @@ concurrency:
   cancel-in-progress: false
 jobs:
   review-existing:
-    if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.phase == 'review'
+    if: >-
+      github.event.repository.private == false &&
+      ((github.event_name == 'workflow_dispatch' && inputs.phase == 'review') ||
+       (github.event_name == 'schedule' && github.event.schedule == '20 0 * * *'))
     runs-on: ubuntu-latest
     timeout-minutes: 4
     outputs:
@@ -125,6 +130,15 @@ jobs:
           python -m tools.documentary_script --run-id "$SCRIPT_RUN_ID" \
             --out dist/script/GUION_DOCUMENTAL_NO_APROBADO.json \
             --diagnostics-out dist/script/DIAGNOSTICO_INVESTIGACION.json
+      - name: Guardar guion aceptable como trabajo pendiente en el panel
+        # Activar sólo después de migración 0014 y despliegue comprobados.
+        if: vars.AUTONOMOUS_SCRIPT_INGEST_ENABLED == '1'
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python -m tools.push_documentary_draft \
+            --script dist/script/GUION_DOCUMENTAL_NO_APROBADO.json \
+            --receipt dist/script/RECIBO_PANEL.json --probe-rejection
       - name: Preparar tareas de voz canónica y recursos por escena sin producir
         run: |
           python -m tools.documentary_production_plan \
@@ -139,7 +153,10 @@ jobs:
           retention-days: 5
           if-no-files-found: warn
   topic-discovery:
-    if: github.event.repository.private == false && inputs.phase != 'script' && inputs.phase != 'profile' && inputs.phase != 'review'
+    if: >-
+      github.event.repository.private == false && inputs.phase != 'script' &&
+      inputs.phase != 'profile' && inputs.phase != 'review' &&
+      (github.event_name != 'schedule' || github.event.schedule == '17 10 * * *')
     runs-on: ubuntu-latest
     timeout-minutes: 22
     outputs:

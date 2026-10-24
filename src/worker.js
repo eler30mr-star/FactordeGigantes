@@ -1,3 +1,4 @@
+import {storeAutonomousDraft,hasAutonomousOrigin} from './autonomous-script-drafts.mjs';
 import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from "./ai-research-team.mjs";
 import {selectResearchFromD1,readResearchQueue} from "./market-research-selection.mjs";
@@ -140,7 +141,7 @@ async function handle(request,env) {
   const ingestPdf=parts[1]==="market" && parts[2]==="pdf" && parts[3]==="ingest" && parts.length===4;
   const ingestResearch=parts[1]==="market" && parts[2]==="research" && parts[3]==="ingest" && parts.length===4;
   const runResearchSelection=url.pathname==='/api/market/research-selection/run';
-  const aiWrite=['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest','/api/market/ai-pipeline/script-context'].includes(url.pathname);
+  const aiWrite=['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest','/api/market/ai-pipeline/script-context','/api/market/ai-pipeline/script-ingest'].includes(url.pathname);
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
   if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection || aiWrite) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
@@ -153,6 +154,10 @@ async function handle(request,env) {
     try{
       if(!aiWrite)return json(await readAiReports(env.DB));
       const body=await parseBody(request);
+      if(url.pathname==='/api/market/ai-pipeline/script-ingest'){
+        const result=await storeAutonomousDraft(env.DB,body);
+        return json(result,result.ok?201:result.status);
+      }
       if(url.pathname==='/api/market/ai-pipeline/script-context')return json(await readScriptContext(env.DB,body.run_id));
       if(url.pathname==='/api/market/ai-budget/reserve')
         return json(await reserveAiBudget(env.DB,body.provider,body.request_id));
@@ -161,6 +166,8 @@ async function handle(request,env) {
     }catch(e){
       if(e instanceof RangeError||e instanceof SyntaxError||e instanceof TypeError)
         return err('Informe o solicitud de IA inválida',400);
+      if(/no such table:\s*autonomous_script_drafts/i.test(String(e?.message||'')))
+        return err('Falta migración 0014_autonomous_script_drafts.sql',503);
       if(/no such table:\s*(ai_budget_|market_ai_)/i.test(String(e?.message||'')))
         return err('Falta migración 0013_ai_research_team.sql',503);
       throw e;
@@ -334,6 +341,8 @@ async function handle(request,env) {
     const id=parts[3];
     const row=await find(env,id);
     if (!row) return err("Trabajo inexistente",404);
+    if (await hasAutonomousOrigin(env.DB,id))
+      return err("Producción canónica pendiente: este guion no admite el renderizador de previsualización",409);
     if (parts.length === 4 && method === "GET") {
       if (!["queued","rendering"].includes(row.status)) return err("Trabajo no autorizado para render",409);
       if (row.status === "queued") await setStatus(env,id,"rendering","render_started");
@@ -450,6 +459,8 @@ async function handle(request,env) {
     await setStatus(env,id,"draft","changes_requested",{review_note:note}); return json({ok:true});
   }
   if (action === "dispatch" && row.status === "approved") {
+    if (await hasAutonomousOrigin(env.DB,id))
+      return err("Integración de voz canónica y recursos por escena pendiente",409);
     const gate=await editorialGate(env,id,validateManifest(JSON.parse(row.manifest_json)));
     if (!gate.ok) return err(gate.reason,409);
     if (!env.GITHUB_DISPATCH_TOKEN || !env.GITHUB_REPO) return err("Acceso GitHub sin configurar",503);

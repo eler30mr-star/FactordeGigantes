@@ -15,6 +15,7 @@ import re
 
 from tools.ai_clients import FreeClients, ProviderError, readiness
 from tools.documentary_blueprint import inspect_episode, WPM
+from tools.script_provenance import evidence_link_sha256
 
 
 def revalidate_source_metadata(research):
@@ -78,8 +79,8 @@ def parse_script(text, research, blueprint):
             for child in value: reject_permissions(child)
     reject_permissions(data)
     if not isinstance(data, dict): raise ValueError("Guion sin contrato JSON")
-    for key in ("title", "central_question"):
-        if not isinstance(data.get(key), str) or not 10 <= len(data[key].strip()) <= 180:
+    for key,min_len,max_len in (("title",10,150),("central_question",25,180)):
+        if not isinstance(data.get(key), str) or not min_len <= len(data[key].strip()) <= max_len:
             raise ValueError("Identidad editorial incompleta")
     scenes = data.get("scenes")
     if not isinstance(scenes, list) or len(scenes) != len(blueprint["scenes"]):
@@ -132,10 +133,11 @@ def parse_script(text, research, blueprint):
             "duration_is_estimate": True,"narration_wpm": WPM}
 
 
-def write_script(research, selection, *, clients):
+def write_script(research, selection, *, clients, research_run_id=None):
     blueprint = inspect_episode(research, selection)
     base = {"schema":"fdg_documentary_script_v1","wikidata_id":blueprint["wikidata_id"],
-            "company":blueprint["company"],"source_research_sha256":hashlib.sha256(
+            "company":blueprint["company"],"source_research_run_id":research_run_id,
+            "source_evidence_sha256":evidence_link_sha256(research),"source_research_sha256":hashlib.sha256(
                 json.dumps(research,ensure_ascii=False,sort_keys=True).encode()).hexdigest(),
             "publication_authorized":False,"ready_for_render":False,"factual_approval":False,
             "voice_license_verified":False,"visual_rights_verified":False,"scenes":[],
@@ -219,7 +221,8 @@ def main():
         clients=FreeClients(reserve=control.reserve)
     else:
         clients=FreeClients(env={},reserve=lambda *_:False)
-    result=write_script(research,selection,clients=clients)
+    result=write_script(research,selection,clients=clients,
+                        research_run_id=context["run_id"] if a.run_id else None)
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print('GUION_DOCUMENTAL:',result['status'],'ESCENAS:',len(result['scenes']))

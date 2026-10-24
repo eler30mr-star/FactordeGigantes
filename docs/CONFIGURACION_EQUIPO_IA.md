@@ -154,3 +154,18 @@ El historial del investigador anterior sigue disponible por separado.
 Gemini 2.5 tiene acceso restringido a usuarios previos; el adaptador antiguo
 conserva compatibilidad pero el nuevo equipo usa 3.8 Flash. No se promete que los
 proveedores mantengan las mismas condiciones gratuitas indefinidamente.
+
+
+## Guion al panel (migración 0014)
+
+Después de aplicar `0014_autonomous_script_drafts.sql` y desplegar el Worker,
+activar `AUTONOMOUS_SCRIPT_INGEST_ENABLED=1` en variables Actions. El paso
+`tools.push_documentary_draft` usa OIDC, sin claves nuevas. Sólo acepta borradores
+trazables de expedientes activos con fuentes suficientes. Trabajo y expediente
+quedan pendientes de revisión humana. El mismo artefacto puede reimportarse sin
+generar otro guion ni sobrescribir cambios del editor. El render autónomo con
+voz canónica y recursos de escena sigue pendiente; estos trabajos están protegidos
+frente al renderizador de previsualización.
+
+El cron de las 00:20 UTC sólo reanuda revisión (19:20 America/Lima). El radar
+principal mantiene las 10:17 UTC. Las cuotas D1 originales no cambian.
