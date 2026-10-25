@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Resultado real cerrado: búsqueda operativa, selector aún sin calibrar
+
+Reevaluación `40203259358` success, sin consultas YouTube ni inferencias adicionales. La asociación corregida conserva 3, 9 y 11 videos comparables para Nikola, Palm y TomTom; canales con referencias suficientes: 0, 1 y 0. Ya no se descartan por falta de consultas independientes. Persiste insuficiencia legítima de referencias; no se rebajan umbrales ni se fuerza un ganador. No se acredita calibración ni aceptación completa.
+
+Artefacto `12602503257`, SHA ZIP `ce5b0d52c9f00105fb4972e929ef204012ca47ab8eb335baa655f5696d7ce838`; CI `40203227146` success. Se documentan resultados, límites, correcciones y pendientes en `docs/ACEPTACION_MERCADO_REAL.md`. Plan actualizado para distinguir módulos implementados de aceptaciones pendientes. Se elimina del CI el disparador temporal por mensaje de commit; la fase manual explícita queda disponible y reanudable.
+
+Automático apagado, pausa general y barrera de publicación conservados. Cero episodios nuevos, investigaciones profundas, renders, subidas o publicaciones en estas pruebas. Siguiente trabajo: validar cobertura/referencias con muestras reales acotadas y aceptar el recorrido dirigido completo; no fingir cierre operativo.
+
 ## 2026-10-25 · Segunda muestra real y corrección de asociación de evidencia
 
 Run `40202996674` success; reutilizó Gemini y las búsquedas generales previas. Tres consultas por empresa devolvieron doce videos cada una; se midieron publicaciones de doce canales. Empresas observadas: Nikola, Palm y TomTom. El selector mantuvo cero candidatas elegibles y conservó los motivos, sin forzar episodio.
