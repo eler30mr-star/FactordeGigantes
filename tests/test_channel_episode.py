@@ -5,6 +5,36 @@ from tools.channel_episode import run_episode, resolve_company
 
 
 class ChannelEpisodeTests(unittest.TestCase):
+    def test_retry_continues_from_saved_research_without_resolver_sources_or_analysts(self):
+        saved = {'company': 'BlackBerry', 'editorial_topic': 'Pérdida de liderazgo',
+                 'selected_episode_id': 'chosen', 'selected_wikidata_id': 'Q100'}
+        run_id = 'ai-' + 'b' * 28
+        calls = []
+        class Control:
+            def request(self, path, body):
+                calls.append((path, body))
+                if path.endswith('/context'):
+                    return {'allowed': True, 'episode': {'episode_id': 'chosen', 'company': 'BlackBerry',
+                        'topic': 'Pérdida de liderazgo', 'origin': 'chat'}, 'checkpoint': {'run_id': run_id, 'report': saved}}
+                if path.endswith('/research'): raise AssertionError('No repetir persistencia/investigación')
+                return {'ok': True, 'job_id': 'job'}
+            def reserve(self, *_): return True
+        def script(report, selection, **options):
+            self.assertEqual(report, saved)
+            self.assertEqual(options['research_run_id'], run_id)
+            self.assertEqual(selection['selected_wikidata_id'], 'Q100')
+            return {'status': 'editorial_draft_unapproved'}
+        forbidden = lambda *_args, **_kwargs: self.fail('No repetir búsquedas ni analistas')
+        with patch('tools.channel_episode.validate_report_locally'):
+            result = run_episode(Control(), 'retry', resolver=forbidden, discover=forbidden, analyze=forbidden,
+                scriptwriter=script, client_factory=lambda **_: None)
+        self.assertEqual(result['state'], 'review')
+        self.assertTrue(calls[0][1]['include_checkpoint'])
+        saved['selected_episode_id'] = 'another'
+        with patch('tools.channel_episode.validate_report_locally'), self.assertRaises(ValueError):
+            run_episode(Control(), 'retry', resolver=forbidden, discover=forbidden, analyze=forbidden,
+                scriptwriter=script, client_factory=lambda **_: None)
+
     def test_pause_does_not_resolve_or_investigate(self):
         class Control:
             def request(self, *args): return {'allowed': False}

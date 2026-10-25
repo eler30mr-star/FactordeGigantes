@@ -54,6 +54,18 @@ test('cited script creates real editorial draft without any legacy market select
  const request=await dispatchChannelResearch(env,id,async()=>({status:204}));
  const saved=await storeChannelResearch(env,{request_id:request.request_id,report:research});
  script.source_research_run_id=saved.run_id;
+ // A script failure is retryable without a new source or analyst run.
+ await storeChannelResearch(env,{request_id:request.request_id,blocked:true});
+ const resumed=await dispatchChannelResearch(env,id,async()=>({status:204}));
+ const checkpoint=await channelResearchContext(env,{request_id:resumed.request_id,include_checkpoint:true});
+ assert.equal(checkpoint.checkpoint.run_id,saved.run_id);
+ assert.equal(checkpoint.checkpoint.report.selected_episode_id,id);
+ assert.equal((await channelResearchContext(env,{request_id:resumed.request_id})).checkpoint,undefined);
+ // A paused callback cannot read the full saved evidence or continue providers.
+ env.FINAL_AI_INTEGRATION_ENABLED='0';
+ assert.equal((await channelResearchContext(env,{request_id:resumed.request_id,include_checkpoint:true})).checkpoint,null);
+ env.FINAL_AI_INTEGRATION_ENABLED='1';
+ request.request_id=resumed.request_id;
  const result=await storeChannelScript(env,{request_id:request.request_id,script});
  assert.equal(result.created,true);
  const again=await storeChannelScript(env,{request_id:request.request_id,script});

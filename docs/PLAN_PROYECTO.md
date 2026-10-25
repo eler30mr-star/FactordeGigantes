@@ -108,8 +108,8 @@ Resolver entrega autenticada del MP4, permisos, reproducción parcial y conserva
 | Bloque | Implementación comprobada | Aceptación pendiente |
 | --- | --- | --- |
 | P0 | Modo persistente, chat, episodio único, reservas, estudio YouTube y conexión a investigación del elegido | Calibrar cobertura real; todavía ninguna selección automática validada |
-| P1 | Panel centrado en episodio, reproductor privado y extracción del MP4 real verificados | Revisión humana en navegador de audio, desplazamiento y experiencia completa |
-| P2 | Conexión episodio → investigación → guion y registro del video, contratos y despliegue comprobados | Recorrer los dos modos con proveedores y producción real bajo la misma identidad |
+| P1 | Panel con seis etapas y acciones del episodio, lectura/revisión del guion, reproductor vinculado por SHA/run y extracción del MP4 real verificados | Revisión humana en navegador de audio, desplazamiento y experiencia completa |
+| P2 | Conexión episodio → investigación → guion y registro del video; reanudación del guion desde investigación D1 y cierre por publicación confirmada implementados | Recorrer los dos modos con proveedores y producción real bajo la misma identidad |
 | P3 | Subida privada y autorización separada de publicación/programación implementadas | Consentimiento Google ampliado y primera publicación/programación autorizadas |
 
 La [aceptación real del mercado](ACEPTACION_MERCADO_REAL.md) ejecutó YouTube y Gemini y confirmó una muestra insuficiente: no se eligió una empresa ni se habilitó el selector. Las casillas de aceptación integral continúan abiertas; este estado distingue implementación de cierre operativo.

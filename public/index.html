@@ -12,7 +12,7 @@
 <body>
  <header><div class="brand"><div class="mark">F</div><div><strong>FACTOR DE GIGANTES</strong><small>Estudio de producción documental</small></div></div><span class="pill">Control editorial</span></header>
  <main>
-  <section class="intro"><p class="eyebrow">SISTEMA DE AUTOMATIZACIÓN</p><h1>Tu sala de producción</h1><p>Investigación, guiones, revisión y creación de videos de prueba. Ningún video se publica en YouTube desde esta versión.</p></section>
+  <section class="intro"><p class="eyebrow">SISTEMA DE AUTOMATIZACIÓN</p><h1>Tu sala de producción</h1><p>Elige el tema por chat o activa la búsqueda del canal. Sigue la investigación, revisa el guion y reproduce el video antes de autorizar su publicación.</p></section>
   <section class="card" aria-label="Acceso">
    <div class="heading"><h2>Conexión privada</h2><span id="indicator" class="muted">Sin conectar</span></div>
    <div class="formrow"><label for="token">Token de administración</label><input id="token" type="password" autocomplete="off" placeholder="Pega el token ADMIN_TOKEN"><button id="connect">Conectar</button></div>
@@ -24,6 +24,7 @@
     <button id="automatic-toggle" type="button" role="switch" aria-checked="false" disabled>Automático: sin consultar</button>
     <p id="channel-status" class="muted" role="status">Conecta para consultar el modo del canal.</p>
     <div id="channel-episode" aria-live="polite"></div>
+    <div id="channel-progress" aria-label="Avance y siguiente acción del episodio"></div>
     <details><summary>Estudio de mercado y motivos de selección</summary><div id="channel-study"></div></details>
     <h3>Dime qué video quieres</h3>
     <div id="channel-chat-history" role="log" aria-label="Conversación del canal" aria-live="polite"></div>

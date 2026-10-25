@@ -16,7 +16,7 @@ export function mountYoutubeReviews(root,rows,{request,notify,refresh,fetchArchi
  root.replaceChildren();
  if(!rows.length){root.append(el('p','Todavía no hay exportaciones registradas para revisión.','muted'));return;}
  for(const row of rows){
-  const card=el('article','','job');card.append(el('h3',row.title),el('p',labels[row.state]||row.state,'muted'));
+  const card=el('article','','job');card.dataset.exportId=row.id;card.append(el('h3',row.title),el('p',labels[row.state]||row.state,'muted'));
   card.append(el('p',row.origin==='codex_development_research'?'Material de desarrollo preparado por Codex':'Borrador del guionista autónomo','muted micro'));
   if(fetchArchive)root.videoCleanups.push(mountVideoPreview(card,row,{fetchArchive}));
   card.append(link('Descargar video, guion y fuentes',row.source_url));

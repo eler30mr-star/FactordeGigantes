@@ -3,6 +3,7 @@ import {dispatchChannelResearch,channelResearchContext,storeChannelResearch,stor
 import {beginOpportunityStudy,finishOpportunityStudy,checkOpportunityStudy,failOpportunityStudy,latestOpportunityStudy} from './opportunity-control.mjs';
 import {videoPreview} from './video-preview.mjs';
 import {channelStatus,setAutomaticMode,receiveChannelInstruction,automaticGate} from './channel-control.mjs';
+import {channelProgress,completeChannelEpisode} from './channel-progress.mjs';
 import {readEpisodeInput,acceptEpisodeExport,failEpisodeExport,previewFromEvents} from './episode-production.mjs';
 import {readProductionProgress} from './production-progress.mjs';
 import {youtubeConnectionStatus,startYoutubeConnection,finishYoutubeConnection,disconnectYoutube} from './youtube-connection.mjs';
@@ -164,6 +165,12 @@ async function handle(request,env) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  if(!renderer&&['/api/channel-control/progress','/api/channel-control/complete'].includes(url.pathname)){
+    const closing=url.pathname.endsWith('/complete');
+    if(method!==(closing?'POST':'GET'))return err('Método no admitido',405);
+    try{const result=closing?await completeChannelEpisode(env,await parseBody(request)):await channelProgress(env,url.searchParams.get('episode_id'));return json(result,result.ok?200:result.status);}
+    catch(e){if(e instanceof RangeError)return err('Episodio inválido',400);throw e;}
+  }
   if(episodeWrite || url.pathname==='/api/channel-control/research'){
     try{
       let result;

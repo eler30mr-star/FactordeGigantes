@@ -1,4 +1,5 @@
 import {mountChannelControl} from './channel-control.js';
+import {mountEpisodeWorkbench} from './episode-workbench.js';
 import {mountEditorialEditor} from "./dossier-editor.js";
 import {mountYoutubeReviews} from './youtube-review.js';
 let adminToken = "";
@@ -293,6 +294,13 @@ async function loadYoutubeReviews(){
   mountYoutubeReviews($('youtube-review-results'),data.exports,{request,notify:notice,refresh:loadYoutubeReviews,
     fetchArchive:(path,options)=>fetch(path,{...options,headers:{Authorization:'Bearer '+adminToken}})});
   $('youtube-review-status').textContent=data.exports.length+' exportaciones registradas. La revisión y la subida privada son acciones separadas.';
+}
+async function openEpisodeExport(id){
+  const data=await request('/api/youtube/exports/'+encodeURIComponent(id));
+  mountYoutubeReviews($('youtube-review-results'),[data.export],{request,notify:notice,refresh:()=>openEpisodeExport(id),
+    fetchArchive:(path,options)=>fetch(path,{...options,headers:{Authorization:'Bearer '+adminToken}})});
+  $('youtube-review-status').textContent='Revisión del video del episodio elegido.';
+  $('youtube-review-results').scrollIntoView({behavior:'smooth'});
 }
 $('youtube-review-refresh').addEventListener('click',()=>loadYoutubeReviews().catch(e=>{$('youtube-review-status').textContent=e.message;}));
 $('youtube-connection-refresh').addEventListener('click',()=>loadYoutubeConnection().catch(e=>{$('youtube-connection-status').textContent=e.message;}));
@@ -802,7 +810,12 @@ $("research-form").addEventListener("submit",async event=>{
   }finally{btn.disabled=researchPaused;}
 });
 
-const channelControl=mountChannelControl({request});
+const episodeWorkbench=mountEpisodeWorkbench($('channel-progress'),{request,
+ openDossier:async id=>{const data=await request('/api/jobs/'+encodeURIComponent(id));await openDossier(data.job);},
+ openExport:openEpisodeExport,
+ fetchArchive:(path,options)=>fetch(path,{...options,headers:{Authorization:'Bearer '+adminToken}}),
+ refresh:()=>channelControl.load()});
+const channelControl=mountChannelControl({request,onEpisode:episode=>episodeWorkbench.load(episode)});
 
 $("connect").addEventListener("click",async () => {
   const proposed=$("token").value.trim();

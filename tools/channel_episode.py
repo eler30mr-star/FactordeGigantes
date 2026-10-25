@@ -40,7 +40,7 @@ def resolve_company(company, fetcher=get_json):
 
 def run_episode(control, request_id, *, resolver=resolve_company, discover=discover_sources, analyze=analyze_sources, scriptwriter=write_script, client_factory=FreeClients):
     path = '/api/market/channel-episode/'
-    context = control.request(path + 'context', {'request_id': request_id})
+    context = control.request(path + 'context', {'request_id': request_id, 'include_checkpoint': True})
     if context.get('allowed') is not True:
         return {'state': 'paused_or_finished'}
     episode = context['episode']
@@ -48,7 +48,17 @@ def run_episode(control, request_id, *, resolver=resolve_company, discover=disco
         current = control.request(path + 'context', {'request_id': request_id})
         return current.get('allowed') is True and control.reserve(provider, role)
     clients = client_factory(reserve=reserve)
-    qid = resolver(episode['company'])
+    checkpoint = context.get('checkpoint')
+    if checkpoint:
+        report = checkpoint['report']
+        if (report.get('selected_episode_id') != episode['episode_id'] or
+                report.get('company') != episode['company'] or report.get('editorial_topic') != episode['topic']):
+            raise ValueError('Stored research belongs to another episode')
+        validate_report_locally(report)
+        qid = report['selected_wikidata_id']
+        receipt = {'run_id': checkpoint['run_id']}
+    else:
+        qid = resolver(episode['company'])
     selection = {'selected_wikidata_id': qid, 'selected_episode_id': episode['episode_id'],
         'editorial_topic': episode['topic'], 'research_queue': {'wikidata_id': qid,
         'title': episode['company'], 'topic': episode['topic'], 'origin': episode['origin']}}
@@ -59,15 +69,16 @@ def run_episode(control, request_id, *, resolver=resolve_company, discover=disco
                 raise RuntimeError('Investigación pausada')
             return fetcher(*args, **kwargs)
         return invoke
-    sources = discover(selection, clients=clients, wiki_fetcher=checked(fetch_public),
-        gdelt_fetcher=checked(fetch_public), document_fetcher=checked(fetch_document_public))
-    sources['editorial_topic'] = episode['topic']
-    report = analyze(sources, clients=clients)
-    report.update(editorial_topic=episode['topic'], selected_episode_id=episode['episode_id'])
-    validate_report_locally(report)
-    receipt = control.request(path + 'research', {'request_id': request_id, 'report': report})
-    if not receipt.get('ok') or not receipt.get('run_id'):
-        raise RuntimeError('Research persistence not confirmed')
+    if not checkpoint:
+        sources = discover(selection, clients=clients, wiki_fetcher=checked(fetch_public),
+            gdelt_fetcher=checked(fetch_public), document_fetcher=checked(fetch_document_public))
+        sources['editorial_topic'] = episode['topic']
+        report = analyze(sources, clients=clients)
+        report.update(editorial_topic=episode['topic'], selected_episode_id=episode['episode_id'])
+        validate_report_locally(report)
+        receipt = control.request(path + 'research', {'request_id': request_id, 'report': report})
+        if not receipt.get('ok') or not receipt.get('run_id'):
+            raise RuntimeError('Research persistence not confirmed')
     draft = scriptwriter(report, selection, clients=client_factory(reserve=reserve), research_run_id=receipt['run_id'])
     if draft.get('status') != 'editorial_draft_unapproved':
         return {'state': 'blocked', 'research': report, 'draft': draft}

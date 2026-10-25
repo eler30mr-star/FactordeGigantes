@@ -1,5 +1,20 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Recorrido operativo del episodio en el panel y reanudación del guion
+
+**Problema corregido:** el episodio elegido por chat se quedaba en un estado genérico y un fallo del guionista repetía la investigación. Se entrega un panel del episodio con seis etapas, lectura del guion, revisión del expediente, envío a revisión, aprobación explícita y autorización de narración/montaje. Reutiliza las rutas y puertas editoriales existentes; no acredita fuentes o derechos automáticamente.
+
+**Continuidad:** una investigación persistida se hereda al reintentar el mismo episodio bloqueado. El runner recupera el expediente D1, valida empresa, enfoque e identidad y continúa con el guion; no vuelve a resolver empresa, buscar documentos ni ejecutar analistas. La consulta ligera de permiso no descarga el expediente completo; pausa y reservas diarias siguen vigentes. Reportes ajenos o ausentes bloquean sin reiniciar en silencio.
+
+**Video del episodio:** el panel deriva la exportación del evento del trabajo exacto y exige SHA del MP4 y run coincidentes, sin usar el último video global. El reproductor permanece al refrescar ese mismo archivo. La revisión/publicación abre directamente esa exportación aunque no esté en las veinte más recientes.
+
+**Cierre del ciclo:** el propietario puede cerrar el episodio solo después de publicación o programación confirmada del mismo video y canal; se verifica de nuevo dentro de la escritura. La operación es idempotente, registra evento y libera el único episodio activo para el siguiente chat. No sube ni publica nada.
+
+**Verificación local:** 163 contratos Node aprobados; seis nuevos cubren progreso, puertas humanas, asociación SHA/run, cierre, siguiente episodio, autorización y controles del panel. Cuatro pruebas Python del runner aprobadas, incluida reanudación que prohíbe resolver, descubrir, analizar o persistir de nuevo. Sintaxis Python/JS correcta. Pruebas de proveedores/publicación simuladas; no se atribuye otra producción real.
+
+No requiere migración ni cambia la pausa, automático u OAuth. Guía en `docs/EPISODIO_PANEL.md`. CI, despliegue y smoke del bloque se comprobarán tras el commit. Pendiente operativo: aceptación con las IA del episodio dirigido, revisión humana del guion/video y calibración automática. No se declara terminado el proyecto.
+
+
 ## 2026-10-25 · Resultado real cerrado: búsqueda operativa, selector aún sin calibrar
 
 Reevaluación `40203259358` success, sin consultas YouTube ni inferencias adicionales. La asociación corregida conserva 3, 9 y 11 videos comparables para Nikola, Palm y TomTom; canales con referencias suficientes: 0, 1 y 0. Ya no se descartan por falta de consultas independientes. Persiste insuficiencia legítima de referencias; no se rebajan umbrales ni se fuerza un ganador. No se acredita calibración ni aceptación completa.

@@ -9,10 +9,12 @@ export async function dispatchChannelResearch(env,episodeId,fetcher=fetch){
  if(env.GITHUB_REPO!=='eler30mr-star/FactordeGigantes'||typeof env.GITHUB_DISPATCH_TOKEN!=='string'||env.GITHUB_DISPATCH_TOKEN.length<24)
   return fail(503,'Acceso Actions no configurado');
  const id=crypto.randomUUID();
- const created=await env.DB.prepare(`INSERT OR IGNORE INTO channel_episode_research(id,episode_id,state)
- SELECT ?,?,'reserved' WHERE EXISTS(SELECT 1 FROM channel_episodes WHERE id=? AND state='selected')
+ const created=await env.DB.prepare(`INSERT OR IGNORE INTO channel_episode_research(id,episode_id,state,research_run_id)
+ SELECT ?,?,'reserved',(SELECT research_run_id FROM channel_episode_research WHERE episode_id=?
+  AND state='blocked' AND research_run_id IS NOT NULL ORDER BY rowid DESC LIMIT 1)
+ WHERE EXISTS(SELECT 1 FROM channel_episodes WHERE id=? AND state='selected')
  AND (SELECT count(*) FROM channel_episode_research WHERE created_at>=date('now'))<4`)
- .bind(id,episodeId,episodeId).run();
+ .bind(id,episodeId,episodeId,episodeId).run();
  if(created.meta?.changes!==1)return {ok:true,started:false,reason:'already_running_or_daily_limit'};
  let response;
  try{response=await fetcher('https://api.github.com/repos/eler30mr-star/FactordeGigantes/actions/workflows/topic-discovery-smoke.yml/dispatches',{
@@ -35,10 +37,20 @@ export async function dispatchChannelResearch(env,episodeId,fetcher=fetch){
 }
 export async function channelResearchContext(env,body){
  if(!body||!valid(body.request_id))throw new RangeError('Solicitud inválida');
- const r=await env.DB.prepare(`SELECT r.id,r.state,e.id AS episode_id,e.company,e.topic,e.origin FROM channel_episode_research r
+ const r=await env.DB.prepare(`SELECT r.id,r.state,r.research_run_id,e.id AS episode_id,e.company,e.topic,e.origin FROM channel_episode_research r
  JOIN channel_episodes e ON e.id=r.episode_id WHERE r.id=? AND e.state IN ('selected','researching')`).bind(body.request_id).first();
  if(!r)return fail(404,'Episodio no reservado');
- return {ok:true,allowed:env.FINAL_AI_INTEGRATION_ENABLED==='1'&&['reserved','sent','unknown'].includes(r.state),episode:r};
+ const allowed=env.FINAL_AI_INTEGRATION_ENABLED==='1'&&['reserved','sent','unknown'].includes(r.state);
+ let checkpoint=null;
+ if(allowed&&body.include_checkpoint===true&&r.research_run_id){
+  const saved=await env.DB.prepare('SELECT report_json FROM market_ai_pipeline_runs WHERE id=?').bind(r.research_run_id).first();
+  if(!saved)return fail(409,'Falta el resultado de investigación guardado; no se repetirá en silencio');
+  const report=JSON.parse(saved.report_json);
+  if(report.selected_episode_id!==r.episode_id||report.company!==r.company||report.editorial_topic!==r.topic)
+   return fail(409,'La investigación guardada no corresponde al episodio');
+  checkpoint={run_id:r.research_run_id,report};
+ }
+ return {ok:true,allowed,episode:r,...(body.include_checkpoint===true?{checkpoint}:{})};
 }
 export async function storeChannelResearch(env,body){
  const context=await channelResearchContext(env,body);if(!context.ok)return context;

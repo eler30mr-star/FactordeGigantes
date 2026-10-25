@@ -26,3 +26,5 @@
 }
 
 .youtube-review-form{margin-top:18px;gap:14px}.youtube-review-form label{display:grid;gap:7px}.youtube-review-form .review-check{display:flex;align-items:flex-start;gap:10px;line-height:1.45}.youtube-review-form .review-check input{width:20px;height:20px;padding:0;flex:0 0 20px;accent-color:#deb66c}.job>a{display:inline-block;margin:8px 12px 8px 0}
+.episode-stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;list-style:none;padding:0;margin:18px 0}.episode-stages li{border:1px solid #393a3f;border-radius:8px;padding:12px;font-size:12px;color:#aaa9aa}.episode-stages [data-state="done"]{border-color:#537a55;color:#bfdbbc}.episode-stages [aria-current="step"]{border-color:#deb66c;color:#ffe2a2}#channel-progress details{margin:18px 0}#channel-progress details p{line-height:1.7;white-space:pre-wrap}#channel-progress video{margin-top:16px}@media(max-width:550px){.episode-stages{grid-template-columns:repeat(2,minmax(0,1fr))}}
+

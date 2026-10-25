@@ -1,5 +1,5 @@
 // Uses the existing in-memory authenticated request client; never persists tokens.
-export function mountChannelControl({request,documentRef=document,uuid=()=>crypto.randomUUID()}){
+export function mountChannelControl({request,documentRef=document,uuid=()=>crypto.randomUUID(),onEpisode=async()=>{}}){
  const el=id=>documentRef.getElementById(id);
  let state=null,busy=false,pending=null;
  const toggle=el('automatic-toggle'),send=el('channel-send');
@@ -16,16 +16,6 @@ export function mountChannelControl({request,documentRef=document,uuid=()=>crypt
    line(episode,data.episode.company+' — '+data.episode.topic);
    line(episode,'Elegido por '+(data.episode.origin==='chat'?'ti':'el sistema')+'. Estado: '+data.episode.state+'.');
    if(data.research_paused)line(episode,'Investigación pausada. Tu elección se conserva.');
-   try{const result=await request('/api/channel-control/research?episode_id='+data.episode.id);
-    if(result.run){line(episode,result.run.note||'Investigación: '+result.run.state);if(result.run.job_status)line(episode,'Trabajo editorial: '+result.run.job_status);}
-   }catch{ /* La selección sigue visible aunque el seguimiento no esté disponible. */ }
-   if(data.episode.state==='selected'&&!data.research_paused){
-    const start=documentRef.createElement('button');start.type='button';start.textContent='Iniciar investigación del episodio';episode.append(start);
-    start.addEventListener('click',async()=>{if(busy)return;lock(true);start.disabled=true;
-     try{const r=await request('/api/channel-control/research','POST',{episode_id:data.episode.id});
-      el('channel-chat-status').textContent=r.started?'Investigación enviada a Actions.':r.reason==='dispatch_unknown'?'Despacho incierto: revisa Actions antes de repetir.':'Ya hay una solicitud o se alcanzó el límite diario.';await load();
-     }catch(e){el('channel-chat-status').textContent=e.message;}finally{lock(false);start.disabled=false;}});
-   }
   }
   const study=el('channel-study');study.replaceChildren();
   try{
@@ -41,7 +31,7 @@ export function mountChannelControl({request,documentRef=document,uuid=()=>crypt
   }catch{line(study,'Estudio de mercado todavía no disponible.');}
   const history=el('channel-chat-history');history.replaceChildren();
   for(const entry of data.conversation){line(history,'Tú: '+entry.message);line(history,'Sistema: '+entry.reply);}
-  lock(busy);return data;
+  await onEpisode(data.episode);lock(busy);return data;
  }
  async function perform(kind,payload){
   // Preserve request ID and original revision after an uncertain network result.

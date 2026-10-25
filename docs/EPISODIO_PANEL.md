@@ -1,0 +1,14 @@
+# Del chat al video en el panel
+
+1. Escribe empresa y enfoque, por ejemplo: «Haz un video sobre BlackBerry y por qué perdió el mercado». El episodio conserva esa elección.
+2. Consulta las seis etapas bajo «Tu próximo video». El mensaje indica el trabajo actual o el bloqueo y muestra la siguiente acción disponible.
+3. Si el guionista falla después de guardar la investigación, usa **Reanudar desde el guion**. Se conservan fuentes y análisis, y se aplican los límites diarios.
+4. Abre **Leer guion del episodio**, envíalo a revisión y comprueba **Fuentes y derechos**. La revisión factual y de licencias requiere una confirmación humana; después puedes aprobar el guion.
+5. Autoriza **Generar narración y video**. Durante la producción el avance se actualiza cada doce segundos. **Reanudar montaje** continúa el mismo trabajo después de un fallo.
+6. Cuando se registre el resultado, reproduce el MP4 en el propio episodio. La asociación comprueba trabajo, ejecución y huella del video; no muestra el resultado de otra empresa.
+7. Abre **Revisión y publicación de este video**. Revisión, subida privada y publicación/programación son autorizaciones separadas sobre ese archivo exacto.
+8. Tras la confirmación de YouTube, **Cerrar episodio y preparar el siguiente** libera el canal para otra elección y conserva el historial.
+
+Si la investigación está pausada, la elección y los resultados guardados se conservan y el botón de inicio/reanudación permanece deshabilitado. Encender automático no levanta esa pausa ni acredita la calibración del estudio. Un envío incierto no permite repetir a ciegas.
+
+Este recorrido está implementado y cubierto por contratos locales; la aceptación real del nuevo flujo completo y las revisiones humanas siguen pendientes. Los diagnósticos, expedientes y aprobaciones se muestran como tales: una prueba técnica correcta no equivale a hechos verificados ni a una publicación real.
