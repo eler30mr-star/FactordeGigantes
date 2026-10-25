@@ -56,9 +56,21 @@ test('cited script creates real editorial draft without any legacy market select
  script.source_research_run_id=saved.run_id;
  const result=await storeChannelScript(env,{request_id:request.request_id,script});
  assert.equal(result.created,true);
+ const again=await storeChannelScript(env,{request_id:request.request_id,script});
+ assert.equal(again.job_id,result.job_id);assert.equal(again.created,false);
  assert.equal(raw.prepare('SELECT status FROM jobs WHERE id=?').get(result.job_id).status,'draft');
  assert.equal(raw.prepare('SELECT editor_attested FROM editorial_dossiers WHERE job_id=?').get(result.job_id).editor_attested,0);
  assert.equal(raw.prepare('SELECT count(*) n FROM market_research_queue').get().n,0);
  assert.equal(raw.prepare('SELECT count(*) n FROM market_research_selection_runs').get().n,0);
  assert.equal(raw.prepare('SELECT state FROM channel_episodes WHERE id=?').get(id).state,'review');
+});
+
+test('late dispatch acknowledgement cannot revive an already blocked investigation',async()=>{
+ const {env,id,raw}=setup();
+ await dispatchChannelResearch(env,id,async(url,options)=>{
+  const request_id=JSON.parse(options.body).inputs.episode_request_id;
+  await storeChannelResearch(env,{request_id,blocked:true});return {status:204};
+ });
+ assert.equal(raw.prepare('SELECT state FROM channel_episodes').get().state,'selected');
+ assert.equal(raw.prepare('SELECT state FROM channel_episode_research').get().state,'blocked');
 });

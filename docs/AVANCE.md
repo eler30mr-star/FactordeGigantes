@@ -1,5 +1,9 @@
 # Historial de avance — Factor de Gigantes
 
+### Reintentos y confirmaciones tardías
+
+Se refuerza la idempotencia del guardado del guion: repetir la misma respuesta conserva el trabajo existente; otra versión se rechaza sin sobrescribirlo. Una confirmación tardía de despacho no puede reactivar una investigación que ya quedó bloqueada. Regresiones con SQLite y el guion citado real de prueba aprobadas; total local **150 Node**. La aceptación con proveedores reales permanece pendiente y la pausa no cambia.
+
 ## 2026-10-25 · Episodio elegido → investigación enfocada → guion para revisión
 
 **Implementación:** el chat y la selección automática calibrada pueden despachar la fase `episode` del workflow existente. La entrada es el episodio D1, con empresa, enfoque y origen, no la cola de mercado antigua. Automático apagado no bloquea las instrucciones manuales; la pausa de IA sí se respeta. Reservas atómicas evitan doble despacho y limitan a cuatro intentos diarios. Un resultado de red incierto bloquea reenvíos hasta revisión de Actions.

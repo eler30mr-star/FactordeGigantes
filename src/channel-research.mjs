@@ -29,7 +29,7 @@ export async function dispatchChannelResearch(env,episodeId,fetcher=fetch){
  }
  await env.DB.batch([
   env.DB.prepare("UPDATE channel_episode_research SET state='sent' WHERE id=? AND state='reserved'").bind(id),
-  env.DB.prepare("UPDATE channel_episodes SET state='researching',updated_at=datetime('now') WHERE id=? AND state='selected'").bind(episodeId)
+  env.DB.prepare("UPDATE channel_episodes SET state='researching',updated_at=datetime('now') WHERE id=? AND state='selected' AND EXISTS(SELECT 1 FROM channel_episode_research WHERE id=? AND state='sent')").bind(episodeId,id)
  ]);
  return {ok:true,started:true,request_id:id};
 }
@@ -58,6 +58,9 @@ export async function storeChannelResearch(env,body){
  return {...stored,episode_id:episode.episode_id};
 }
 export async function storeChannelScript(env,body){
+ if(!body||!valid(body.request_id))throw new RangeError('Solicitud inválida');
+ const prior=await env.DB.prepare('SELECT r.job_id,d.script_json FROM channel_episode_research r JOIN autonomous_script_drafts d ON d.job_id=r.job_id WHERE r.id=?').bind(body.request_id).first();
+ if(prior)return prior.script_json===JSON.stringify(body.script)?{ok:true,job_id:prior.job_id,created:false,publication_authorized:false}:fail(409,'El guion ya tiene otra versión guardada');
  const context=await channelResearchContext(env,body);if(!context.ok)return context;
  if(!context.allowed)return fail(409,'Investigación pausada o solicitud terminada');
  const run=await env.DB.prepare('SELECT research_run_id FROM channel_episode_research WHERE id=?').bind(body.request_id).first();
