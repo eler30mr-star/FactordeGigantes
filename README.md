@@ -9,10 +9,11 @@ El sistema descubre temas, conserva investigación y borradores citados en D1, e
 - **Panel y API desplegados:** oportunidades de mercado, fuentes, equipo investigador, guion, expediente editorial, aprobación y seguimiento del montaje.
 - **Motor genérico de episodios:** voz canónica Qwen3-TTS Base 1.7B CPU, tomas recuperables, gráficos originales por escena, MP4, capítulos, SRT/VTT, créditos, QA sobre archivo real y página de revisión. La generación final y la aprobación auditiva son verificaciones distintas.
 - **Desarrollo sin gastar búsquedas de proveedores:** Codex preparó directamente el [guion citado de Theranos](research/theranos-development/GUION_PRUEBA_CITADO.md), con 1.600 palabras, ocho escenas y nueve fuentes. No se presenta como investigación autónoma de las otras IA.
+- **Episodio narrado completo de desarrollo:** [descargar video y paquete de revisión](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163555937/artifacts/12588892336), **11:11**, ocho escenas, 56 tomas Qwen, subtítulos, capítulos y fuentes. Montaje y QA aprobados; audición, derechos comerciales y aceptación profesional pendientes. Retención del artefacto: siete días.
 - **Montaje técnico completo comprobado en GitHub:** [descargar video y material de revisión](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163254722/artifacts/12587492309), 11:36, QA aprobada. **Contiene señal de audio técnica, no narración.** Artefacto temporal, retención de siete días.
 - **Investigadores pausados** por indicación del propietario, incluidos cron y lanzamiento desde el panel. Su prueba integrada se habilita expresamente; la prueba final individual del narrador no los reactiva.
 
-La prueba final de narración canónica se sigue en [Actions](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163555937). Su inicio no equivale a generación completa, identidad vocal aprobada ni aceptación profesional. El estado verificado y los pendientes se registran en [AVANCE](docs/AVANCE.md).
+La prueba final de narración y montaje terminó correctamente en [Actions](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163555937). El archivo se descargó y verificó por SHA; no acredita por sí solo identidad vocal aprobada ni aceptación profesional. El estado verificado y los pendientes se registran en [AVANCE](docs/AVANCE.md).
 
 ## Operación y arquitectura
 
