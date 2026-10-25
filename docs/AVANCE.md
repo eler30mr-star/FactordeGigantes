@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Cierre verificado de despliegue del estudio v2
+
+Código `9bbfbe2`, CI `40195019845` finalizado en success: contratos, cobertura Python, QA audiovisual y smoke de producción aprobados. Cloudflare registra deployment `34ff213b-351d-435f-876e-73932fb5e853`, versión `511416bc-9245-460b-bd38-7ae2e3b3b18c`, al 100 %. Se conserva `FINAL_AI_INTEGRATION_ENABLED=0` y no hay indicador de selector validado. Las migraciones 0017 y 0018 ya están aplicadas; el modo real continúa apagado y no se han creado episodios ni estudios para el propietario.
+
+La prueba real de extracción/reproducción preparada del MP4 pertenece al CI anterior `40193908327`, que verificó ZIP y MP4 de 30.308.212 bytes sin regenerar narración. La aceptación de usuario en navegador y la calibración del mercado con APIs reales no se inventan.
+
+Quedan la conexión de la elección por chat/estudio al pipeline enfocado de investigación, guion y producción; la aceptación integrada de IA cuando corresponda; y el cierre autorizado de publicación/programación. El almacenamiento y la cola del investigador antiguo dependen de la selección de mercado heredada: la siguiente integración debe usar el episodio elegido como fuente de verdad, conservar su enfoque y no fabricar un score de mercado para las instrucciones manuales.
+
 ## 2026-10-25 · Reproductor desplegado y estudio YouTube comparativo v2 implementado
 
 **Cierre real del reproductor:** código `ac6a53c`, CI `40193908327` aprobado. El job de contratos recuperó el ZIP existente y el extractor utilizado por el panel confirmó `archive_verified=true`, `video_verified=true`, `video_bytes=30308212`, tipo `video/mp4`, cero modelos generados y sin autorización de publicación. Smoke posterior aprobó archivos servidos y barreras privadas. Cloudflare deployment `3c7e8dbb-749f-4450-85aa-8506f62587be`, versión `3c84607c-8d29-4053-a90c-154affb29d36`. Esto acredita bytes y despliegue; no inventa escucha o aceptación visual humana del documental.
