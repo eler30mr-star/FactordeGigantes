@@ -1,3 +1,4 @@
+import {mountVideoPreview} from './video-preview.js';
 const labels={review:'Pendiente de revisión',approved:'Revisión aprobada',queued:'Subida solicitada',initiating:'Iniciando sesión privada',
  uploading:'Transferencia privada en curso',uploaded:'Subido como privado',unknown:'Resultado incierto: revisar antes de repetir'};
 const checks={watched_video:'He visto el video completo',voice_approved:'Apruebo la identidad, dicción y ritmo de la voz',
@@ -8,12 +9,15 @@ function link(text,url){
  if(!/^https:\/\/(?:github\.com\/eler30mr-star\/FactordeGigantes\/actions\/runs\/\d+\/artifacts\/\d+|www\.youtube\.com\/watch\?v=[\w-]{11})$/.test(url))throw Error('Enlace inválido');
  const a=el('a',text);a.href=url;a.target='_blank';a.rel='noopener noreferrer';return a;
 }
-export function mountYoutubeReviews(root,rows,{request,notify,refresh}){
+export function mountYoutubeReviews(root,rows,{request,notify,refresh,fetchArchive}){
+ for(const cleanup of root.videoCleanups||[])cleanup();
+ root.videoCleanups=[];
  root.replaceChildren();
  if(!rows.length){root.append(el('p','Todavía no hay exportaciones registradas para revisión.','muted'));return;}
  for(const row of rows){
   const card=el('article','','job');card.append(el('h3',row.title),el('p',labels[row.state]||row.state,'muted'));
   card.append(el('p',row.origin==='codex_development_research'?'Material de desarrollo preparado por Codex':'Borrador del guionista autónomo','muted micro'));
+  if(fetchArchive)root.videoCleanups.push(mountVideoPreview(card,row,{fetchArchive}));
   card.append(link('Descargar video, guion y fuentes',row.source_url));
   if(row.video_url)card.append(link('Abrir video privado en YouTube',row.video_url));
   if(row.last_error)card.append(el('p',row.last_error,'muted'));
@@ -55,3 +59,4 @@ export function mountYoutubeReviews(root,rows,{request,notify,refresh}){
   root.append(card);
  }
 }
+

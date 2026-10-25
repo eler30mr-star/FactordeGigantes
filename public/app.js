@@ -289,7 +289,8 @@ async function loadYoutubeConnection(){
 }
 async function loadYoutubeReviews(){
   const data=await request('/api/youtube/exports');
-  mountYoutubeReviews($('youtube-review-results'),data.exports,{request,notify:notice,refresh:loadYoutubeReviews});
+  mountYoutubeReviews($('youtube-review-results'),data.exports,{request,notify:notice,refresh:loadYoutubeReviews,
+    fetchArchive:(path,options)=>fetch(path,{...options,headers:{Authorization:'Bearer '+adminToken}})});
   $('youtube-review-status').textContent=data.exports.length+' exportaciones registradas. La revisión y la subida privada son acciones separadas.';
 }
 $('youtube-review-refresh').addEventListener('click',()=>loadYoutubeReviews().catch(e=>{$('youtube-review-status').textContent=e.message;}));
@@ -811,6 +812,11 @@ $("connect").addEventListener("click",async () => {
     loadProductionRuns().catch(e=>{$('production-status').textContent=e.message;});
     loadYoutubeConnection().catch(e=>{$('youtube-connection-status').textContent=e.message;});
     loadYoutubeReviews().catch(e=>{$('youtube-review-status').textContent=e.message;});
+
+  } catch(e) { adminToken=""; $("workspace").hidden=true; notice(e.message);}
+});
+$('research-archive').addEventListener('toggle',()=>{
+  if(!$('research-archive').open||!adminToken)return;
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
     loadOpportunities().catch(e=>{$("opportunities-status").textContent=e.message;});
     loadOfficialEvidence().catch(e=>{$("official-status").textContent=e.message;});
@@ -821,7 +827,6 @@ $("connect").addEventListener("click",async () => {
     loadNewsRadar().catch(e=>{$("news-status").textContent=e.message;});
     loadYoutubeMarket().catch(e=>{$("youtube-status").textContent=e.message;});
     loadCrossSignals().catch(e=>{$("cross-status").textContent=e.message;});
-  } catch(e) { adminToken=""; $("workspace").hidden=true; notice(e.message);}
 });
 $("refresh").addEventListener("click",()=>load().catch(e=>notice(e.message)));
 $("create").addEventListener("submit",async e => {

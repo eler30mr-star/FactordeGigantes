@@ -1,5 +1,17 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Control persistente habilitado y reproductor privado implementado
+
+**Verificaciones remotas:** CI del primer bloque `e952902`, run `40193057049`, terminó correctamente en contratos, QA audiovisual y smoke. Cloudflare registra despliegue `1d5be723-a461-4ebb-97ed-35e1b676d996`, versión `12a3dcce-5b6b-4364-9fc3-d2dafeb047e8`. Faltaban las tablas de control; se aplicó realmente la migración 0017 con seis sentencias correctas. Consulta posterior confirma modo apagado/revisión 0, cero episodios nuevos, un trabajo y una exportación previos conservados, y claves foráneas sin infracciones. No se modificó la pausa de investigadores.
+
+**Implementación del reproductor:** API de lectura ADMIN entrega por streaming únicamente el artefacto narrado registrado. Comprueba identidad, origen, caducidad, digest y tamaño; no entrega credenciales GitHub ni enlaces firmados al navegador. El cliente valida SHA del ZIP y MP4, extrae solo el video y crea un Blob reproducible con controles, audio y desplazamiento dentro del panel. Se libera al actualizar. Límite explícito de 80 MiB; el archivo actual ocupa 30.308.212 bytes. Los archivos caducados muestran un bloqueo sin regenerar producción. La preparación descarga el paquete antes de reproducir; no es streaming progresivo del MP4 ni almacenamiento permanente.
+
+**Interfaz:** las fuentes, listas históricas y herramientas anteriores quedan en un apartado desplegable; sus consultas se realizan al abrirlo, evitando llenar la portada al conectar. Se conserva la descarga y toda la información previa.
+
+**Pruebas ejecutadas:** 135 contratos Node locales correctos, incluidos siete nuevos de ZIP almacenado/deflactado, integridad, caducidad, origen, streaming incompleto, roles y montaje/liberación del reproductor. Sintaxis y YAML correctos. Se añade aceptación en CI marcada `[preview-e2e]` para recuperar el artefacto real existente y verificarlo con el mismo extractor, sin IA ni render nuevos. Su resultado y el despliegue de este bloque se registrarán después de confirmarlos; no se atribuye todavía reproducción observada en navegador.
+
+**Siguiente bloque:** estudio comparativo YouTube y conexión del episodio a la investigación enfocada. El chat actual guarda la elección; no se declara aún cadena autónoma terminada ni autorización de publicación.
+
 ## 2026-10-25 · Primer bloque implementado: control del canal y selección por chat
 
 **Implementación en main:** API ADMIN de estado, cambio de modo y chat; migración aditiva `0017_channel_control.sql`; botón automático encendido/apagado y conversación en el panel. El modo es persistente por canal, apagado por defecto, con revisión condicional y registro de actor autenticado. Las instrucciones explícitas seleccionan empresa y tema; las ambiguas abren un diálogo breve persistente. Reintentos conservan identificador y no duplican episodios. Un episodio activo no se reemplaza silenciosamente.

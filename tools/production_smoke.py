@@ -38,6 +38,10 @@ def probe(base):
     report = {"product": "Factor de Gigantes", "worker": EXPECTED_HOST,
               "checks": {}, "production_ready": False}
     checks = [
+        ('/channel-control.js', 200, [b'mountChannelControl']),
+        ('/video-preview.js', 200, [b'extractPreview', b'mountVideoPreview']),
+        ('/api/channel-control', 401, [b'Acceso no autorizado']),
+        ('/api/youtube/exports/' + '0' * 64 + '/preview', 401, [b'Acceso no autorizado']),
         ("/health", 200, [b'Factor de Gigantes']),
         ("/", 200, [b'Investigar con IA', b'id="research-form"', b'id="dossier-panel"', b'id="production-detail"', b'id="youtube-connect"', b'id="youtube-review-results"']),
         ("/app.js", 200, [b'loadResearch', b'/api/research', b'/api/jobs', b'retry-render', b'/api/production/runs', 'Abrir exportación'.encode()]),
@@ -76,4 +80,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

@@ -1,3 +1,4 @@
+import {videoPreview} from './video-preview.mjs';
 import {channelStatus,setAutomaticMode,receiveChannelInstruction,automaticGate} from './channel-control.mjs';
 import {readEpisodeInput,acceptEpisodeExport,failEpisodeExport,previewFromEvents} from './episode-production.mjs';
 import {readProductionProgress} from './production-progress.mjs';
@@ -176,6 +177,10 @@ async function handle(request,env) {
   }
   const exportAdmin=!renderer&&parts[1]==='youtube'&&parts[2]==='exports';
   const exportRenderer=renderer&&parts[2]==='youtube';
+  if(exportAdmin && parts.length===5 && parts[4]==='preview'){
+    if(method!=='GET')return err('Método no admitido',405);
+    return videoPreview(env,parts[3]);
+  }
   if(exportAdmin||exportRenderer){
     try{
       let result;
