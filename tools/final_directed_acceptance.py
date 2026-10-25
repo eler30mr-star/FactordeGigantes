@@ -100,7 +100,8 @@ def main():
             saved.write_text(json.dumps(sources, ensure_ascii=False, indent=2))
             return sources
         result = run_episode(Control(), identity['request_id'], client_factory=Clients, discover=discover)
-        if result.get('research', {}).get('editorial_focus_review', {}).get('status') == 'misaligned':
+        if (result.get('research', {}).get('editorial_focus_review', {}).get('status') == 'misaligned'
+                or result.get('draft', {}).get('status') == 'blocked_editorial_coverage'):
             # One bounded recovery in this explicit acceptance, not a provider loop.
             (FOLDER / 'ENFOQUE_ANTERIOR.json').write_text(json.dumps(result['research']['editorial_focus_review'], ensure_ascii=False, indent=2))
             audit['previous_editorial_focus'] = result['research']['editorial_focus_review']

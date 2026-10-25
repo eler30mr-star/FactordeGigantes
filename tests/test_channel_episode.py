@@ -7,6 +7,10 @@ from tools.editorial_focus import focus_sha
 
 def focused(report):
     report['candidate_claims']=[{**row, 'statement':row.get('statement', 'La empresa perdió liderazgo frente al cambio del mercado.')} for row in report.get('candidate_claims', [{}])]
+    if report['candidate_claims'] and len(report['candidate_claims'])<6:
+        first=report['candidate_claims'][0]
+        report['candidate_claims']=[{**first,'statement':first['statement']+f' Fixture {n}.'} for n in range(6)]
+        report['reviews']=[{} for _ in report['candidate_claims']]
     topic=report.get('editorial_topic', 'Pérdida de liderazgo')
     report['editorial_focus_review']={'schema':'fdg_editorial_focus_v1','status':'aligned','topic':topic,
         'claims_sha256':focus_sha(topic,report['candidate_claims']),'publication_authorized':False,
@@ -15,6 +19,31 @@ def focused(report):
 
 
 class ChannelEpisodeTests(unittest.TestCase):
+    def test_aligned_but_short_research_replans_instead_of_repeating_only_two_facts_forever(self):
+        saved=focused({'company':'BlackBerry','editorial_topic':'Pérdida de liderazgo','selected_episode_id':'chosen',
+            'selected_wikidata_id':'Q100','stages':[],'evidence_manifest':[]})
+        saved['candidate_claims']=saved['candidate_claims'][:2]
+        saved['editorial_focus_review']['claims_sha256']=focus_sha(saved['editorial_topic'],saved['candidate_claims'])
+        saved['editorial_focus_review']['judgments']=saved['editorial_focus_review']['judgments'][:2]
+        saved['editorial_focus_review']['research_questions']=['¿Qué otras decisiones explican la trayectoria de la empresa?']
+        writes=[]
+        class Control:
+            def request(self,path,body):
+                if path.endswith('/context'):return {'allowed':True,'episode':{'episode_id':'chosen','company':'BlackBerry',
+                    'topic':'Pérdida de liderazgo','origin':'chat'},'checkpoint':{'run_id':'ai-'+'a'*28,'report':saved}}
+                if path.endswith('/research'):writes.append(body['report'])
+                return {'ok':True,'run_id':'ai-'+'b'*28,'job_id':'job'}
+            def reserve(self,*_):return True
+        forbidden=lambda *_a,**_k:self.fail('No descargar otra vez sin cambios de perfil')
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode(Control(),'request',resolver=forbidden,discover=forbidden,
+                analyze=lambda s,**_:focused({**s,'candidate_claims':[{}]}),
+                scriptwriter=lambda *_a,**_k:{'status':'editorial_draft_unapproved'},client_factory=lambda **_:None)
+        self.assertEqual(result['state'],'review')
+        self.assertEqual(writes[0]['editorial_replanning']['reason'],'insufficient_relevant_facts')
+        self.assertEqual(writes[0]['editorial_replanning']['parent_run_id'],'ai-'+'a'*28)
+        self.assertTrue(writes[0]['editorial_replanning']['topic_unchanged'])
+
     def test_off_topic_facts_stop_before_more_downloads_or_scripting(self):
         saved={'company':'BlackBerry','selected_episode_id':'chosen','editorial_topic':'Pérdida de liderazgo',
             'selected_wikidata_id':'Q100','candidate_claims':[{'statement':'El teléfono tiene dos altavoces frontales.'}],

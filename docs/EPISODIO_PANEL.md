@@ -12,3 +12,7 @@
 Si la investigación está pausada, la elección y los resultados guardados se conservan y el botón de inicio/reanudación permanece deshabilitado. Encender automático no levanta esa pausa ni acredita la calibración del estudio. Un envío incierto no permite repetir a ciegas.
 
 Este recorrido está implementado y cubierto por contratos locales; la aceptación real del nuevo flujo completo y las revisiones humanas siguen pendientes. Los diagnósticos, expedientes y aprobaciones se muestran como tales: una prueba técnica correcta no equivale a hechos verificados ni a una publicación real.
+
+Si aparece **Retomar el enfoque elegido**, abre las preguntas faltantes: el sistema detectó o debe comprobar la relación entre las afirmaciones y tu tema. La reanudación conserva la empresa y el enfoque; el expediente anterior queda como versión padre. Si hay pocos hechos pertinentes, amplía la investigación en lugar de repetir indefinidamente los mismos.
+
+Un límite configurado de solicitudes IA conserva fuentes, hechos y preguntas. Podrás reanudar cuando haya cupo. Ese bloqueo no significa que el guion esté aprobado.

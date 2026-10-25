@@ -1,5 +1,17 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Desvío editorial rechazado en prueba real y resultado preservado por límite
+
+Run 40224493562 success. Gemini revisó el enfoque (427 entrada/561 salida) y clasificó las seis afirmaciones sobre Priv/DTEK50 como ajenas a la pérdida de liderazgo y transformación elegidas. Propuso cuatro preguntas documentales. La recuperación puntual conservó el padre y reanalizó los diez pasajes (3.411 entrada/171 salida), obteniendo solo dos afirmaciones candidatas pertinentes: software/servicios y unidades de Ciberseguridad/IoT. No se completaron seis hechos de relleno.
+
+Los límites de solicitudes del proyecto rechazaron la siguiente reserva Groq y Gemini antes de otra llamada remota. No se incrementaron límites ni se atribuye agotamiento comercial de las cuentas. Artefacto actual 12610517429, SHA ZIP 3b60ec0bd9d02bf76c3c7189c3ae0978fe23d9b0c28583b6d671ca9378b79d7a. Dos hechos candidatos y preguntas quedan guardados; faltan contraste, cobertura editorial, guion y video.
+
+Código 3f20459, CI 40224460026 aprobado. Deployment Cloudflare 62c36b06-17f8-420b-b834-72324beed720, versión b4f5f558-1d66-4777-9647-6d0eb3871e45, al 100 %. Se verificó en el Worker servido editorialFocusReady y el rechazo del enfoque incorrecto.
+
+Se completa la reanudación de cobertura corta: un conjunto pertinente con menos de seis hechos puede ampliarse bajo las mismas preguntas, conservando la versión padre; no queda atrapado corroborando para siempre dos afirmaciones. El panel explica también el límite de solicitudes. 61 pruebas Python enfocadas y 163 contratos Node aprobados en el bloque. La suite local histórica encontró archivos/dependencias ausentes en la copia parcial; CI completo aprobado.
+
+Se retira el disparador temporal por mensaje de commit. Guía y aceptación actualizadas con evidencia real, separación de SQLite aislado/D1 y siguiente objetivo exacto. Reanudar desde 40224493562 cuando haya cupo, buscar los hechos documentados que explican la pérdida de liderazgo y completar revisión/guion. Pausa, automático, voz y publicación conservan sus controles.
+
 ## 2026-10-25 · Fuente corporativa recuperada y desvío del enfoque detectado
 
 Run 40223314920 recuperó fuente corporativa en blackberry.com, cuatro documentos/dominios y diez pasajes. Groq revisó el lote nuevo (3.369 entrada/1.418 salida), sin repetir Gemini/Qwen. Artefacto 12610142946, SHA ZIP 433f0befb8176b559d4c62b9dc4d5ed4a2e32569bafe710352ae605a33d15216. El guion sigue bloqueado por contraste específico insuficiente.

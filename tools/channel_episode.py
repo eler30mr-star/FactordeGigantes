@@ -106,11 +106,14 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
         return hashlib.sha256(json.dumps({'profile': 'chosen_topic_v2', 'topic': episode['topic'],
             'evidence': report.get('evidence_manifest', [])}, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
     old_focus = report.get('editorial_focus_review', {}) if checkpoint else {}
-    replanning = bool(checkpoint and old_focus.get('status') == 'misaligned' and old_focus.get('topic') == episode['topic']
+    replanning = bool(checkpoint and old_focus.get('status') in {'misaligned', 'aligned'}
+        and (old_focus.get('status') == 'misaligned' or len(report.get('candidate_claims', [])) < 6) and old_focus.get('topic') == episode['topic']
         and old_focus.get('claims_sha256') == focus_sha(episode['topic'], report.get('candidate_claims', [])))
     if replanning:
         prior = report
-        questions = prior['editorial_focus_review'].get('research_questions') or prior.get('editorial_research_questions', [])
+        questions = prior['editorial_focus_review'].get('research_questions') or prior.get('editorial_research_questions') or prior.get('missing_questions', [])
+        questions = [q for q in questions if isinstance(q, str) and 10 <= len(q) <= 220][:4]
+        if not questions: questions = [f"¿Qué documentos responden a: {episode['topic'][:180]}?"]
         history=list(dict.fromkeys([*prior.get('retrieval_history_urls', []),
             *prior.get('corroboration_continuation', {}).get('attempted_urls', []),
             *(prior.get('retrieval_budget') or {}).get('attempted_urls', [])]))[-40:]
@@ -133,7 +136,8 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
         report['editorial_research_questions'] = questions
         report['retrieval_history_urls'] = history
         report['editorial_replanning'] = {'parent_run_id': receipt['run_id'],
-            'previous_claims_sha256': focus_sha(episode['topic'], prior['candidate_claims']), 'topic_unchanged': True}
+            'previous_claims_sha256': focus_sha(episode['topic'], prior['candidate_claims']), 'topic_unchanged': True,
+            'reason': 'scope_mismatch' if old_focus['status']=='misaligned' else 'insufficient_relevant_facts'}
         receipt = persist(report)
     # Check relevance before spending more searches on a legacy set of unrelated facts.
     if checkpoint and not replanning and report.get('candidate_claims') and not valid_focus(
@@ -143,6 +147,9 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
         if report['editorial_focus_review']['status'] != 'aligned':
             return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_focus',
                 'blocking_reasons': ['editorial_review_unavailable' if report['editorial_focus_review']['status']=='unavailable' else 'chosen_topic_not_covered'], 'publication_authorized': False}}
+        if len(report['candidate_claims']) < 6:
+            return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_coverage',
+                'blocking_reasons': ['need_more_relevant_facts'], 'publication_authorized': False}}
     if replanning:
         pass
     elif not checkpoint:
@@ -200,6 +207,9 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
     if not valid_focus(report.get('editorial_focus_review'), episode['topic'], report.get('candidate_claims', [])):
         return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_focus',
             'blocking_reasons': ['editorial_review_unavailable' if report.get('editorial_focus_review', {}).get('status')=='unavailable' else 'chosen_topic_not_covered'], 'publication_authorized': False}}
+    if len(report['candidate_claims']) < 6:
+        return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_coverage',
+            'blocking_reasons': ['need_more_relevant_facts'], 'publication_authorized': False}}
     draft = scriptwriter(report, selection, clients=client_factory(reserve=reserve), research_run_id=receipt['run_id'])
     if draft.get('status') != 'editorial_draft_unapproved':
         return {'state': 'blocked', 'research': report, 'draft': draft}

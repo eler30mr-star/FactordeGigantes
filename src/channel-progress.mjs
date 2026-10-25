@@ -11,17 +11,20 @@ export async function channelProgress(env,id){
  const job=research?.job_id?await env.DB.prepare('SELECT id,title,status,review_note,last_error FROM jobs WHERE id=?').bind(research.job_id).first():null;
  let checkpointStage='script';
  let focusQuestions=[];
+ let focusReason=null;
  if(research?.research_run_id&&!job){
   const checkpoint=await env.DB.prepare(`SELECT
    json_array_length(report_json,'$.candidate_claims') AS claims,
    json_array_length(report_json,'$.evidence_manifest') AS passages,
    json_array_length(report_json,'$.reviews') AS reviews,
    json_extract(report_json,'$.editorial_focus_review.status') AS focus_status,
+   json_extract(report_json,'$.editorial_focus_review.reason') AS focus_reason,
    json_extract(report_json,'$.editorial_focus_review.research_questions') AS focus_questions,
    EXISTS(SELECT 1 FROM json_each(report_json,'$.source_quality.claim_gaps') WHERE json_array_length(value,'$.gaps')>0) AS missing_sources
    FROM market_ai_pipeline_runs WHERE id=?`).bind(research.research_run_id).first();
   if(checkpoint&&['misaligned','unavailable'].includes(checkpoint.focus_status)){
    checkpointStage='focus';
+   focusReason=checkpoint.focus_reason;
    try{const questions=JSON.parse(checkpoint.focus_questions||'[]');if(Array.isArray(questions))focusQuestions=questions.filter(q=>typeof q==='string'&&q.length<=220).slice(0,4);}catch{}
   }
   else if(checkpoint&&checkpoint.claims===0)checkpointStage=checkpoint.passages>0?'analysis':'corroboration';
@@ -57,6 +60,7 @@ export async function channelProgress(env,id){
    if(saved&&checkpointStage==='corroboration'){steps[1].state='blocked';steps[2].state='pending';message='La investigación está guardada, pero falta contraste. Puedes completar las fuentes de este mismo episodio.';}
    else if(saved&&checkpointStage==='analysis'){steps[1].state='blocked';steps[2].state='pending';message='Las fuentes están guardadas. Puedes reanudar el análisis sin volver a descargarlas.';}
    else if(saved&&checkpointStage==='focus'){steps[1].state='blocked';steps[2].state='pending';message='Falta comprobar o completar la relación de las afirmaciones con el enfoque elegido. La empresa y el tema se conservan.';}
+   if(checkpointStage==='focus'&&focusReason==='budget_denied')message='Se alcanzó un límite configurado de solicitudes IA. Las fuentes y los hechos quedan guardados para reanudar la revisión del enfoque.';
    else if(saved&&checkpointStage==='review')message='Las fuentes están guardadas. Puedes reanudar su revisión sin repetir las búsquedas.';
   }else if(research.state==='unknown'){
    steps[saved?2:1].state='blocked';next='check_dispatch';message='No se confirmó el envío. Revisa Actions antes de repetir para evitar duplicados.';
