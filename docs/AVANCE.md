@@ -1,5 +1,21 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Reproductor desplegado y estudio YouTube comparativo v2 implementado
+
+**Cierre real del reproductor:** código `ac6a53c`, CI `40193908327` aprobado. El job de contratos recuperó el ZIP existente y el extractor utilizado por el panel confirmó `archive_verified=true`, `video_verified=true`, `video_bytes=30308212`, tipo `video/mp4`, cero modelos generados y sin autorización de publicación. Smoke posterior aprobó archivos servidos y barreras privadas. Cloudflare deployment `3c7e8dbb-749f-4450-85aa-8506f62587be`, versión `3c84607c-8d29-4053-a90c-154affb29d36`. Esto acredita bytes y despliegue; no inventa escucha o aceptación visual humana del documental.
+
+**Nuevo estudio:** búsqueda inicial de YouTube desde tres consultas del nicho, propuestas de dos/tres empresas con IA gratuita reservada en D1, consultas comparativas y referencias de publicaciones habituales de hasta doce canales. No se investigan hechos ni se recogen PDFs de cada candidata. El Worker calcula las puntuaciones desde métricas observadas, devuelve razones y exige dos empresas realmente comparables para elegir. No se confunden visitas por edad con crecimiento, búsquedas regionales con procedencia de espectadores ni muestras con demanda total.
+
+**Calidad y control:** mínimo cuatro videos largos, dos ejemplos recientes, varias consultas y comparación con tres canales con tres referencias cada uno; medianas para evitar que un video excepcional decida. Se documentan criterios, ponderaciones y limitaciones en `docs/ESTUDIO_YOUTUBE.md`. Reservas por día, bloqueo por episodio activo, comprobaciones de modo antes de consultas y antes de guardar; apagado concurrente cancela la elección. Informes incompletos conservan un bloqueo visible y no producen episodio. La fase `opportunity` y horario diario usan este flujo; el radar anterior sigue retirado.
+
+**Estado de activación:** la pausa de investigadores permanece. Además, `YOUTUBE_SELECTOR_VALIDATED` ausente/distinto de 1 conserva los estudios como calibración, sin elegir episodio automáticamente. No se habilita este indicador sin revisar muestras reales. Las pruebas actuales de mercado usan datos simulados; no se declara calibración real ni oportunidad diaria ya operativa.
+
+**D1 remota:** migración aditiva 0018 aplicada y verificada; tabla de estudios vacía, modo apagado/revisión 0, cero infracciones FK. No se ejecutaron proveedores ni se creó un episodio para el propietario.
+
+**Verificación local del bloque:** 143 contratos Node aprobados y cuatro pruebas Python nuevas aprobadas; sintaxis y YAML correctos. Cubren muestras insuficientes, formatos cortos, outlier, duplicados, procedencia, caducidad, reservas diarias, calibración, apagado concurrente y persistencia idempotente. CI y despliegue de este bloque se comprobarán tras publicarlo.
+
+**Pendientes exactos:** calibración real del estudio cuando se habilite la prueba integrada y conectar la selección de ambos modos a investigación enfocada → guion → producción reanudable. El chat todavía registra la elección; no despacha ese recorrido completo. La publicación/programación autorizada sigue pendiente de completar y aceptar. El proyecto no se declara terminado.
+
 ## 2026-10-25 · Control persistente habilitado y reproductor privado implementado
 
 **Verificaciones remotas:** CI del primer bloque `e952902`, run `40193057049`, terminó correctamente en contratos, QA audiovisual y smoke. Cloudflare registra despliegue `1d5be723-a461-4ebb-97ed-35e1b676d996`, versión `12a3dcce-5b6b-4364-9fc3-d2dafeb047e8`. Faltaban las tablas de control; se aplicó realmente la migración 0017 con seis sentencias correctas. Consulta posterior confirma modo apagado/revisión 0, cero episodios nuevos, un trabajo y una exportación previos conservados, y claves foráneas sin infracciones. No se modificó la pausa de investigadores.

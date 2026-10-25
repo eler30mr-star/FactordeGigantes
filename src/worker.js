@@ -1,3 +1,4 @@
+import {beginOpportunityStudy,finishOpportunityStudy,checkOpportunityStudy,failOpportunityStudy,latestOpportunityStudy} from './opportunity-control.mjs';
 import {videoPreview} from './video-preview.mjs';
 import {channelStatus,setAutomaticMode,receiveChannelInstruction,automaticGate} from './channel-control.mjs';
 import {readEpisodeInput,acceptEpisodeExport,failEpisodeExport,previewFromEvents} from './episode-production.mjs';
@@ -150,15 +151,33 @@ async function handle(request,env) {
   const ingestPdf=parts[1]==="market" && parts[2]==="pdf" && parts[3]==="ingest" && parts.length===4;
   const ingestResearch=parts[1]==="market" && parts[2]==="research" && parts[3]==="ingest" && parts.length===4;
   const runResearchSelection=url.pathname==='/api/market/research-selection/run';
+  const studyWrite=['/api/market/opportunity-study/start','/api/market/opportunity-study/check','/api/market/opportunity-study/fail','/api/market/opportunity-study/finish'].includes(url.pathname);
   const automationGate=url.pathname==='/api/market/automation-control';
   const aiWrite=['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest','/api/market/ai-pipeline/script-context','/api/market/ai-pipeline/script-ingest'].includes(url.pathname);
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
-  if (automationGate || ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection || aiWrite) {
+  if (studyWrite || automationGate || ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection || aiWrite) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
   } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  if(studyWrite || url.pathname==='/api/market/opportunity-study'){
+    try{
+      let result;
+      if(!studyWrite && method==='GET')result=await latestOpportunityStudy(env);
+      else if(studyWrite && method==='POST'){
+        const body=await parseBody(request);
+        result=url.pathname.endsWith('/start')?await beginOpportunityStudy(env,body):
+          url.pathname.endsWith('/check')?await checkOpportunityStudy(env,body):
+          url.pathname.endsWith('/fail')?await failOpportunityStudy(env,body):await finishOpportunityStudy(env,body);
+      }
+      return result?json(result,result.ok?200:result.status):err('Método no admitido',405);
+    }catch(e){
+      if(/no such table: channel_/.test(String(e?.message||'')))return err('Falta migración 0018_opportunity_studies.sql',503);
+      if(e instanceof RangeError||e instanceof SyntaxError||e instanceof TypeError)return err('Estudio de mercado inválido',400);
+      throw e;
+    }
+  }
   if(automationGate || (!renderer && parts[1]==='channel-control')){
     try{
       let result;

@@ -16,13 +16,15 @@ function lease(body){
 }
 function gateView(control,env){
  const enabled=control?.automatic_enabled===1;
- // Market v1 is deliberately not reused: it starts with Wikimedia and cannot
- // satisfy the owner's YouTube-first comparative study. No runtime flag bypass.
+ const paused=env.FINAL_AI_INTEGRATION_ENABLED!=='1',validated=env.YOUTUBE_SELECTOR_VALIDATED==='1';
+ const reason=!enabled?'automatic_off':paused?'research_paused':!validated?'market_calibration_pending':'ready';
  return {ok:true,automatic_enabled:enabled,revision:control?.revision??0,
-  allowed:false,reason:!enabled?'automatic_off':'market_selector_pending',
-  message:!enabled?'Automático apagado. Esperando tu tema y empresa por chat.':
-   'Automático encendido. El nuevo estudio de mercado YouTube está pendiente de integración; no se elegirá un tema sin evidencia.',
-  research_paused:env.FINAL_AI_INTEGRATION_ENABLED!=='1',publication_authorized:false};
+  allowed:enabled&&!paused&&validated,reason,
+  message:!enabled?'Automático apagado. Esperando tu tema y empresa por chat.':paused?
+   'Automático encendido. Los investigadores siguen pausados; no se inician búsquedas.':!validated?
+   'Automático encendido. Estudio YouTube disponible para calibración; selección automática pendiente de validar con datos reales.':
+   'Automático encendido. El sistema puede realizar el estudio comparativo diario.',
+  research_paused:paused,publication_authorized:false};
 }
 export async function automaticGate(env){return gateView(await row(env.DB),env);}
 export async function channelStatus(env){
@@ -77,7 +79,7 @@ export async function setAutomaticMode(env,body){
  const control=await row(env.DB);
  if(!control)return fail(503,'Falta inicializar el control del canal');
  const result={ok:true,revision:body.revision+1,automatic_enabled:body.enabled,
-  reply:body.enabled?'Automático encendido; estudio de mercado pendiente de integración.':
+  reply:body.enabled?'Automático encendido. Se respetan la pausa y la validación del estudio antes de elegir.':
    'Automático apagado. Indica por chat qué tema y empresa quieres investigar.'};
  return commitOperation(env,body,'mode',payload,result,[body.enabled?1:0,control.pending_company,control.pending_instruction]);
 }

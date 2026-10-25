@@ -5,7 +5,7 @@ on:
       phase:
         description: 'Investigar o reanudar únicamente el borrador desde D1'
         type: choice
-        options: [research, corroborate, review, script, profile]
+        options: [opportunity, research, corroborate, review, script, profile]
         default: research
       research_run_id:
         description: 'Expediente ai-... o latest para la cola activa'
@@ -28,6 +28,39 @@ concurrency:
   group: fdg-topic-discovery-market
   cancel-in-progress: false
 jobs:
+  youtube-opportunity-study:
+    if: >-
+      github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1' &&
+      ((github.event_name == 'workflow_dispatch' && inputs.phase == 'opportunity') ||
+       (github.event_name == 'schedule' && github.event.schedule == '17 10 * * *'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Estudiar YouTube solo si automático está encendido en el servidor
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          YOUTUBE_DATA_API_KEY: ${{ secrets.YOUTUBE_DATA_API_KEY }}
+          YOUTUBE_MARKET_BUDGET_ENABLED: ${{ vars.YOUTUBE_MARKET_BUDGET_ENABLED || '1' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GEMINI_RESEARCH_FREE_CONFIRMED: ${{ vars.GEMINI_RESEARCH_FREE_CONFIRMED || '1' }}
+          GROQ_RESEARCH_FREE_CONFIRMED: ${{ vars.GROQ_RESEARCH_FREE_CONFIRMED || '1' }}
+          MISTRAL_RESEARCH_FREE_CONFIRMED: ${{ vars.MISTRAL_RESEARCH_FREE_CONFIRMED }}
+          OPENROUTER_RESEARCH_FREE_CONFIRMED: ${{ vars.OPENROUTER_RESEARCH_FREE_CONFIRMED }}
+        run: python -m tools.youtube_opportunity_study
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fdg-youtube-opportunity-study
+          path: dist/opportunity/
+          retention-days: 7
+          if-no-files-found: warn
   corroborate-existing:
     if: >-
       github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1' &&

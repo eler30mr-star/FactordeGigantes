@@ -17,6 +17,18 @@ export function mountChannelControl({request,documentRef=document,uuid=()=>crypt
    line(episode,'Elegido por '+(data.episode.origin==='chat'?'ti':'el sistema')+'. Estado: seleccionado.');
    line(episode,(data.research_paused?'Investigación pausada. ':'')+'El nuevo flujo de producción está pendiente de integración.');
   }
+  const study=el('channel-study');study.replaceChildren();
+  try{
+   const result=await request('/api/market/opportunity-study');
+   if(result.study){
+    const r=result.study,states={running:'en curso',calibration:'en calibración',insufficient:'sin evidencia suficiente',selected:'episodio elegido',cancelled:'cancelado'};
+    const reasons={need_four_comparable_long_videos:'faltan cuatro videos largos comparables',need_three_channels_with_three_baselines_each:'faltan referencias habituales de al menos tres canales',need_independent_search_queries:'faltan consultas independientes',need_two_recent_examples:'faltan ejemplos recientes',company_recently_covered:'empresa ya tratada recientemente',no_consistent_relative_outperformance:'el rendimiento relativo no destaca de forma consistente'};
+    line(study,'Último estudio YouTube: '+r.observed_on+' · '+(states[r.state]||r.state));
+    for(const candidate of r.rankings||[])line(study,candidate.company+' — '+candidate.topic+
+      (candidate.eligible?' · comparación suficiente':' · falta evidencia: '+candidate.reasons.map(reason=>reasons[reason]||'evidencia incompleta').join(', ')));
+    if(r.state==='calibration')line(study,'Estudio de calibración. Todavía no se eligió un episodio automáticamente.');
+   }
+  }catch{line(study,'Estudio de mercado todavía no disponible.');}
   const history=el('channel-chat-history');history.replaceChildren();
   for(const entry of data.conversation){line(history,'Tú: '+entry.message);line(history,'Sistema: '+entry.reply);}
   lock(busy);return data;

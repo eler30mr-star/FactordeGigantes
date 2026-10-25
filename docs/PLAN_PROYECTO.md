@@ -107,21 +107,21 @@ Todo lo siguiente queda **pendiente de implementación o validación integral**,
 
 ### P0 — Corregir la entrada y el orden de ejecución
 
-- [ ] Implementar el botón de modo persistente y su control efectivo en servidor, cron y colas; apagado permite solo episodios dirigidos por el propietario.
+- [x] Implementar el botón de modo persistente y su control efectivo en servidor, cron y colas; apagado permite solo episodios dirigidos por el propietario.
 - [ ] Definir y validar criterios de estudio de mercado, mínimos de suficiencia y decisión comparativa explicable; no elegir si faltan evidencias.
-- [ ] Modelar el ciclo diario y el episodio único con tema, empresa, enfoque, origen, decisión y estado persistentes.
+- [x] Modelar el ciclo diario y el episodio único con tema, empresa, enfoque, origen, decisión y estado persistentes.
 - [ ] Hacer que el descubrimiento comience por búsqueda YouTube del nicho; comparar candidatos de forma acotada y seleccionar uno antes de disparar investigación.
-- [ ] Impedir investigación profunda de candidatos no seleccionados y revisar los cron/colectores existentes.
+- [x] Impedir investigación profunda de candidatos no seleccionados y revisar los cron/colectores existentes.
 - [ ] Implementar chat conectado al orquestador para elegir tema y empresa sin radar obligatorio.
-- [ ] Evitar duplicados en el ciclo, doble envío del chat y reintentos; una nueva instrucción no destruye un episodio en curso.
+- [x] Evitar duplicados en el ciclo, doble envío del chat y reintentos; una nueva instrucción no destruye un episodio en curso.
 
 **Aceptación:** con proveedores simulados, comprobar ambos recorridos y el orden de llamadas; ningún investigador profundo se invoca antes de existir una selección ni para candidatos descartados. Validar después búsqueda real y decisión explicada, respetando la pausa vigente de investigadores hasta habilitación expresa.
 
 ### P1 — Panel centrado en el video
 
-- [ ] Presentar episodio actual, botón automático encendido/apagado, chat, avance, bloqueo y siguiente acción como vista principal; permitir consultar el estudio que sustenta la selección.
+- [x] Presentar episodio actual, botón automático encendido/apagado, chat, avance, bloqueo y siguiente acción como vista principal; permitir consultar el estudio que sustenta la selección.
 - [ ] Entregar y reproducir el MP4 real dentro del panel autenticado; probar audio, desplazamiento, permisos y caducidad.
-- [ ] Relegar datos técnicos, fuentes e historial a vistas secundarias asociadas al episodio.
+- [x] Relegar datos técnicos, fuentes e historial a vistas secundarias asociadas al episodio.
 
 **Aceptación:** el propietario puede indicar una empresa y tema por chat, seguir el episodio y ver el video en el panel sin preparar investigación, guion ni descargar un ZIP para reproducirlo.
 
@@ -143,11 +143,11 @@ Todo lo siguiente queda **pendiente de implementación o validación integral**,
 
 ## 7. Estado y reglas de continuidad
 
-La infraestructura existente —Worker, D1, proveedores IA, narrador, montaje, OAuth y subidor privado— se reutiliza según su estado verificado en [AVANCE.md](AVANCE.md). Hay un episodio narrado de desarrollo registrado, no una demostración del nuevo flujo autónomo. El chat operativo y el reproductor embebido son requisitos pendientes; avance/descarga no equivalen a reproducción.
+La infraestructura existente —Worker, D1, proveedores IA, narrador, montaje, OAuth y subidor privado— se reutiliza según su estado verificado en [AVANCE.md](AVANCE.md). Hay un episodio narrado de desarrollo registrado, no una demostración del nuevo flujo autónomo. El modo persistente, el chat de selección y el reproductor embebido están implementados. El reproductor se desplegó y verificó con el MP4 real; su aceptación auditiva y visual humana sigue pendiente. El estudio YouTube v2 conserva una puerta de calibración; la conexión del chat y de la elección automática al flujo de investigación y producción todavía está pendiente. Avance/descarga por sí solos no equivalen a reproducción.
 
 La pausa de investigadores registrada previamente se conserva. Actualizar el plan no autoriza llamadas a proveedores, nuevas producciones, publicaciones ni cambios de producción en esta intervención. Se mantienen cero pagos, voz canónica, fuentes verificables, recursos con derechos, secretos protegidos y `main` exclusiva.
 
-**Siguiente bloque de desarrollo:** implementar P0 y conectar P1 al episodio, antes de ampliar recolectores o volver a producir monografías de empresas. Registrar separadamente código, pruebas, despliegue y aceptación real.
+**Siguiente bloque de desarrollo:** conectar el episodio elegido por chat o estudio a investigación y producción reanudables, y aceptar el estudio YouTube con muestras reales cuando se habilite la prueba integrada. El control, el reproductor y el estudio v2 ya tienen código y pruebas; no ampliar el radar antiguo. Registrar separadamente código, pruebas, despliegue y aceptación real.
 
 ## Anexo — Plan e hitos anteriores, conservados como historial
 

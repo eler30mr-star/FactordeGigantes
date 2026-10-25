@@ -35,7 +35,7 @@ test('default off, persistent mode, no selector bypass and no providers',async()
  const off=await channelStatus(env);assert.equal(off.automatic_enabled,false);assert.equal(off.allowed,false);
  const enabled=await setAutomaticMode(env,op(0,{enabled:true}));assert.equal(enabled.automatic_enabled,true);
  const reloaded=await channelStatus({...env});assert.equal(reloaded.automatic_enabled,true);assert.equal(reloaded.revision,1);
- assert.equal(reloaded.reason,'market_selector_pending');assert.equal(reloaded.allowed,false);
+ assert.equal(reloaded.reason,'research_paused');assert.equal(reloaded.allowed,false);
  assert.equal((await automaticGate({...env,FINAL_AI_INTEGRATION_ENABLED:'1'})).allowed,false);
  assert.equal(env.DB.raw.prepare('SELECT count(*) AS n FROM channel_control_events').get().n,1);
  assert.equal((await setAutomaticMode(env,op(1,{enabled:false}))).automatic_enabled,false);
