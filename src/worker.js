@@ -1,5 +1,6 @@
 import {readEpisodeInput,acceptEpisodeExport,failEpisodeExport,previewFromEvents} from './episode-production.mjs';
 import {readProductionProgress} from './production-progress.mjs';
+import {youtubeConnectionStatus,startYoutubeConnection,finishYoutubeConnection,disconnectYoutube} from './youtube-connection.mjs';
 import {storeAutonomousDraft,hasAutonomousOrigin,readEditorialScriptContext} from './autonomous-script-drafts.mjs';
 import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from "./ai-research-team.mjs";
@@ -130,6 +131,7 @@ async function restoreRejectedDispatch(env,id) {
 async function handle(request,env) {
   const url = new URL(request.url);
   if (url.pathname === "/health" && request.method === "GET") return json({ok:true,product:"Factor de Gigantes",version:"0.1.0"});
+  if(url.pathname==='/oauth/youtube/callback')return finishYoutubeConnection(request,env);
   if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
   const parts=url.pathname.split("/").filter(Boolean);
   const method=request.method;
@@ -152,6 +154,22 @@ async function handle(request,env) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  if(!renderer&&parts[1]==='youtube'&&parts.length===3&&['connection','connect','disconnect'].includes(parts[2])){
+    try{
+      if(parts[2]==='connection'&&method==='GET')return json(await youtubeConnectionStatus(env));
+      if(parts[2]!=='connection'&&method==='POST'){
+        const body=await parseBody(request);
+        const result=parts[2]==='connect'?await startYoutubeConnection(env,body):await disconnectYoutube(env,body);
+        const {cookie,...view}=result;const response=json(view,result.ok?200:result.status);
+        if(cookie)response.headers.set('Set-Cookie',cookie);return response;
+      }
+      return err('Método no admitido',405);
+    }catch(e){
+      if(/no such table: youtube_/.test(String(e?.message||'')))return err('Falta migración 0015_youtube_oauth.sql',503);
+      if(e instanceof SyntaxError||e instanceof RangeError)return err('Solicitud de conexión inválida',400);
+      return err('No se pudo completar la conexión de YouTube. Revisa su configuración.',503);
+    }
+  }
   if(!renderer&&parts[1]==='production'&&parts[2]==='runs'&&(parts.length===3||parts.length===4)){
     if(method!=='GET')return err('Método no admitido',405);
     const result=await readProductionProgress(env,parts[3]??null);

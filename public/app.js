@@ -274,6 +274,35 @@ $('production-refresh').addEventListener('click',async()=>{
   const button=$('production-refresh');button.disabled=true;
   try{await loadProductionRuns();}catch(e){$('production-status').textContent=e.message;}finally{button.disabled=false;}
 });
+async function loadYoutubeConnection(){
+  const data=await request('/api/youtube/connection');
+  const status=$('youtube-connection-status');
+  status.textContent=data.connected?'Conexión registrada: '+data.channel.title+' · '+data.channel.id+'. No hay publicación automática.':
+    !data.configured?'Pendiente de configurar el cliente OAuth del canal. La clave del estudio de YouTube no sustituye esta conexión.':
+    data.last_connection_result==='channel_mismatch'?'Google devolvió otro canal. Conecta la cuenta que administra el canal configurado.':'Canal todavía sin conectar.';
+  $('youtube-connect').disabled=!data.configured;
+  $('youtube-disconnect').hidden=!data.connection_stored;
+  $('youtube-connection-config').textContent=(data.missing.length?'Faltan: '+data.missing.join(', ')+'. ':'Configuración presente. ')+
+    'URL de retorno para Google: '+data.callback_url;
+}
+$('youtube-connection-refresh').addEventListener('click',()=>loadYoutubeConnection().catch(e=>{$('youtube-connection-status').textContent=e.message;}));
+$('youtube-connect').addEventListener('click',async()=>{
+  const button=$('youtube-connect');button.disabled=true;
+  try{
+    const data=await request('/api/youtube/connect','POST',{confirmed:true});
+    const url=new URL(data.authorization_url);
+    if(url.origin!=='https://accounts.google.com'||url.pathname!=='/o/oauth2/v2/auth')throw Error('URL de autorización inválida');
+    window.location.assign(url.href);
+  }catch(e){$('youtube-connection-status').textContent=e.message;button.disabled=false;}
+});
+$('youtube-disconnect').addEventListener('click',async()=>{
+  const button=$('youtube-disconnect');button.disabled=true;
+  try{
+    const result=await request('/api/youtube/disconnect','POST',{confirmed:true});
+    await loadYoutubeConnection();
+    if(!result.revocation_confirmed)notice('Credenciales eliminadas del sistema. Revisa también el acceso de la aplicación en tu cuenta Google.');
+  }catch(e){$('youtube-connection-status').textContent=e.message;}finally{button.disabled=false;}
+});
 $("system-refresh").addEventListener("click",()=>loadSystemStatus().catch(e=>{
   $("system-status").textContent=e.message;
 }));
@@ -769,6 +798,7 @@ $("connect").addEventListener("click",async () => {
     loadResearch().catch(e=>{$("research-status").textContent=e.message;});
     loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
     loadProductionRuns().catch(e=>{$('production-status').textContent=e.message;});
+    loadYoutubeConnection().catch(e=>{$('youtube-connection-status').textContent=e.message;});
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
     loadOpportunities().catch(e=>{$("opportunities-status").textContent=e.message;});
     loadOfficialEvidence().catch(e=>{$("official-status").textContent=e.message;});

@@ -11,17 +11,21 @@ import hashlib
 import os
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 EXPECTED_HOST = "factor-de-gigantes.martin30-eler.workers.dev"
 HEADERS = {"User-Agent": "FactorDeGigantes-ProductionSmoke/1.0",
            "Accept": "text/html,application/json,*/*"}
 MAX_BYTES = 200_000
 
+class NoRedirects(HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
 def read(base, path):
     request = Request(base + path, headers=HEADERS)
     try:
-        with urlopen(request, timeout=15) as r:
+        with build_opener(NoRedirects()).open(request, timeout=15) as r:
             return r.status, r.headers.get("Content-Type", ""), r.read(MAX_BYTES + 1)
     except HTTPError as e:
         return e.code, e.headers.get("Content-Type", ""), e.read(1024)
@@ -35,10 +39,12 @@ def probe(base):
               "checks": {}, "production_ready": False}
     checks = [
         ("/health", 200, [b'Factor de Gigantes']),
-        ("/", 200, [b'Investigar con IA', b'id="research-form"', b'id="dossier-panel"', b'id="production-detail"']),
+        ("/", 200, [b'Investigar con IA', b'id="research-form"', b'id="dossier-panel"', b'id="production-detail"', b'id="youtube-connect"']),
         ("/app.js", 200, [b'loadResearch', b'/api/research', b'/api/jobs', b'retry-render', b'/api/production/runs', 'Abrir exportación'.encode()]),
         ("/api/research", 401, [b'Acceso no autorizado']),
         ("/api/production/runs", 401, [b'Acceso no autorizado']),
+        ("/api/youtube/connection", 401, [b'Acceso no autorizado']),
+        ("/oauth/youtube/callback?state=invalid", 303, []),
         ("/api/renderer/jobs/00000000-0000-0000-0000-000000000000/episode", 401, [b'Acceso no autorizado']),
     ]
     for path, expected_status, expected_text in checks:

@@ -2,7 +2,7 @@
 
 Repositorio oficial **eler30mr-star/FactordeGigantes**, rama de trabajo **main**. Panel: [Factor de Gigantes](https://factor-de-gigantes.martin30-eler.workers.dev).
 
-El sistema descubre temas, conserva investigación y borradores citados en D1, exige revisión humana y prepara documentales originales en español. La publicación en YouTube todavía requiere su integración OAuth y autorización correspondiente.
+El sistema descubre temas, conserva investigación y borradores citados en D1, exige revisión humana y prepara documentales originales en español. La conexión OAuth de YouTube está preparada; falta configurar el cliente y conceder acceso al canal. La subida y publicación requieren su integración y autorización por episodio.
 
 ## Entrega actual
 
@@ -15,6 +15,8 @@ El sistema descubre temas, conserva investigación y borradores citados en D1, e
 La prueba final de narración canónica se sigue en [Actions](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163555937). Su inicio no equivale a generación completa, identidad vocal aprobada ni aceptación profesional. El estado verificado y los pendientes se registran en [AVANCE](docs/AVANCE.md).
 
 ## Operación y arquitectura
+
+- [Conectar el canal YouTube](docs/CONEXION_YOUTUBE.md): cliente web, consentimiento, almacenamiento cifrado y límites de esta entrega.
 
 - [Plan del proyecto](docs/PLAN_PROYECTO.md): objetivo, criterios editoriales y fases.
 - [Producción de episodios](docs/PRODUCCION_EPISODIOS.md): montaje técnico, prueba final, recuperación de tomas y conexión al panel.
