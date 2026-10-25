@@ -7,6 +7,7 @@ Para usar: API_BASE_URL=https://factor-de-gigantes.martin30-eler.workers.dev
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
@@ -35,12 +36,15 @@ def probe(base):
     checks = [
         ("/health", 200, [b'Factor de Gigantes']),
         ("/", 200, [b'Investigar con IA', b'id="research-form"', b'id="dossier-panel"']),
-        ("/app.js", 200, [b'loadResearch', b'/api/research', b'/api/jobs']),
+        ("/app.js", 200, [b'loadResearch', b'/api/research', b'/api/jobs', b'retry-render', 'Abrir exportación'.encode()]),
         ("/api/research", 401, [b'Acceso no autorizado']),
+        ("/api/renderer/jobs/00000000-0000-0000-0000-000000000000/episode", 401, [b'Acceso no autorizado']),
     ]
     for path, expected_status, expected_text in checks:
         status, ctype, data = read(base, path)
         result = {"status": status, "pass": status == expected_status and len(data) <= MAX_BYTES and all(token in data for token in expected_text)}
+        if path == '/app.js' and status == 200:
+            result['sha256'] = hashlib.sha256(data).hexdigest()
         report["checks"][path] = result
     report["production_ready"] = all(item["pass"] for item in report["checks"].values())
     report["interpretation"] = (
@@ -63,3 +67,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
