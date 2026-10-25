@@ -1,0 +1,100 @@
+"""Live chosen-episode acceptance; real providers, isolated editorial persistence."""
+import json
+import os
+import shutil
+import subprocess
+import uuid
+from pathlib import Path
+from tools.ai_clients import FreeClients, ProviderError
+from tools.ai_control import ControlClient
+from tools.ai_source_discovery import discover_sources
+from tools.channel_episode import run_episode, resolve_company
+
+FOLDER = Path('dist/final-directed-acceptance')
+COMPANY = 'BlackBerry'
+TOPIC = 'Por qué perdió su liderazgo en el mercado de teléfonos y cómo cambió su negocio'
+
+
+def store(action, **body):
+    result = subprocess.run(['node', 'tools/episode_acceptance_store.mjs'],
+        input=json.dumps({'action': action, **body}), text=True, capture_output=True, timeout=30)
+    if result.returncode:
+        raise ValueError('El contrato de persistencia editorial rechazó la prueba')
+    return json.loads(result.stdout)
+
+
+def main():
+    if os.environ.get('CONFIRM_FINAL_ACCEPTANCE') != 'true':
+        raise SystemExit('Prueba integrada no confirmada')
+    FOLDER.mkdir(parents=True, exist_ok=True)
+    audit = {'company': COMPANY, 'topic': TOPIC, 'providers': [], 'production_mode_changed': False,
+             'production_episode_created': False, 'isolated_sqlite_only': True, 'publication_authorized': False,
+             'phase': 'company_identity'}
+    try:
+        previous = os.environ.get('RESUME_DIRECTED_RUN', '')
+        if previous:
+            if not previous.isdigit():
+                raise ValueError('Run previo inválido')
+            for name in ('IDENTIDAD.json', 'FUENTES.json', 'INVESTIGACION.json', 'GUION.json', 'ACEPTACION.sqlite'):
+                source = Path('dist/previous-directed') / name
+                if source.is_file():
+                    shutil.copyfile(source, FOLDER / name)
+            audit['resumed_from_run_id'] = previous
+        identity_file = FOLDER / 'IDENTIDAD.json'
+        identity = json.loads(identity_file.read_text()) if identity_file.exists() else {
+            'episode_id': str(uuid.uuid4()), 'request_id': str(uuid.uuid4()), 'company': COMPANY, 'topic': TOPIC}
+        if identity['company'] != COMPANY or identity['topic'] != TOPIC:
+            raise ValueError('La prueba previa corresponde a otra elección')
+        identity_file.write_text(json.dumps(identity, ensure_ascii=False, indent=2))
+        store('init', identity=identity)
+        budget = ControlClient()
+        class Control:
+            def reserve(self, provider, role):
+                return budget.reserve(provider, role)
+            def request(self, path, body):
+                action = path.rsplit('/', 1)[-1]
+                if action != 'context':
+                    audit['phase'] = 'persist_' + action
+                result = store(action, body=body)
+                if action == 'research' and result.get('ok'):
+                    (FOLDER / 'INVESTIGACION.json').write_text(json.dumps(body['report'], ensure_ascii=False, indent=2))
+                if action == 'script' and result.get('ok'):
+                    (FOLDER / 'GUION.json').write_text(json.dumps(body['script'], ensure_ascii=False, indent=2))
+                return result
+        class Clients(FreeClients):
+            def generate(self, provider, prompt, **options):
+                audit['phase'] = options.get('role') or ('review' if provider == 'groq' else 'analyze')
+                try:
+                    text, metadata = super().generate(provider, prompt, **options)
+                    audit['providers'].append({'provider': provider, 'state': 'success', **metadata})
+                    return text, metadata
+                except ProviderError as exc:
+                    audit['providers'].append({'provider': provider, 'state': exc.code, 'http_status': exc.status})
+                    raise
+        def discover(selection, **options):
+            audit['phase'] = 'source_discovery'
+            saved = FOLDER / 'FUENTES.json'
+            if saved.exists():
+                audit['source_checkpoint_reused'] = True
+                return json.loads(saved.read_text())
+            sources = discover_sources(selection, **options)
+            saved.write_text(json.dumps(sources, ensure_ascii=False, indent=2))
+            return sources
+        result = run_episode(Control(), identity['request_id'], client_factory=Clients, discover=discover)
+        (FOLDER / 'RESULTADO.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
+        report = result.get('research', {})
+        audit.update(state=result['state'], evidence_count=len(report.get('evidence_manifest', [])),
+            claim_count=len(report.get('candidate_claims', [])), stages=report.get('stages', []),
+            source_quality=report.get('source_quality'), script_status=result.get('draft', {}).get('status'),
+            blocking_reasons=result.get('draft', {}).get('blocking_reasons', []), job_id=result.get('job_id'))
+        print('ACEPTACION_EPISODIO:', json.dumps(audit, ensure_ascii=False))
+    except (ValueError, RuntimeError, OSError, KeyError, TypeError) as exc:
+        audit.update(state='blocked', error_type=type(exc).__name__)
+        print('ACEPTACION_EPISODIO_BLOQUEADA:', json.dumps(audit, ensure_ascii=False))
+        raise SystemExit('Aceptación detenida; diagnóstico y resultados conservados sin credenciales') from None
+    finally:
+        (FOLDER / 'DIAGNOSTICO.json').write_text(json.dumps(audit, ensure_ascii=False, indent=2))
+
+
+if __name__ == '__main__':
+    main()

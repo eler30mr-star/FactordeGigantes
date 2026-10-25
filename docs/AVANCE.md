@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Aceptación integrada puntual del episodio dirigido iniciada
+
+Se implementa una fase explícita de prueba final para BlackBerry, ejemplo del plan, usando el runner real del episodio: resolución de identidad → fuentes observadas → análisis/revisión → guion → persistencia editorial. Los proveedores usan sus reservas D1 reales y modalidades gratuitas configuradas. La persistencia de investigación/guion usa las funciones de producción contra SQLite aislado dentro del artefacto; no crea episodios del propietario ni levanta la pausa global.
+
+Se conservan identidad, fuentes, investigación, guion, estado y base de aceptación para reanudar sin repetir búsquedas o analistas. No se suministran fuentes o prosa manuales para fingir autonomía. La prueba no autoriza render, subida ni publicación. La fase requiere main, workflow_dispatch y confirmación de prueba final.
+
+Verificación previa: sintaxis Python/JS y YAML correctas; persistencia real de investigación y borrador mediante el adaptador nuevo comprobada con fixture simulado. Resultado con proveedores reales pendiente de la ejecución, no acreditado por esta entrada.
+
 ## 2026-10-25 · Recorrido del episodio desplegado y comprobado
 
 Código `e26803a` en main. CI [40205782309](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40205782309) success: contratos, cobertura Python, QA audiovisual y smoke de producción. El smoke confirma que se sirve `episode-workbench.js` y que progreso/cierre conservan la barrera ADMIN. Cloudflare deployment `82a753f6-1cd4-458a-91e8-d9588b5be89f`, versión `40206ff9-8f1b-42fb-ae72-ecdb060df4ad`, al 100 %. Lectura del script servido confirma progreso, recuperación de checkpoint y cierre del episodio.
