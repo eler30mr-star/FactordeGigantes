@@ -185,9 +185,24 @@ async function load() {
     }
     if (j.status==="review") actions.append(actionButton("Aprobar","approve"),actionButton("Pedir cambios","request-changes"));
     if (j.status==="approved") actions.append(actionButton("Generar prueba","dispatch"),actionButton("Pedir cambios","request-changes"));
-    if (j.status==="failed") actions.append(actionButton("Rehacer guion","request-changes"));
+    if (j.status==="failed") actions.append(actionButton("Reintentar montaje","retry-render"),actionButton("Rehacer guion","request-changes"));
     if (["queued","rendering"].includes(j.status)) actions.append(tag("span","muted","Render en curso. Ver GitHub Actions."));
     if (j.status==="ready") actions.append(tag("span","muted","Prueba disponible en GitHub Actions. No publicada."));
+    if(j.status==='ready'){
+      const open=tag('button','secondary','Abrir exportación');open.type='button';
+      open.addEventListener('click',async()=>{
+        try{
+          const detail=await request('/api/jobs/'+encodeURIComponent(j.id));
+          const url=detail.preview?.run_url;
+          if(!url || !/^https:\/\/github\.com\/eler30mr-star\/FactordeGigantes\/actions\/runs\/[0-9]+$/.test(url)){
+            notice('Consulta los artefactos de esta prueba en GitHub Actions.');return;
+          }
+          const link=tag('a','','Ver video y archivos de revisión');link.href=url;link.target='_blank';link.rel='noopener noreferrer';
+          open.replaceWith(link);
+        }catch(e){notice(e.message);}
+      });
+      actions.append(open);
+    }
     card.append(actions);list.append(card);
   }
 }

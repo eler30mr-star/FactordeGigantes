@@ -1,3 +1,4 @@
+import {readEpisodeInput,acceptEpisodeExport,previewFromEvents} from './episode-production.mjs';
 import {storeAutonomousDraft,hasAutonomousOrigin,readEditorialScriptContext} from './autonomous-script-drafts.mjs';
 import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from "./ai-research-team.mjs";
@@ -108,11 +109,12 @@ async function setStatus(env,id,status, action, extra = {}) {
     .bind(status, extra.review_note ?? "", extra.last_error ?? "",id).run();
   await record(env,id,action,extra.review_note || extra.last_error || "");
 }
-async function reserveRenderDispatch(env,id) {
+async function reserveRenderDispatch(env,id,previousStatus="approved") {
+  const previous=previousStatus==="failed"?"failed":"approved";
   // Cambio condicional atómico en D1: evita dos workflow_dispatch para el mismo trabajo.
   const result=await env.DB.prepare(
     "UPDATE jobs SET status='queued', updated_at=datetime('now') "+
-    "WHERE id=? AND status='approved' AND EXISTS "+
+    "WHERE id=? AND status='"+previous+"' AND EXISTS "+
     "(SELECT 1 FROM editorial_dossiers WHERE job_id=? AND editor_attested=1 AND editor_name<>'')"
   ).bind(id,id).run();
   return result.meta?.changes === 1;
@@ -341,6 +343,33 @@ async function handle(request,env) {
     const id=parts[3];
     const row=await find(env,id);
     if (!row) return err("Trabajo inexistente",404);
+    if(parts.length===5 && ['episode','episode-report'].includes(parts[4])){
+      if(!await hasAutonomousOrigin(env.DB,id))return err('Se requiere guion autónomo trazable',404);
+      if(parts[4]==='episode' && method==='GET'){
+        const gate=await editorialGate(env,id,validateManifest(JSON.parse(row.manifest_json)));
+        if(!gate.ok)return err(gate.reason,409);
+        const input=await readEpisodeInput(env.DB,row);
+        if(!input.ok)return json(input,input.status);
+        if(row.status==='queued')await setStatus(env,id,'rendering','episode_render_started');
+        return json(input);
+      }
+      if(parts[4]==='episode-report' && method==='POST'){
+        const body=await parseBody(request);
+        if(body.status==='failed'){
+          if(!['queued','rendering'].includes(row.status))return err('Render no activo',409);
+          await setStatus(env,id,'failed','episode_render_failed',{last_error:'Revisar ejecución del episodio en GitHub Actions'});
+          if(typeof body.run_id==='string'&&/^\d{1,20}$/.test(body.run_id))await record(env,id,'episode_failed_attempt',JSON.stringify({run_id:body.run_id}));
+          return json({ok:true,automatic_publication_allowed:false});
+        }
+        const gate=await editorialGate(env,id,validateManifest(JSON.parse(row.manifest_json)));
+        if(!gate.ok)return err(gate.reason,409);
+        try{
+          const result=await acceptEpisodeExport(env.DB,row,body);
+          return json(result,result.ok?200:result.status);
+        }catch(e){if(e instanceof RangeError)return err('Informe de episodio inválido',400);throw e;}
+      }
+      return err('Método no admitido',405);
+    }
     if (await hasAutonomousOrigin(env.DB,id))
       return err("Producción canónica pendiente: este guion no admite el renderizador de previsualización",409);
     if (parts.length === 4 && method === "GET") {
@@ -424,7 +453,7 @@ async function handle(request,env) {
   }
   if (parts.length === 3 && method === "GET") {
     const e=await env.DB.prepare("SELECT action,note,created_at FROM events WHERE job_id=? ORDER BY id DESC LIMIT 40").bind(id).all();
-    return json({job:dto(row),events:e.results});
+    return json({job:dto(row),events:e.results,preview:previewFromEvents(e.results)});
   }
   if (parts.length === 3 && method === "PUT") {
     if (row.status !== "draft") return err("Solo se editan borradores",409);
@@ -458,17 +487,21 @@ async function handle(request,env) {
     await env.DB.prepare("UPDATE editorial_dossiers SET editor_attested=0, editor_name='', attested_at=NULL WHERE job_id=?").bind(id).run();
     await setStatus(env,id,"draft","changes_requested",{review_note:note}); return json({ok:true});
   }
-  if (action === "dispatch" && row.status === "approved") {
-    if (await hasAutonomousOrigin(env.DB,id))
-      return err("Integración de voz canónica y recursos por escena pendiente",409);
+  if ((action === "dispatch" && row.status === "approved") || (action === "retry-render" && row.status === "failed")) {
+    const autonomous=await hasAutonomousOrigin(env.DB,id);
     const gate=await editorialGate(env,id,validateManifest(JSON.parse(row.manifest_json)));
     if (!gate.ok) return err(gate.reason,409);
     if (!env.GITHUB_DISPATCH_TOKEN || !env.GITHUB_REPO) return err("Acceso GitHub sin configurar",503);
     const repo=env.GITHUB_REPO;
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return err("Repositorio GitHub inválido",503);
-    const workflow=env.GITHUB_WORKFLOW || "render.yml";
+    let resumeRun='';
+    if(autonomous&&row.status==='failed'){
+      const attempt=await env.DB.prepare("SELECT note FROM events WHERE job_id=? AND action='episode_failed_attempt' ORDER BY id DESC LIMIT 1").bind(id).first();
+      try{const run=JSON.parse(attempt?.note||'{}').run_id;if(/^\d{1,20}$/.test(run))resumeRun=run;}catch{}
+    }
+    const workflow=autonomous?"development-episode.yml":(env.GITHUB_WORKFLOW || "render.yml");
     const endpoint="https://api.github.com/repos/"+repo+"/actions/workflows/"+encodeURIComponent(workflow)+"/dispatches";
-    if (!await reserveRenderDispatch(env,id))
+    if (!await reserveRenderDispatch(env,id,row.status))
       return err("Render ya reservado, o el estado/aprobación cambió; no duplicar el envío",409);
     let response;
     try {
@@ -476,7 +509,7 @@ async function handle(request,env) {
         "Authorization":"Bearer "+env.GITHUB_DISPATCH_TOKEN, "Accept":"application/vnd.github+json",
         "X-GitHub-Api-Version":"2022-11-28","User-Agent":"FactorDeGigantes-Worker",
         "Content-Type":"application/json"
-      },body:JSON.stringify({ref:"main", inputs:{job_id:id}})});
+      },body:JSON.stringify({ref:"main", inputs:autonomous?{job_id:id,mode:"final_ai",confirm_final_test:"true",resume_run_id:resumeRun}:{job_id:id}})});
     } catch {
       // Puede haberse entregado a GitHub pese al timeout: bloquear reintento ciego.
       await record(env,id,"render_dispatch_unknown","Resultado de red indeterminado; revisar Actions antes de reintentar");

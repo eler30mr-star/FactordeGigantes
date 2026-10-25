@@ -15,6 +15,18 @@ on:
 permissions:
   contents: read
 jobs:
+  complete-episode:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[episode-e2e]')
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Probar montaje completo sin usar proveedores
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run development-episode.yml --ref main --repo "$GITHUB_REPOSITORY" -f mode=technical
   live-corroboration:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[corroborate-e2e]')
     needs: checks
@@ -57,7 +69,9 @@ jobs:
       - name: Verificar detección de exportaciones defectuosas sin IA ni voz nueva
         env:
           FDG_MEDIA_QA_INTEGRATION: '1'
-        run: python -m unittest tests.test_av_quality -v
+        run: |
+          python -m pip install 'Pillow==11.3.0'
+          python -m unittest tests.test_av_quality tests.test_episode_engine -v
   live-profile:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[profile-e2e]')
     needs: checks
@@ -114,6 +128,7 @@ jobs:
         run: |
           node --check src/worker.js
           node --check src/autonomous-script-drafts.mjs
+          node --check src/episode-production.mjs
           node --check src/ai-research-team.mjs
           node --check src/market-radar.mjs
           node --check src/market-ingest.mjs
@@ -137,7 +152,7 @@ jobs:
       - name: Pruebas de contratos del renderizador
         run: python -m unittest discover -s tests -v
       - name: Verificar seguridad editorial en API Worker y contrato D1
-        run: node --test tests/test_editorial_gate.mjs tests/test_dossier_editor.mjs tests/test_research_control.mjs tests/test_system_readiness.mjs tests/test_market_radar_api.mjs tests/test_market_ingest.mjs tests/test_github_oidc.mjs tests/test_news_ingest.mjs tests/test_news_triage.mjs tests/test_youtube_market.mjs tests/test_market_cross_signals.mjs tests/test_news_entity_ingest.mjs tests/test_market_assessment.mjs tests/test_market_official_ingest.mjs tests/test_market_pdf_ingest.mjs tests/test_market_research_ingest.mjs tests/test_market_research_selection.mjs tests/test_ai_research_team.mjs tests/test_autonomous_script_drafts.mjs
+        run: node --test tests/test_editorial_gate.mjs tests/test_dossier_editor.mjs tests/test_research_control.mjs tests/test_system_readiness.mjs tests/test_market_radar_api.mjs tests/test_market_ingest.mjs tests/test_github_oidc.mjs tests/test_news_ingest.mjs tests/test_news_triage.mjs tests/test_youtube_market.mjs tests/test_market_cross_signals.mjs tests/test_news_entity_ingest.mjs tests/test_market_assessment.mjs tests/test_market_official_ingest.mjs tests/test_market_pdf_ingest.mjs tests/test_market_research_ingest.mjs tests/test_market_research_selection.mjs tests/test_ai_research_team.mjs tests/test_autonomous_script_drafts.mjs tests/test_episode_production.mjs
       - name: Validar manifest de ejemplo
         run: python tools/render.py --manifest examples/documental.json --validate-only
 

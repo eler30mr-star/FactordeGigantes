@@ -1,0 +1,257 @@
+name: FDG - episodio completo de desarrollo
+run-name: Episodio de desarrollo · ${{ inputs.mode }}
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Técnico sin IA o prueba final con narrador canónico'
+        type: choice
+        options: [technical, final_ai]
+        default: technical
+      confirm_final_test:
+        description: 'Ejecutar ahora la prueba final con Qwen CPU; no publica ni activa búsquedas programadas'
+        type: boolean
+        default: false
+      episode_path:
+        description: 'Paquete JSON versionado; preparado por Codex o adaptado del guionista'
+        type: string
+        default: research/theranos-development/EPISODIO_DESARROLLO.json
+      job_id:
+        description: 'Trabajo aprobado del panel; vacío para el paquete de desarrollo'
+        type: string
+        default: ''
+      resume_run_id:
+        description: 'Run previo con tomas canónicas para reanudar sin regenerarlas; opcional'
+        type: string
+        default: ''
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: fdg-development-episode-${{ inputs.mode }}
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      scenes: ${{ steps.plan.outputs.scenes }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validar paquete y preparar matriz de escenas sin proveedores
+        id: plan
+        env:
+          EPISODE_PATH: ${{ inputs.episode_path }}
+          EPISODE_MODE: ${{ inputs.mode }}
+          FINAL_AI_INTEGRATION_ENABLED: ${{ vars.FINAL_AI_INTEGRATION_ENABLED }}
+          EPISODE_JOB_ID: ${{ inputs.job_id }}
+          FINAL_TEST_CONFIRMED: ${{ inputs.confirm_final_test }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from tools.episode_package import validate_episode,voice_plan
+          if os.environ['EPISODE_MODE']=='final_ai' and os.environ.get('FINAL_AI_INTEGRATION_ENABLED')!='1' and os.environ.get('FINAL_TEST_CONFIRMED')!='true':
+              raise SystemExit('Pruebas de IA pausadas por el propietario; activar sólo para la prueba final integrada.')
+          if os.environ.get('EPISODE_JOB_ID'):
+              if os.environ['EPISODE_MODE']!='final_ai':
+                  raise SystemExit('Un trabajo aprobado sólo admite montaje con narración canónica.')
+              from tools.production_job import prepare_job
+              episode=prepare_job(os.environ['EPISODE_JOB_ID'],Path('dist/prepared'))
+          else:
+              root=Path.cwd().resolve()
+              path=(root/os.environ['EPISODE_PATH']).resolve()
+              path.relative_to(root)
+              episode=json.loads(path.read_text(encoding='utf-8'))
+          summary=validate_episode(episode)
+          folder=Path('dist/prepared');folder.mkdir(parents=True,exist_ok=True)
+          (folder/'EPISODIO.json').write_text(json.dumps(episode,ensure_ascii=False,indent=2)+'\n')
+          (folder/'PLAN_VOZ.json').write_text(json.dumps(voice_plan(episode),ensure_ascii=False,indent=2)+'\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              output.write('scenes='+json.dumps([s['id'] for s in episode['scenes']])+'\n')
+          print('PAQUETE:',json.dumps(summary),'ORIGEN:',episode['origin'],'APIS_IA: 0')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fdg-episode-input
+          path: dist/prepared/
+          retention-days: 7
+  technical:
+    if: inputs.mode == 'technical'
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: fdg-episode-input
+          path: dist/prepared/
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/fdg-ffmpeg/ffmpeg.tar.xz
+          key: ffmpeg-linux64-97ce978979194b5cf7e06a5e68020dbdaa7a4f3294c5452b6a1bc347100dbb79
+      - name: Preparar exportador local sin llamadas a IA
+        run: |
+          bash tools/setup_ci_ffmpeg.sh
+          python -m pip install 'Pillow==11.3.0'
+          python -m tools.approved_voice --check
+      - name: Exportar ocho a catorce minutos y comprobar el archivo real
+        run: python -m tools.episode_render --episode dist/prepared/EPISODIO.json --out dist/export --technical-test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fdg-episode-technical-review
+          path: |
+            dist/export/*.mp4
+            dist/export/*.json
+            dist/export/*.srt
+            dist/export/*.vtt
+            dist/export/*.html
+            dist/export/*.md
+            dist/export/*.txt
+          if-no-files-found: error
+          retention-days: 7
+  voice:
+    if: inputs.mode == 'final_ai'
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        scene: ${{ fromJSON(needs.prepare.outputs.scenes) }}
+    env:
+      HF_HOME: /tmp/fdg-canonical-model
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      OMP_NUM_THREADS: '4'
+      OPENBLAS_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: fdg-episode-input
+          path: dist/prepared/
+      - name: Recuperar tomas del intento anterior si se solicitó reanudar
+        if: inputs.resume_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+          VOICE_SCENE: ${{ matrix.scene }}
+        run: |
+          [[ "$RESUME_RUN_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESUME_RUN_ID/artifacts" > /tmp/fdg-resume-artifacts.json
+          FOUND=$(python -c 'import json,os; print(int(any(a["name"]=="fdg-voice-"+os.environ["VOICE_SCENE"] and not a["expired"] for a in json.load(open("/tmp/fdg-resume-artifacts.json"))["artifacts"])))')
+          if [ "$FOUND" = '1' ]; then
+            gh run download "$RESUME_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "fdg-voice-$VOICE_SCENE" --dir dist/voice
+          fi
+      - uses: actions/cache@v4
+        with:
+          path: /tmp/fdg-canonical-model
+          key: fdg-canonical-qwen17-cpu-v1
+      - name: Preparar TTS CPU sólo en prueba final
+        run: |
+          python -m tools.approved_voice --check
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg sox
+          python -m pip install torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'qwen-tts==0.1.1' --no-deps
+          python -m pip install 'transformers==4.57.3' 'accelerate==1.12.0' librosa soundfile sox onnxruntime einops
+      - name: Narrar únicamente las tomas faltantes de la escena
+        env:
+          VOICE_SCENE: ${{ matrix.scene }}
+        run: timeout -k 15s 1200s python -m tools.episode_voice --episode dist/prepared/EPISODIO.json --out dist/voice --scene "$VOICE_SCENE" --final-ai-test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fdg-voice-${{ matrix.scene }}
+          path: dist/voice/
+          retention-days: 7
+          if-no-files-found: warn
+  narrated:
+    if: inputs.mode == 'final_ai'
+    needs: [prepare, voice]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: fdg-episode-input
+          path: dist/prepared/
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: fdg-voice-*
+          merge-multiple: true
+          path: dist/voice/
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/fdg-ffmpeg/ffmpeg.tar.xz
+          key: ffmpeg-linux64-97ce978979194b5cf7e06a5e68020dbdaa7a4f3294c5452b6a1bc347100dbb79
+      - name: Preparar exportador
+        run: |
+          bash tools/setup_ci_ffmpeg.sh
+          python -m pip install 'Pillow==11.3.0'
+      - name: Montar únicamente si todas las tomas canónicas coinciden y ejecutar QA
+        env:
+          EPISODE_JOB_ID: ${{ inputs.job_id }}
+        run: |
+          mkdir -p dist/export
+          if [ -n "$EPISODE_JOB_ID" ]; then cp dist/prepared/PIPELINE_CONTEXT.json dist/export/PIPELINE_CONTEXT.json; fi
+          python -m tools.episode_render --episode dist/prepared/EPISODIO.json --out dist/export --voice-dir dist/voice
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fdg-episode-narrated-review
+          path: |
+            dist/export/*.mp4
+            dist/export/*.json
+            dist/export/*.srt
+            dist/export/*.vtt
+            dist/export/*.html
+            dist/export/*.md
+            dist/export/*.txt
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Registrar vista previa narrada en el panel después de subir artefactos
+        if: success() && inputs.job_id != ''
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+          EPISODE_JOB_ID: ${{ inputs.job_id }}
+        run: python -m tools.production_job report "$EPISODE_JOB_ID" --status ready --out dist/export
+  report-failure:
+    if: >-
+      always() && inputs.job_id != '' &&
+      (needs.prepare.result == 'failure' || needs.voice.result == 'failure' || needs.narrated.result == 'failure' ||
+       needs.voice.result == 'cancelled' || needs.narrated.result == 'cancelled')
+    needs: [prepare, voice, narrated]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Registrar fallo técnico reanudable sin revocar la revisión humana
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+          EPISODE_JOB_ID: ${{ inputs.job_id }}
+        run: python -m tools.production_job report "$EPISODE_JOB_ID" --status failed --out dist/export

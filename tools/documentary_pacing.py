@@ -55,8 +55,9 @@ def run(source: Path, target: Path, speed=.94, pause_seconds=.16, max_breaks=3):
             writer.setsampwidth(width)
             writer.setframerate(rate)
             writer.writeframes(final)
+        codec = ["-c:a", "pcm_s16le"] if target.suffix.lower()==".wav" else ["-c:a", "libmp3lame", "-b:a", "160k"]
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(paused),
-                        "-c:a", "libmp3lame", "-b:a", "160k", str(target)],
+                        *codec, str(target)],
                        check=True, timeout=90)
     report = json.loads(subprocess.check_output(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", str(target)],
@@ -74,3 +75,4 @@ if __name__ == "__main__":
     parser.add_argument("--max-breaks", type=int, default=3)
     args = parser.parse_args()
     print(json.dumps(run(args.source, args.target, args.speed, args.pause, args.max_breaks), indent=2))
+
