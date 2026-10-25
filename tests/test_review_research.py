@@ -51,7 +51,9 @@ class ReviewResumeTests(unittest.TestCase):
         return FreeClients(env=configured('groq'),reserve=lambda *_:True,transport=transport)
 
     def test_one_groq_call_updates_candidate_support_without_research_or_input_mutation(self):
-        research=self.research();original=copy.deepcopy(research);calls=[]
+        research=self.research()
+        research['corroboration_continuation']={'review_pending_reason':'comparison_passages_omitted'}
+        original=copy.deepcopy(research);calls=[]
         result=review_existing(research,clients=self.client(calls),source_run_id=RUN)
         report=result['report']
         self.assertEqual(result['status'],'review_completed_candidate_only')
@@ -63,6 +65,7 @@ class ReviewResumeTests(unittest.TestCase):
         self.assertEqual(len([s for s in report['stages'] if s['provider']=='groq']),1)
         self.assertEqual(result['source_downloads'],0)
         self.assertFalse(report['publication_authorized'])
+        self.assertNotIn('review_pending_reason', report['corroboration_continuation'])
         validate_report_locally(report)
 
     def test_repeating_same_review_contract_does_not_reserve_or_persist_again(self):
@@ -102,3 +105,4 @@ class ReviewResumeTests(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
+

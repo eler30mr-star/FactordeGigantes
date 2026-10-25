@@ -68,6 +68,8 @@ def review_existing(research, *, clients, source_run_id):
     report['candidate_claims']=assign_reviewed_support(report['candidate_claims'],reviews)
     report['source_quality']=evidence_gaps(report['evidence_manifest'],report['candidate_claims'])
     report['support_review_method']=METHOD
+    if isinstance(report.get('corroboration_continuation'), dict):
+        report['corroboration_continuation'].pop('review_pending_reason', None)
     report['review_resumption']={'method':METHOD,'source_run_id':source_run_id,
         'source_report_sha256':hashlib.sha256(json.dumps(research,ensure_ascii=False,sort_keys=True).encode()).hexdigest(),
         'reviewed_on':datetime.now(timezone.utc).date().isoformat(),
@@ -110,3 +112,4 @@ def main():
 
 
 if __name__=='__main__':main()
+

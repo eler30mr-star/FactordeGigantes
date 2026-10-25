@@ -1,5 +1,15 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Revisión real completada y continuidad desplegada
+
+Run 40214951196 success: reanudó únicamente Groq (2.331 tokens entrada/1.372 salida), sin búsquedas, descargas ni repetición de Gemini/Qwen. El fallo previo era comparison_passages_omitted; la nueva matriz cumplió el contrato. Una afirmación incorporó apoyo candidato de dos documentos independientes. Se conservan seis pasajes, dos documentos/dominios y seis afirmaciones. Falta fuente primaria y contraste de cinco afirmaciones: guion/video permanecen bloqueados.
+
+Código 3ab354f, CI 40214918373 success. Cloudflare deployment 1735f9b5-31ae-493f-aa51-e04b4273166d, versión 2db3dd88-0e88-4516-97a6-8fe29d4ade5e, al 100 %. Se leyeron las fases de recuperación del script servido. Artefacto final 12607275865, SHA ZIP c27a4f3ec3bde1c698167dda431094ccb1245029f04ca9d297cb4a10977e3099.
+
+Se corrige un motivo de revisión pendiente que permanecía en metadata tras aprobarse la matriz; la regresión confirma su retirada del resultado activo y la preservación de la entrada original. Se elimina el disparador temporal por mensaje de commit; permanece la fase manual explícita y reanudable. Evidencia y diferencias entre proveedores reales/SQLite aislado en docs/ACEPTACION_EPISODIO_DIRIGIDO.md.
+
+53 pruebas Python enfocadas y 163 contratos Node aprobados en el bloque. La pausa, automático y publicación conservan sus controles. No se crea un episodio del propietario ni se acredita el flujo completo hasta video. Siguiente paso: continuar contraste desde el último artefacto, buscando originales corporativos observados para las afirmaciones restantes.
+
 ## 2026-10-25 · Continuación real conserva nueva fuente; revisión pendiente identificada
 
 Run `40208403147` completado sobre el expediente previo: no ejecutó Gemini ni Qwen. Tavily y las descargas añadieron tres pasajes; la investigación pasó de un documento/dominio a dos, seis pasajes y las seis afirmaciones originales conservadas. Groq respondió (2.331 entrada/1.040 salida), pero la revisión de las nuevas citas no superó el contrato y quedó pendiente, con las fuentes guardadas. El sitio corporativo devolvió un rechazo ValueError del lector; no se inventó fuente primaria ni se permitió guion/render.
