@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Publicación/programación desplegadas y CI comprobado
+
+Código `f6b8d93`, CI `40197571459` success en contratos, cobertura Python, QA audiovisual y smoke posterior. Cloudflare deployment `bda807e9-eba8-47d9-a3c2-6cf23bdf9cc1`, versión `4202ea2e-4fa8-4d52-b4db-302bcce1c35d`, al 100 %. Lectura del Worker desplegado confirma el módulo de publicaciones y la comprobación del scope ampliado. El smoke incluye el módulo nuevo del panel y la barrera ADMIN de publicación.
+
+157 contratos Node locales aprobados; las siete pruebas nuevas de Google son simuladas, incluida ampliación OAuth aceptada/incompleta, sin fingir consentimiento real. Migración 0020 aplicada. La exportación real continúa en revisión y la tabla de publicaciones sigue vacía al verificar la migración. No se inició ninguna subida, publicación ni programación real.
+
+La implementación de publicación queda entregada con controles humanos por archivo. Pendientes: aceptación real del flujo de IA y calibración del mercado, revisión/ derechos del documental, consentimiento Google ampliado y primera subida/publicación autorizadas. La pausa de investigadores se conserva; no se declara completado el proyecto operativo solo por pasar CI.
+
 ## 2026-10-25 · Publicación inmediata y programación autorizadas implementadas
 
 Se añade al panel el cierre posterior a la subida privada: elegir publicar ahora o programar una fecha UTC, identificar responsable y autorizar explícitamente el SHA exacto del video revisado. Ningún cron, investigación ni callback de subida puede iniciar esta operación. El servidor comprueba revisión completa, archivo, estado privado y canal conectado antes de reservar.
