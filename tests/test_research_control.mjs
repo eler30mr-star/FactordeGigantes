@@ -4,7 +4,7 @@ import worker from "../src/worker.js";
 import {validateResearchTopic,researchTopicKey,launchResearch,listResearchRequests,matchResearchRuns} from "../src/research-control.mjs";
 
 const TOKEN="private-admin-token-for-tests-0001";
-const ENV={GITHUB_REPO:"eler30mr-star/FactordeGigantes",GITHUB_DISPATCH_TOKEN:"private-github-token-for-tests-0001",ADMIN_TOKEN:TOKEN};
+const ENV={GITHUB_REPO:"eler30mr-star/FactordeGigantes",GITHUB_DISPATCH_TOKEN:"private-github-token-for-tests-0001",ADMIN_TOKEN:TOKEN,FINAL_AI_INTEGRATION_ENABLED:'1'};
 class ResearchDB {
   constructor(){this.requests=[];}
   prepare(sql){
@@ -222,4 +222,17 @@ test("fallo de lectura de GitHub nunca afirma que una ejecución finalizó",asyn
   const denied=await listResearchRequests(e,{includeRuns:true,githubFetch:async()=>({ok:false,status:403})});
   assert.equal(denied.run_lookup,"unavailable");
   assert.equal(denied.requests[0].run,null);
+});
+
+
+test('pausa del propietario bloquea solicitudes antes de reservar D1 o contactar GitHub',async()=>{
+ for(const flag of [undefined,'0','true',true]){
+  const e={...ENV,FINAL_AI_INTEGRATION_ENABLED:flag,DB:{prepare(){throw Error('No reservar cuota durante pausa');}}};
+  const result=await launchResearch(e,{topic:'Theranos y sus decisiones',confirmed:true},async()=>{throw Error('No contactar proveedores');});
+  assert.equal(result.status,409);assert.match(result.error,/pausados/);
+ }
+ const e=env();delete e.FINAL_AI_INTEGRATION_ENABLED;
+ assert.equal((await listResearchRequests(e)).research_paused,true);
+ const req=new Request('https://test/api/research',{method:'POST',headers:{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify({topic:'Theranos y sus decisiones',confirmed:true})});
+ assert.equal((await worker.fetch(req,e)).status,409);assert.equal(e.DB.requests.length,0);
 });

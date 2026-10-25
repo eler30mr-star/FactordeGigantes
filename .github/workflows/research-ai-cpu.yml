@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   investigation:
-    if: github.event.repository.private == false
+    if: github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1'
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
@@ -158,3 +158,4 @@ jobs:
           path: dist/investigacion/
           retention-days: 3
           if-no-files-found: warn
+

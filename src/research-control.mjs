@@ -82,10 +82,13 @@ export async function listResearchRequests(env,{includeRuns=false,githubFetch=fe
     }
   }
   return {requests,workflow_url:workflowUrl,daily_limit:DAILY_LIMIT,run_lookup:lookup,
+          research_paused:env.FINAL_AI_INTEGRATION_ENABLED!=='1',
           outcome_note:"El estado GitHub procede de Actions y no autoriza publicar. Si no aparece un run, verifica Actions manualmente."};
 }
 
 export async function launchResearch(env, payload, githubFetch=fetch, now=new Date()) {
+  if(env.FINAL_AI_INTEGRATION_ENABLED!=='1')
+    return {ok:false,status:409,error:'Investigadores pausados durante el desarrollo; se habilitarán en la prueba final integrada.'};
   if (!payload || payload.confirmed !== true)
     return {ok:false,status:400,error:"Confirma expresamente que deseas utilizar minutos de GitHub Actions."};
   const topic=validateResearchTopic(payload.topic);
@@ -141,3 +144,4 @@ export async function launchResearch(env, payload, githubFetch=fetch, now=new Da
           workflow_url:workflowUrl,
           notice:"GitHub aceptó la solicitud; la ejecución y los resultados deben comprobarse en Actions. No se publicará ningún video."};
 }
+

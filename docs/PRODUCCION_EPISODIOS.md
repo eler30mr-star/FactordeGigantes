@@ -39,3 +39,7 @@ El Worker compara la narración con el borrador trazable. Una edición requiere 
 Un fallo conserva el expediente y su aprobación. «Reintentar montaje» recupera el identificador de la ejecución anterior. «Abrir exportación» enlaza únicamente al resultado oficial de Actions del repositorio; no publica contenido. Un timeout de despacho de resultado incierto bloquea la repetición ciega.
 
 No se requiere migración nueva. Las claves no se escriben en paquetes ni checkpoints. La publicación en YouTube, los derechos comerciales y la aprobación editorial continúan separados del éxito técnico.
+
+## Pausa de investigación durante el desarrollo
+
+La pausa también afecta a la investigación manual del panel y a `research-ai-cpu.yml`. El Worker devuelve 409 antes de reservar D1 o contactar GitHub; el panel muestra el estado y desactiva su botón. Los informes anteriores siguen disponibles. Para la futura prueba integrada de investigación se requiere `FINAL_AI_INTEGRATION_ENABLED=1` tanto en variables Actions como en el Worker. Su valor de producción predeterminado es `0` en `wrangler.jsonc`. La confirmación individual de voz final no cambia estos valores.

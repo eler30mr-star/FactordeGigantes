@@ -17,6 +17,7 @@ export async function systemReadiness(env) {
     github_dispatch_secret_present:dispatchTokenPresent,
     research_prerequisites_present:tables.research_requests && tables.jobs &&
        githubRepositoryConfigured && dispatchTokenPresent,
+    research_paused:env.FINAL_AI_INTEGRATION_ENABLED!=='1',
     render_prerequisites_present:tables.jobs && tables.events && tables.editorial_dossiers &&
        githubRepositoryConfigured,
     checks_do_not_certify_external_permissions:true,
@@ -26,3 +27,4 @@ export async function systemReadiness(env) {
     note:"Comprobación local del Worker y D1. No ejecuta IA, no prueba permisos de GitHub ni autoriza publicar."
   };
 }
+

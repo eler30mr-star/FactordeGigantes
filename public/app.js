@@ -1,5 +1,6 @@
 import {mountEditorialEditor} from "./dossier-editor.js";
 let adminToken = "";
+let researchPaused = true;
 let editingJobId = null;
 let dossierJobId = null;
 let dossierJobStatus = null;
@@ -216,7 +217,7 @@ async function loadSystemStatus() {
     data.github_repository_configured ? "Repositorio: correcto" : "Repositorio: revisar configuración",
     data.github_dispatch_secret_present ?
       "Token de despacho: presente (permisos sin comprobar)" : "Token de despacho: ausente",
-    data.research_prerequisites_present ?
+    data.research_paused ? "Investigadores: pausados durante el desarrollo" : data.research_prerequisites_present ?
       "Investigación: requisitos locales presentes" : "Investigación: requisitos incompletos",
     "Publicación en YouTube: no autorizada"
   ];
@@ -251,11 +252,13 @@ function researchRow(item) {
 }
 async function loadResearch(includeRuns=false) {
   const data=await request(includeRuns?"/api/research?runs=1":"/api/research");
+  researchPaused=data.research_paused===true;
+  $("research-start").disabled=researchPaused;
   const container=$("research-history");
   container.replaceChildren();
   if(!data.requests.length) container.append(tag("p","muted","Sin investigaciones solicitadas aún."));
   for(const item of data.requests) container.append(researchRow(item));
-  $("research-status").textContent="Solicitudes registradas: "+data.requests.length+
+  $("research-status").textContent=(researchPaused?"Investigadores pausados hasta la prueba final integrada. ":"")+"Solicitudes registradas: "+data.requests.length+
     (data.run_lookup==="checked" ? ". Estados consultados en GitHub Actions; los registros sin ejecución asociada siguen pendientes de comprobar." :
     data.run_lookup==="unavailable" ? ". GitHub no respondió o faltan permisos de lectura; consulta Actions directamente." :
     ". Pulsa «Actualizar» para consultar las ejecuciones.");
@@ -685,6 +688,7 @@ $("research-refresh").addEventListener("click",()=>loadResearch(true).catch(e=>{
 }));
 $("research-form").addEventListener("submit",async event=>{
   event.preventDefault();
+  if(researchPaused)return notice('Investigadores pausados durante el desarrollo.');
   const topic=$("research-topic").value.trim();
   if (!topic) return;
   if (!confirm("¿Iniciar investigación IA de «"+topic+"»? Consume minutos de GitHub Actions. No publica contenido."))return;
@@ -699,7 +703,7 @@ $("research-form").addEventListener("submit",async event=>{
   }catch(e){
     $("research-status").textContent=e.message;
     notice(e.message);
-  }finally{btn.disabled=false;}
+  }finally{btn.disabled=researchPaused;}
 });
 
 $("connect").addEventListener("click",async () => {

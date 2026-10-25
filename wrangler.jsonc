@@ -20,6 +20,7 @@
   "vars": {
     "GITHUB_REPO": "eler30mr-star/FactordeGigantes",
     "GITHUB_WORKFLOW": "render.yml",
-    "CLOUDFLARE_AI_FREE_CONFIRMED": "0"
+    "CLOUDFLARE_AI_FREE_CONFIRMED": "0",
+    "FINAL_AI_INTEGRATION_ENABLED": "0"
   }
 }
