@@ -29,7 +29,7 @@ jobs:
         run: gh workflow run development-episode.yml --ref main --repo "$GITHUB_REPOSITORY" -f mode=technical
   final-episode:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[final-episode-e2e]')
-    needs: [checks, audiovisual-quality]
+    needs: [checks, audiovisual-quality, production-smoke]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions:
@@ -129,6 +129,36 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY"
+  production-smoke:
+    needs: [checks, audiovisual-quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verificar panel desplegado después de los contratos
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,time
+          from pathlib import Path
+          from tools.production_smoke import probe
+          expected=hashlib.sha256(Path('public/app.js').read_bytes()).hexdigest()
+          for attempt in range(6):
+              try:
+                  report=probe(os.environ['API_BASE_URL'])
+                  if report['production_ready'] and report['checks']['/app.js'].get('sha256')==expected:
+                      print('PANEL_DESPLEGADO:',json.dumps(report,ensure_ascii=False))
+                      break
+              except Exception as exc:
+                  print('Consulta no disponible:',type(exc).__name__)
+              if attempt==5:raise SystemExit('El panel desplegado aún no coincide con este código; revisar despliegue.')
+              print('Esperando sincronización del despliegue; sin iniciar producción ni IA.')
+              time.sleep(8)
+          PY
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
