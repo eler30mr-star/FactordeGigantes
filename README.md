@@ -1,40 +1,38 @@
-# Factor de Gigantes — sistema de automatización de YouTube
+# Factor de Gigantes — automatización documental
 
-Repositorio oficial: **eler30mr-star/FactordeGigantes** · rama única de trabajo **`main`**.
+Repositorio oficial **eler30mr-star/FactordeGigantes**, rama de trabajo **main**. Panel: [Factor de Gigantes](https://factor-de-gigantes.martin30-eler.workers.dev).
 
-## Meta
+El sistema descubre temas, conserva investigación y borradores citados en D1, exige revisión humana y prepara documentales originales en español. La publicación en YouTube todavía requiere su integración OAuth y autorización correspondiente.
 
-Plataforma propia para gestionar documentales originales en español sobre grandes empresas, innovación, inventos y decisiones históricas. Flujo editorial:
+## Entrega actual
 
-**idea e investigación → guion con fuentes → revisión humana → aprobación → render de previsualización → control de calidad → publicación autorizada en YouTube (fase futura)**.
+- **Panel y API desplegados:** oportunidades de mercado, fuentes, equipo investigador, guion, expediente editorial, aprobación y seguimiento del montaje.
+- **Motor genérico de episodios:** voz canónica Qwen3-TTS Base 1.7B CPU, tomas recuperables, gráficos originales por escena, MP4, capítulos, SRT/VTT, créditos, QA sobre archivo real y página de revisión. La generación final y la aprobación auditiva son verificaciones distintas.
+- **Desarrollo sin gastar búsquedas de proveedores:** Codex preparó directamente el [guion citado de Theranos](research/theranos-development/GUION_PRUEBA_CITADO.md), con 1.600 palabras, ocho escenas y nueve fuentes. No se presenta como investigación autónoma de las otras IA.
+- **Montaje técnico completo comprobado en GitHub:** [descargar video y material de revisión](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163254722/artifacts/12587492309), 11:36, QA aprobada. **Contiene señal de audio técnica, no narración.** Artefacto temporal, retención de siete días.
+- **Investigadores pausados** por indicación del propietario, incluidos cron y lanzamiento desde el panel. Su prueba integrada se habilita expresamente; la prueba final individual del narrador no los reactiva.
 
-El sistema NO publica videos automáticamente en esta primera etapa. No está conectado a un canal de YouTube todavía. Esto protege el canal de errores y contenido repetitivo que afecte su monetización.
+La prueba final de narración canónica se sigue en [Actions](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163555937). Su inicio no equivale a generación completa, identidad vocal aprobada ni aceptación profesional. El estado verificado y los pendientes se registran en [AVANCE](docs/AVANCE.md).
 
-## Tecnología
+## Operación y arquitectura
 
-- **Cloudflare Workers + D1 + static assets**: panel, API privada, revisión y estados.
-- **GitHub Actions**: motor de render activable desde el panel (workflow_dispatch).
-- **FFmpeg + Pillow + Piper TTS (voz neuronal local)**: motor de previsualización con movimientos de cámara, subtítulos y ficha técnica. Piper ya está validado en GitHub Actions con WAV y MP4 reales, y ahora es el motor predeterminado del workflow de render.\n- **eSpeak NG**: modo exclusivamente técnico para comparaciones y diagnósticos; la voz no constituye una versión publicable.
-- **Sin n8n obligatorio ni máquina local encendida**.
+- [Plan del proyecto](docs/PLAN_PROYECTO.md): objetivo, criterios editoriales y fases.
+- [Producción de episodios](docs/PRODUCCION_EPISODIOS.md): montaje técnico, prueba final, recuperación de tomas y conexión al panel.
+- [Configuración del equipo IA](docs/CONFIGURACION_EQUIPO_IA.md): proveedores, funciones y límites.
+- [Despliegue](docs/DESPLIEGUE.md) y [QA audiovisual](docs/QA_AUDIOVISUAL.md).
 
-## Archivos clave
+Cloudflare Workers sirve el panel y la API; D1 conserva proyectos, evidencias y eventos. GitHub Actions ejecuta investigación y producción con permisos separados. FFmpeg y Pillow construyen los gráficos, subtítulos y exportaciones; Qwen usa la referencia aprobada sin sustituirla. El renderizador anterior (`tools/render.py`, Piper/eSpeak) permanece como previsualización histórica y no recibe los guiones autónomos canónicos.
 
-- `docs/PLAN_PROYECTO.md` — visión, arquitectura, seguridad, monetización y fases.
-- `docs/AVANCE.md` — historial preciso y próximo paso.
-- `docs/DESPLIEGUE.md` — configuración manual en Cloudflare y GitHub.
-- `src/worker.js` — API Worker.
-- `public/` — panel web.
-- `migrations/` — modelo de datos D1.
-- `.github/workflows/render.yml` — ensamblado de videos.
-- `tools/render.py` — motor de video.
-- `examples/documental.json` — ejemplo técnico, NO un guion publicado.\n- `tools/voice.py` — motor Piper local con checksum de modelo y motor eSpeak técnico.\n- `tools/subtitles.py` — generación de subtítulos SRT aproximados.\n- `.github/workflows/voice-smoke.yml` — prueba auditiva independiente de voz neuronal.\n- `docs/MOTOR_AUDIOVISUAL.md` — licencias, procedencia, mejoras y limitaciones del motor.
+No se necesita una laptop encendida ni n8n. La API no devuelve secretos y los tokens del panel y del renderizador tienen funciones distintas. Un resultado técnico no concede aprobación factual, licencias, identidad vocal ni permiso de publicación.
 
-## Estado
+## Desarrollo
 
-**Backend técnico conectado y radar real:** Worker y D1 desplegados; base `0001–0004` migrada; el descubridor diario detectó compañías públicas sin lista manual y un workflow autenticado con **GitHub OIDC** confirmó la escritura real de dos empresas y dos series Wikimedia en D1. El panel cuenta con sección privada de radar. El render preliminar está comprobado, pero la investigación competitiva YouTube, elección autónoma fundamentada, documental profesional integral y OAuth/publicación todavía no están terminados. **No hay publicación automática a YouTube**. Ver `docs/AVANCE.md`.
+```bash
+python -m pip install 'pypdf==5.9.0' 'Pillow==11.3.0'
+python -m unittest discover -s tests -v
+npm run check
+```
 
-## Límites y costes
+CI también ejecuta los contratos Node, pruebas audiovisuales con FFmpeg y una comprobación de producción de sólo lectura. El motor requiere fuentes DejaVu. Los comandos de exportación y requisitos de la prueba final se detallan en [Producción de episodios](docs/PRODUCCION_EPISODIOS.md).
 
-Los planes gratuitos tienen cuotas. Renders largos consumen minutos de GitHub Actions, y la base D1/Workers tiene límites. La generación de voz local no requiere una API de pago, pero las licencias de voz/entrenamiento y la investigación y producción cinematográfica con material licenciado todavía requieren evaluación editorial y costes controlados.
-
-La única cuenta de YouTube autorizada para el proyecto debe conectarse mediante OAuth oficial en una etapa posterior; nunca se almacenarán contraseñas de Google.
+Los servicios gratuitos tienen límites: no se prometen cuotas ilimitadas. El narrador CPU no requiere una API de pago; las licencias de modelos, voz y recursos, la revisión del documental y el coste operativo siguen siendo comprobaciones separadas. No hay publicación automática en YouTube ni se almacenan contraseñas de Google.
