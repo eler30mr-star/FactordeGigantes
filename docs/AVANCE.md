@@ -1,5 +1,12 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Recorrido del episodio desplegado y comprobado
+
+Código `e26803a` en main. CI [40205782309](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40205782309) success: contratos, cobertura Python, QA audiovisual y smoke de producción. El smoke confirma que se sirve `episode-workbench.js` y que progreso/cierre conservan la barrera ADMIN. Cloudflare deployment `82a753f6-1cd4-458a-91e8-d9588b5be89f`, versión `40206ff9-8f1b-42fb-ae72-ecdb060df4ad`, al 100 %. Lectura del script servido confirma progreso, recuperación de checkpoint y cierre del episodio.
+
+El bloque queda implementado, confirmado y desplegado. 163 contratos Node y cuatro pruebas Python locales del runner aprobados. No se atribuyen ejecución de IA nueva, revisión humana en navegador, publicación real ni aceptación integral: pausa y selector pendiente de calibración permanecen. Siguiente objetivo operativo: aceptación del recorrido dirigido con proveedores, conservando el guion y resultados para revisión; después validar el automático.
+
+
 ## 2026-10-25 · Recorrido operativo del episodio en el panel y reanudación del guion
 
 **Problema corregido:** el episodio elegido por chat se quedaba en un estado genérico y un fallo del guionista repetía la investigación. Se entrega un panel del episodio con seis etapas, lectura del guion, revisión del expediente, envío a revisión, aprobación explícita y autorización de narración/montaje. Reutiliza las rutas y puertas editoriales existentes; no acredita fuentes o derechos automáticamente.
