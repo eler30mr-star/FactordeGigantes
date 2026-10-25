@@ -1,5 +1,19 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Episodio elegido → investigación enfocada → guion para revisión
+
+**Implementación:** el chat y la selección automática calibrada pueden despachar la fase `episode` del workflow existente. La entrada es el episodio D1, con empresa, enfoque y origen, no la cola de mercado antigua. Automático apagado no bloquea las instrucciones manuales; la pausa de IA sí se respeta. Reservas atómicas evitan doble despacho y limitan a cuatro intentos diarios. Un resultado de red incierto bloquea reenvíos hasta revisión de Actions.
+
+El runner comprueba identidad corporativa observada sin adivinar empresas alternativas; ambigüedad o insuficiencia dejan un bloqueo. Las búsquedas documentales, el análisis y el guion conservan el enfoque elegido. Los documentos y llamadas de proveedores comprueban la pausa antes de continuar. No se fabrica puntuación de mercado para una instrucción manual.
+
+**Integración editorial:** investigación persistida y vinculada al episodio; guion válido crea trabajo, expediente y procedencia en una transacción, pendientes de revisión humana. Se reutiliza el motor canónico de render ya existente después de la aprobación correspondiente. Se añade registro por `workflow_run` de exportaciones narradas exitosas de main para que el MP4 terminado llegue al reproductor y a revisión, sin iniciar subida ni publicación.
+
+**Pruebas:** 149 contratos Node aprobados localmente, incluidos seis nuevos: despacho con automático apagado, pausa sin escrituras, concurrencia, incertidumbre, bloqueo/reintento y creación real de borrador editorial con SQLite y guion Python citado. Esta última confirma cero filas de selección/cola de mercado heredada y ninguna aprobación fabricada. Tres pruebas Python nuevas aprobadas: pausa, identidad no ambigua y conservación de empresa/enfoque. Sintaxis y YAML correctos. No se ejecutaron proveedores reales ni se produjo otro video.
+
+**D1:** migración aditiva 0019 aplicada realmente, cero solicitudes nuevas del propietario, trabajo anterior conservado, automático apagado y claves foráneas íntegras. CI y despliegue del código nuevo pendientes de confirmar después del commit.
+
+**Límites:** la pausa de investigadores y la puerta de calibración de mercado siguen vigentes. La ejecución real con proveedores, la calidad del guion/video y la publicación autorizada aún requieren su aceptación integrada; no se declara terminado el proyecto. Ante identidad o fuentes insuficientes se conserva la selección y el informe, sin inventar contenido para renderizar.
+
 ## 2026-10-25 · Cierre verificado de despliegue del estudio v2
 
 Código `9bbfbe2`, CI `40195019845` finalizado en success: contratos, cobertura Python, QA audiovisual y smoke de producción aprobados. Cloudflare registra deployment `34ff213b-351d-435f-876e-73932fb5e853`, versión `511416bc-9245-460b-bd38-7ae2e3b3b18c`, al 100 %. Se conserva `FINAL_AI_INTEGRATION_ENABLED=0` y no hay indicador de selector validado. Las migraciones 0017 y 0018 ya están aplicadas; el modo real continúa apagado y no se han creado episodios ni estudios para el propietario.

@@ -107,7 +107,7 @@ export async function receiveChannelInstruction(env,body){
  const result={ok:true,revision:body.revision+1,episode,
   reply:episode?'Seleccionado: '+episode.company+' — '+episode.topic+'. '+
    (env.FINAL_AI_INTEGRATION_ENABLED!=='1'?'La investigación sigue pausada. ':'')+
-   'El episodio está guardado; la conexión del nuevo flujo de producción está pendiente.':parsed.reply,
+   'El episodio está guardado para investigación enfocada y revisión del guion.':parsed.reply,
   state:episode?'selected':'clarification',publication_authorized:false};
  return commitOperation(env,body,'chat',payload,result,[control.automatic_enabled,
   episode?'':parsed.company,episode?'':parsed.instruction],episode);

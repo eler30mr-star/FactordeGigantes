@@ -233,7 +233,7 @@ export function validateAiReport(r,now=new Date()){
     r.reviews.length!==r.candidate_claims.length))throw new RangeError('Revisión incompleta');
  return r;
 }
-export async function storeAiReport(db,report){
+export async function storeAiReport(db,report,{updateLegacyQueue=true}={}){
  validateAiReport(report);
  const numbers=text=>text.match(/(?<![A-Za-z0-9])\d+(?:[.,]\d+)*(?![A-Za-z0-9])/g)||[];
  const evidence=new Map(report.evidence_manifest.map(e=>[e.id,e]));
@@ -261,7 +261,7 @@ export async function storeAiReport(db,report){
    !report.candidate_claims.length||
    quality.claim_gaps.some(g=>g.gaps.length>0)));
  const nextState=needsSources?'awaiting_sources':'researching';
- if(report.evidence_manifest.length)
+ if(updateLegacyQueue&&report.evidence_manifest.length)
   statements.push(db.prepare(
    "UPDATE market_research_queue SET state=?,updated_at=datetime('now') WHERE wikidata_id=? AND state IN ('awaiting_sources','researching')"
   ).bind(nextState,report.selected_wikidata_id));
@@ -314,3 +314,4 @@ export async function classifyWithCloudflare(env,body){
   return {status:'success',model:CF_MODEL,classification:parsed.classification.map(e=>({evidence_id:e.evidence_id,category:e.category}))};
  }catch{return {status:'provider_failure'};}
 }
+

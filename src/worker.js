@@ -1,3 +1,4 @@
+import {dispatchChannelResearch,channelResearchContext,storeChannelResearch,storeChannelScript,channelResearchStatus} from './channel-research.mjs';
 import {beginOpportunityStudy,finishOpportunityStudy,checkOpportunityStudy,failOpportunityStudy,latestOpportunityStudy} from './opportunity-control.mjs';
 import {videoPreview} from './video-preview.mjs';
 import {channelStatus,setAutomaticMode,receiveChannelInstruction,automaticGate} from './channel-control.mjs';
@@ -151,16 +152,33 @@ async function handle(request,env) {
   const ingestPdf=parts[1]==="market" && parts[2]==="pdf" && parts[3]==="ingest" && parts.length===4;
   const ingestResearch=parts[1]==="market" && parts[2]==="research" && parts[3]==="ingest" && parts.length===4;
   const runResearchSelection=url.pathname==='/api/market/research-selection/run';
+  const episodeWrite=['/api/market/channel-episode/context','/api/market/channel-episode/research','/api/market/channel-episode/script'].includes(url.pathname);
   const studyWrite=['/api/market/opportunity-study/start','/api/market/opportunity-study/check','/api/market/opportunity-study/fail','/api/market/opportunity-study/finish'].includes(url.pathname);
   const automationGate=url.pathname==='/api/market/automation-control';
   const aiWrite=['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest','/api/market/ai-pipeline/script-context','/api/market/ai-pipeline/script-ingest'].includes(url.pathname);
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
-  if (studyWrite || automationGate || ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection || aiWrite) {
+  if (episodeWrite || studyWrite || automationGate || ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection || aiWrite) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
   } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  if(episodeWrite || url.pathname==='/api/channel-control/research'){
+    try{
+      let result;
+      if(episodeWrite && method==='POST'){
+        const body=await parseBody(request);
+        result=url.pathname.endsWith('/context')?await channelResearchContext(env,body):url.pathname.endsWith('/script')?
+         await storeChannelScript(env,body):await storeChannelResearch(env,body);
+      }else if(!episodeWrite && method==='POST')result=await dispatchChannelResearch(env,(await parseBody(request)).episode_id);
+      else if(!episodeWrite && method==='GET')result=await channelResearchStatus(env,url.searchParams.get('episode_id'));
+      return result?json(result,result.ok?200:result.status):err('Método no admitido',405);
+    }catch(e){
+      if(/no such table: channel_/.test(String(e?.message||'')))return err('Falta migración 0019_episode_research.sql',503);
+      if(e instanceof RangeError||e instanceof SyntaxError||e instanceof TypeError)return err('Solicitud de episodio inválida',400);
+      throw e;
+    }
+  }
   if(studyWrite || url.pathname==='/api/market/opportunity-study'){
     try{
       let result;
@@ -170,6 +188,7 @@ async function handle(request,env) {
         result=url.pathname.endsWith('/start')?await beginOpportunityStudy(env,body):
           url.pathname.endsWith('/check')?await checkOpportunityStudy(env,body):
           url.pathname.endsWith('/fail')?await failOpportunityStudy(env,body):await finishOpportunityStudy(env,body);
+        if(result.ok&&result.state==='selected'&&!result.replayed)result.pipeline=await dispatchChannelResearch(env,body.id);
       }
       return result?json(result,result.ok?200:result.status):err('Método no admitido',405);
     }catch(e){
@@ -186,6 +205,7 @@ async function handle(request,env) {
       else if(!automationGate && parts.length===3 && method==='POST' && ['mode','chat'].includes(parts[2])){
         const body=await parseBody(request);
         result=parts[2]==='mode'?await setAutomaticMode(env,body):await receiveChannelInstruction(env,body);
+        if(parts[2]==='chat'&&result.ok&&result.episode&&!result.replayed)result.pipeline=await dispatchChannelResearch(env,result.episode.id);
       }
       return result?json(result,result.ok?200:result.status):err('Método o ruta de control no admitidos',405);
     }catch(e){

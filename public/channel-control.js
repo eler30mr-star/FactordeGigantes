@@ -14,8 +14,18 @@ export function mountChannelControl({request,documentRef=document,uuid=()=>crypt
   const episode=el('channel-episode');episode.replaceChildren();
   if(data.episode){
    line(episode,data.episode.company+' — '+data.episode.topic);
-   line(episode,'Elegido por '+(data.episode.origin==='chat'?'ti':'el sistema')+'. Estado: seleccionado.');
-   line(episode,(data.research_paused?'Investigación pausada. ':'')+'El nuevo flujo de producción está pendiente de integración.');
+   line(episode,'Elegido por '+(data.episode.origin==='chat'?'ti':'el sistema')+'. Estado: '+data.episode.state+'.');
+   if(data.research_paused)line(episode,'Investigación pausada. Tu elección se conserva.');
+   try{const result=await request('/api/channel-control/research?episode_id='+data.episode.id);
+    if(result.run){line(episode,result.run.note||'Investigación: '+result.run.state);if(result.run.job_status)line(episode,'Trabajo editorial: '+result.run.job_status);}
+   }catch{ /* La selección sigue visible aunque el seguimiento no esté disponible. */ }
+   if(data.episode.state==='selected'&&!data.research_paused){
+    const start=documentRef.createElement('button');start.type='button';start.textContent='Iniciar investigación del episodio';episode.append(start);
+    start.addEventListener('click',async()=>{if(busy)return;lock(true);start.disabled=true;
+     try{const r=await request('/api/channel-control/research','POST',{episode_id:data.episode.id});
+      el('channel-chat-status').textContent=r.started?'Investigación enviada a Actions.':r.reason==='dispatch_unknown'?'Despacho incierto: revisa Actions antes de repetir.':'Ya hay una solicitud o se alcanzó el límite diario.';await load();
+     }catch(e){el('channel-chat-status').textContent=e.message;}finally{lock(false);start.disabled=false;}});
+   }
   }
   const study=el('channel-study');study.replaceChildren();
   try{

@@ -1,0 +1,37 @@
+name: FDG - registrar episodio narrado terminado
+on:
+  workflow_run:
+    workflows: ['FDG - episodio completo de desarrollo']
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: fdg-register-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+jobs:
+  register:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'workflow_dispatch' &&
+      github.event.workflow_run.repository.full_name == 'eler30mr-star/FactordeGigantes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Registrar el MP4 existente para reproducir y revisar en el panel
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+        run: |
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]
+          python -m tools.youtube_delivery register "$SOURCE_RUN_ID" --out dist/review --if-narrated

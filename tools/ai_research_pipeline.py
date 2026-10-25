@@ -277,7 +277,7 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
         for p in ("cloudflare", "qwen", "gemini", "mistral", "openrouter", "groq"):
             report["stages"].append({"provider": p, "role": "analyze", "status": "disabled"})
         return report
-    topic = sources["company"]
+    topic = sources["company"] + (" — " + sources["editorial_topic"] if sources.get("editorial_topic") else "")
     if classifier is not None:
         try:
             result = classifier(evidence)
@@ -444,3 +444,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

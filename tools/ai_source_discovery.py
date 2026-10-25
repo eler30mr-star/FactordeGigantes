@@ -275,7 +275,14 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         except (OSError,ValueError,TypeError,KeyError,TimeoutError):
             out["stages"].append({"provider":"gdelt","role":"discover",
                                   "status":"source_unavailable"})
+    focus = selection.get('editorial_topic')
+    if focus is not None and (not isinstance(focus, str) or not 5 <= len(focus) <= 300):
+        raise ValueError('Enfoque editorial inválido')
     queries = search_plan(title, targets, REGULATORY_HOSTS)
+    if focus:
+        queries = [{**q, 'query': f'"{title}" {focus} ' +
+                    ('original documents annual report' if i == 0 else 'independent reporting')}
+                   for i, q in enumerate(queries)]
     out["discovery_plan"] = queries
     for provider in ("tavily", "exa"):
         found = []
@@ -466,3 +473,4 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                                 for i, e in enumerate(new_fragments[:MAX_EVIDENCE])]
     out["status"] = "sources_collected" if out["retrieval_budget"]["documents_with_relevant_text"] else "skipped_no_documentary_evidence"
     return out
+

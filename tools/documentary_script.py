@@ -57,7 +57,7 @@ def script_prompt(research, blueprint):
         '{"title":"título específico","central_question":"pregunta editorial",'
         '"scenes":[{"scene_number":1,"paragraphs":[{"text":"narración original",'
         '"claim_indices":[1],"evidence_ids":["E001","E002"]}]}]}.\n'
-        + json.dumps({"company": research["company"],
+        + json.dumps({"company": research["company"], "chosen_editorial_topic": research.get("editorial_topic"),
                       "candidate_claims": research["candidate_claims"],
                       "evidence_manifest": research["evidence_manifest"],
                       "scene_plan": blueprint["scenes"]}, ensure_ascii=False, separators=(",", ":"))
@@ -240,3 +240,4 @@ def main():
 
 
 if __name__=='__main__':main()
+
