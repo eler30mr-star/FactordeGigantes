@@ -21,6 +21,7 @@ REPORT_TERMS=(
     "estados financieros","reporte anual","memoria anual"
 )
 IR_TERMS=("investor relations","investors","inversores","inversionistas","financial results")
+NEWS_TERMS=("press release","press releases","news release","news releases","newsroom", "comunicado de prensa")
 
 class Links(HTMLParser):
     def __init__(self):
@@ -75,7 +76,8 @@ def find_official_document_links(page_url, html_bytes, *, mime="text/html"):
         pdf=p.path.lower().endswith(".pdf")
         is_report=any(term in label for term in REPORT_TERMS)
         is_ir=any(term in label for term in IR_TERMS)
-        if not (pdf or is_report or is_ir):
+        is_news=any(term in label for term in NEWS_TERMS)
+        if not (pdf or is_report or is_ir or is_news):
             continue
         seen.add(url)
         host=p.hostname.lower()
@@ -83,7 +85,7 @@ def find_official_document_links(page_url, html_bytes, *, mime="text/html"):
             "url":url,
             "anchor_text":re.sub(r"\s+"," ",text).strip()[:140],
             "category":"financial_report_link_candidate" if is_report else
-                       "pdf_link_candidate" if pdf else "investor_information_page_candidate",
+                       "pdf_link_candidate" if pdf else "corporate_news_link_candidate" if is_news else "investor_information_page_candidate",
             "pdf_by_filename":pdf,
             "same_hostname_as_official_page":host==base,
             "external_host_requires_independent_verification":host!=base,
@@ -95,3 +97,4 @@ def find_official_document_links(page_url, html_bytes, *, mime="text/html"):
         if len(candidates)>=MAX_CANDIDATES:
             break
     return candidates
+

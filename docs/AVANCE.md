@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Contraste de varias afirmaciones con el mismo presupuesto
+
+La continuación del episodio conserva las afirmaciones elegidas y cubre hasta tres objetivos pendientes por lote. Usa las dos consultas existentes para buscar el original del objetivo prioritario y contraste independiente de otro objetivo; cada consulta conserva las exclusiones del hecho correspondiente. La extracción literal puede repartir sus tres ventanas entre los objetivos. Se registra y rota el lote sin reescribir las afirmaciones ni aumentar las cuotas.
+
+Se incorporan enlaces corporativos observados a comunicados/newsroom, además de informes, y se priorizan documentos frente a portadas genéricas. No se adivinan rutas ni se acredita propiedad de un host externo por enlazarlo. Los límites de ocho descargas, diez pasajes y dos búsquedas por proveedor permanecen. La aceptación añade afirmaciones y rutas públicas sin parámetros al diagnóstico para identificar el contraste pendiente.
+
+49 pruebas Python enfocadas aprobadas, incluidas rotación por lotes, consultas con exclusiones separadas y enlaces a comunicados sin aprobación fabricada. Se lanza continuación real desde 40214951196; su resultado queda pendiente de comprobación. No se levanta la pausa de producción ni se inicia un render o publicación.
+
 ## 2026-10-25 · Revisión real completada y continuidad desplegada
 
 Run 40214951196 success: reanudó únicamente Groq (2.331 tokens entrada/1.372 salida), sin búsquedas, descargas ni repetición de Gemini/Qwen. El fallo previo era comparison_passages_omitted; la nueva matriz cumplió el contrato. Una afirmación incorporó apoyo candidato de dos documentos independientes. Se conservan seis pasajes, dos documentos/dominios y seis afirmaciones. Falta fuente primaria y contraste de cinco afirmaciones: guion/video permanecen bloqueados.

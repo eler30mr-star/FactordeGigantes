@@ -5,6 +5,13 @@ from tools.official_document_links import find_official_document_links
 URL="https://www.example.com/investors/index.html"
 
 class OfficialLinksTests(unittest.TestCase):
+    def test_press_releases_are_observed_links_and_not_an_ownership_attestation(self):
+        result=find_official_document_links(URL,b'<a href="/newsroom/press-releases/2016/company-change">Company update</a><a href="/products">Products</a>')
+        self.assertEqual(len(result),1)
+        self.assertEqual(result[0]['url'],'https://www.example.com/newsroom/press-releases/2016/company-change')
+        self.assertEqual(result[0]['category'],'corporate_news_link_candidate')
+        self.assertFalse(result[0]['ownership_verified'])
+
     def test_find_pdf_and_annual_report_and_external_cdn_link(self):
         raw=b'''<html><body>
           <a href="/investors/reports/annual-report-2025.pdf">Annual Report 2025</a>
@@ -44,3 +51,4 @@ class OfficialLinksTests(unittest.TestCase):
 
 if __name__=="__main__":
     unittest.main()
+

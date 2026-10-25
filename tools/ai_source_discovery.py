@@ -353,8 +353,10 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         archive = parsed.hostname in {"web.archive.org", "archive.today",
                                      "archive.ph", "wayback.archive-it.org"}
         targeted=bool(targets) and lead.get('discovered_by') in ('tavily','exa')
-        return (-int(lead["url"] in expand_urls), -int(targeted), -int(official_host(parsed.hostname)), -int(regulatory_host(parsed.hostname)), int(archive), -int(relevant),
-                -int(parsed.path.lower().endswith(".pdf")), lead["url"])
+        document_link = bool(re.search(r'annual.report|financial|earnings|press.release|news.release|\.pdf(?:$|\?)',
+                                      normalized(parsed.path+' '+str(lead.get('title', '')))))
+        return (-int(lead["url"] in expand_urls), -int(targeted), -int(official_host(parsed.hostname)), -int(regulatory_host(parsed.hostname)), int(archive),
+                -int(document_link), -int(relevant), -int(parsed.path.lower().endswith(".pdf")), lead["url"])
 
     # Intercalar gobierno/justicia con publicaciones independientes. El orden
     # alfabético de Wikipedia enviaba cuatro solicitudes y se detenía aunque

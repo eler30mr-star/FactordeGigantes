@@ -54,7 +54,8 @@ def continuation_selection(research):
     if not available:
         visited = []
         available = prioritized_targets(targets)
-    target = available[0] if available else None
+    batch = available[:3]
+    target = batch[0] if batch else None
     attempted = list(dict.fromkeys([
         *previous.get('attempted_urls', []),
         *(research.get('retrieval_budget') or {}).get('attempted_urls', []),
@@ -70,9 +71,10 @@ def continuation_selection(research):
     return {'selected_wikidata_id': research['selected_wikidata_id'],
             'research_queue': {'wikidata_id': research['selected_wikidata_id'], 'title': research['company']},
             'prior_attempted_urls': attempted, 'prior_evidence_manifest': [],
-            'prior_research_targets': [target] if target else [], 'citation_expansion_urls': expansions}, \
+            'prior_research_targets': batch, 'citation_expansion_urls': expansions}, \
         {'claims_sha256': claim_digest, 'visited_target_indices': visited,
-         'target_claim_index': target['claim_index'] if target else None}
+         'target_claim_index': target['claim_index'] if target else None,
+         'target_claim_indices': [row['claim_index'] for row in batch]}
 
 
 def merge_passages(research, discovered):
@@ -139,7 +141,7 @@ def continue_corroboration(research, *, source_run_id, clients, discover=discove
     progress.update(method=METHOD, source_run_id=source_run_id,
         source_collected_on=research['collected_on'], research_inference_repeated=False,
         source_report_sha256=hashlib.sha256(json.dumps(research, ensure_ascii=False, sort_keys=True).encode()).hexdigest(),
-        visited_target_indices=list(dict.fromkeys(progress['visited_target_indices']+[progress['target_claim_index']])),
+        visited_target_indices=list(dict.fromkeys(progress['visited_target_indices']+progress['target_claim_indices'])),
         attempted_urls=list(dict.fromkeys([
             *previous.get('attempted_urls', []), *selection['prior_attempted_urls'], *budget['attempted_urls']]))[-40:],
         ranked_citation_scanned_urls=list(dict.fromkeys([
@@ -217,3 +219,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

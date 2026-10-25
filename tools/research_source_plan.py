@@ -51,9 +51,12 @@ def search_plan(title, targets, regulatory_domains):
         primary["include_domains"] = sorted(regulatory_domains)[:20]
     # La segunda consulta busca un emisor diferente del que ya sustenta el
     # hecho prioritario; no descartar a sus reguladores de la primera consulta.
-    cited = sorted({urlsplit(u).hostname for u in target["cited_urls"]})
-    contrast = {"intent": "find_independent_corroboration", "target_claim_index": target["claim_index"],
-                "query": query, "exclude_domains": list(dict.fromkeys(excluded + cited))[:20]}
+    contrast_target = next((row for row in ordered if row['claim_index'] != target['claim_index']
+        and 'no_independent_domain' in row['gaps']), target)
+    cited = sorted({urlsplit(u).hostname for u in contrast_target["cited_urls"]})
+    contrast_query = f'"{title}" ' + contrast_target['statement'][:220]
+    contrast = {"intent": "find_independent_corroboration", "target_claim_index": contrast_target["claim_index"],
+                "query": contrast_query, "exclude_domains": list(dict.fromkeys(excluded + cited))[:20]}
     return [primary, contrast]
 
 
@@ -135,3 +138,4 @@ def select_passages(analysis, title, targets, limit=3):
             record["entity_context_excerpt"] = text[begin:begin+180]
         results.append(record)
     return results
+

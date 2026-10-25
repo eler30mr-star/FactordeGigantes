@@ -37,6 +37,19 @@ def discovered():
 
 
 class CorroborationTests(unittest.TestCase):
+    def test_continuation_covers_three_pending_claims_and_rotates_without_rewriting_them(self):
+        old=research()
+        old['candidate_claims']=[{**copy.deepcopy(old['candidate_claims'][0]),
+            'statement':f'Empresa Ejemplo anunció el cambio empresarial número {n} con fuentes pendientes.'} for n in range(6)]
+        old['source_quality']=evidence_gaps(old['evidence_manifest'],old['candidate_claims'])
+        before=copy.deepcopy(old)
+        selection,progress=continuation_selection(old)
+        self.assertEqual(progress['target_claim_indices'],[1,2,3])
+        self.assertEqual(len(selection['prior_research_targets']),3)
+        self.assertEqual(old,before)
+        old['corroboration_continuation']={**progress,'visited_target_indices':progress['target_claim_indices']}
+        self.assertEqual(continuation_selection(old)[1]['target_claim_indices'],[4,5,6])
+
     def client(self, calls, *, allowed=True, insufficient=False):
         def transport(url,body,headers):
             self.assertIn('api.groq.com',url)
@@ -166,3 +179,4 @@ class CorroborationTests(unittest.TestCase):
                 main()
                 control.return_value.persist.assert_not_called()
                 self.assertEqual(json.loads(output.read_text())['status'],'skipped_no_research_work')
+

@@ -16,6 +16,17 @@ TARGET = {'claim_index': 1, 'statement': 'Empresa Ejemplo acordó una restituci�
 
 
 class TargetedRetrievalTests(unittest.TestCase):
+    def test_two_queries_cover_primary_and_another_pending_claim_with_its_own_exclusions(self):
+        first={**TARGET,'gaps':['no_original_primary_document']}
+        second={**TARGET,'claim_index':2,'statement':'Empresa Ejemplo cambió su negocio en 2018.',
+            'cited_urls':['https://another.example/story'],'gaps':['no_independent_domain']}
+        plan=search_plan(TITLE,[first,second],REGULATORY_HOSTS)
+        self.assertEqual(len(plan),2)
+        self.assertEqual([row['target_claim_index'] for row in plan],[1,2])
+        self.assertIn(second['statement'],plan[1]['query'])
+        self.assertIn('another.example',plan[1]['exclude_domains'])
+        self.assertNotIn('reporter.example',plan[1]['exclude_domains'])
+
     def test_search_prioritizes_missing_authority_then_different_publisher(self):
         plan = search_plan(TITLE, [TARGET], REGULATORY_HOSTS)
         self.assertEqual(len(plan), 2)
@@ -117,3 +128,4 @@ class TargetedRetrievalTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
