@@ -1810,3 +1810,11 @@ El propietario pidió continuar el avance hacia un documental terminado, sin má
 - Workflow técnico real `40163254722`: preparación correcta y montaje en curso; todavía no se declara artefacto remoto aceptado.
 - Cloudflare desplegó automáticamente la integración en versión `a9325812-3831-446c-a88f-947cf949cf59`, deployment `6fe6b559-ac0b-45a8-81ff-0e3b40124850`. La lectura del Worker servido confirma rutas de episodio, workflow canónico, reintento y SHA de voz. La verificación HTTP pública desde el conector es 403 externo; no se presenta como fallo del Worker. Se amplía el smoke de Actions para comprobar el panel nuevo y registrar su hash sin credenciales.
 - Se incorpora disparador explícito `[final-episode-e2e]` para una ejecución final canónica después de todos los checks. Este commit de corrección **no lo activa** y no reactiva proveedores ni cron de investigación. La voz final permanece pendiente.
+
+
+### Candidato integrado verificado; prueba final canónica acotada
+
+- CI corregido `40163372125`, commit `eb04986c04f172694bd58a49899563dec79c5b0c`: **success** en contratos y los **quince casos audiovisuales con FFmpeg**. Job general: 347 casos Python, cinco omitidos cubiertos en la suite audiovisual; 95 Node. La incidencia de importación quedó resuelta.
+- Smoke desde Actions confirma HTTP 200 de `/health`, panel y JavaScript nuevo. SHA `/app.js` `7f664433c0b3e4968fe587dae1efcce3740a9e8fcbf0f34e3f6288f5ab546415`, idéntico al archivo implementado. API de investigación y nueva ruta de episodio sin token: 401. Renderizador autenticado a UUID inexistente: 404. Despliegue Worker y panel verificado sin revelar claves.
+- Cron real `40163370338` quedó **skipped** por la pausa del propietario: no reactivó búsquedas ni investigadores. El montaje técnico `40163254722` sigue exportando el episodio; aún no se declara terminado ese run.
+- Tras comprobar el candidato y el MP4 técnico local, se solicita **una prueba final de narración y montaje** mediante `[final-episode-e2e]`. Usa exclusivamente Qwen TTS 1.7B en CPU y el material preparado por Codex; no invoca Gemini, Groq, Tavily, Exa ni radar. Conserva referencia/cadencia y checkpoints de cada toma. Esta solicitud no acredita éxito de generación, audición ni calidad profesional: se registrará su resultado real. No aumenta cuotas de proveedores ni autoriza publicar.
