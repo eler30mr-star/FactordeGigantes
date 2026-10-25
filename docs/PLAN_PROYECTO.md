@@ -1,5 +1,133 @@
 # Plan maestro — Factor de Gigantes
 
+> **Dirección vigente del propietario — 2026-10-25.** Este bloque define el producto y el orden de trabajo. Prevalece sobre prioridades, secuencias y propuestas incompatibles del historial conservado al final y de los documentos técnicos anteriores. Los hitos históricos acreditan componentes, no la aceptación del sistema completo. Se mantienen las reglas de seguridad, veracidad, licencias, voz canónica, cero pagos y trabajo exclusivo en `main`.
+
+## 1. Objetivo del producto
+
+Construir un **sistema de automatización de producción y publicación del canal de YouTube Factor de Gigantes**, con IA y supervisión del propietario. El resultado operativo es un video del canal que avanza desde una elección editorial hasta su reproducción en el panel y su publicación autorizada.
+
+El nicho del canal ya está definido: empresas, tecnología, innovación, modelos de negocio y decisiones que cambiaron su trayectoria; contenido original en español latinoamericano. La identidad documental, la voz canónica y el formato principal de 8–14 minutos se conservan. No volver a pedir al propietario que defina el nicho en cada ciclo.
+
+La unidad de trabajo es **un episodio con un tema, una empresa y un enfoque elegidos**. El volumen de compañías almacenadas, fuentes recogidas o llamadas a IA no mide el éxito del producto.
+
+## 2. Dos formas de iniciar el mismo episodio
+
+### Modo automático: búsqueda y selección del día
+
+1. En el ciclo diario, buscar oportunidades recientes **en YouTube**, dentro del nicho y del público del canal.
+2. Las IA comparan un conjunto acotado de candidatos con señales observadas: videos, fechas, evolución cuando haya observaciones comparables, visitas, rendimiento relativo y competencia temática. Considerar el historial propio para evitar repeticiones.
+3. Elegir **un tema y una empresa**, con una pregunta/enfoque para el video, y registrar brevemente por qué conviene producirlo ese día.
+4. Solo después de persistir esa selección, comenzar la investigación factual y documental del episodio.
+
+Esta búsqueda busca potencial de viralización en YouTube; no promete viralidad. Wikipedia, Wikidata, RSS y noticias pueden aportar contexto o desambiguación, pero no sustituyen la búsqueda en YouTube ni sus señales. No atribuir a muestras públicas CTR, retención ni crecimiento que no se haya medido. Si faltan señales suficientes, mostrar el motivo y permitir reintento o elección por chat; no inventar un ganador ni investigar indiscriminadamente todas las opciones.
+
+El ciclo diario define la oportunidad del día; no impone publicar un video incompleto por cumplir una fecha. La duración real de producción, los límites gratuitos y las aprobaciones siguen siendo visibles.
+
+### Modo dirigido: chat del propietario
+
+El panel debe tener **un chat operativo** para indicar tema y empresa, por ejemplo: «Haz un video sobre BlackBerry y por qué perdió el mercado».
+
+- Interpretar la instrucción, mostrar tema, empresa y enfoque entendidos, y crear o dirigir el episodio correspondiente.
+- Si la instrucción es suficiente, pasar a investigación del tema elegido sin exigir selección por radar ni formularios de fuentes, guion o JSON.
+- Pedir una aclaración breve solo si falta información imprescindible; no cambiar la empresa o el enfoque en silencio.
+- La selección explícita del propietario sustituye la búsqueda automática de ese episodio. Guardar origen `chat` o `automático`, instrucción y decisión.
+- Si hay un episodio en curso, mostrar el efecto de una nueva instrucción y conservar su trabajo; no iniciar producciones duplicadas ni descartar material silenciosamente.
+- El chat da instrucciones al sistema real y muestra su ejecución; no debe limitarse a responder texto sin crear o actualizar el episodio.
+
+## 3. Flujo obligatorio después de seleccionar
+
+**Búsqueda YouTube → selección de tema y empresa**, o **instrucción por chat → selección del propietario**.
+
+Ambas entradas convergen en:
+
+**Investigación del elegido → guion → narración y escenas → montaje y QA → video reproducible en el panel → revisión/aprobación → subida y publicación/programación autorizadas → resultados del canal.**
+
+- El investigador busca exclusivamente la información necesaria para la pregunta y las escenas del episodio seleccionado. Puede investigar otras empresas cuando sean parte necesaria de esa explicación, sin abrir expedientes independientes de cada candidata.
+- Las IA obtienen fuentes, contrastan afirmaciones y redactan el guion. El propietario supervisa; no tiene que investigar o escribir cada episodio ni depender de Codex como productor recurrente.
+- La selección de oportunidad no exige tener antes un expediente factual completo. El contraste de hechos pertenece a la investigación posterior y debe completarse antes de usar afirmaciones en el video.
+- Los módulos de voz, visuales, montaje y QA reciben el mismo episodio y conservan trazabilidad. Reintentar desde el fallo sin repetir búsqueda, investigación o tomas ya válidas.
+- Mantener los controles editoriales y de derechos existentes, incluida la autorización de render donde corresponda. La autorización de publicación es una acción explícita: elegir por chat, conectar OAuth, aprobar un guion o superar QA no la concede.
+- La publicación/programación es parte del objetivo final del producto. La entrega actual de subida privada es un componente intermedio, no el cierre del proyecto.
+- La analítica propia retroalimenta futuras decisiones cuando esté disponible y autorizada. No presentar métricas ajenas como resultados del canal.
+
+## 4. Qué debe mostrar el panel
+
+La portada debe responder: **qué video se está haciendo, por qué se eligió, en qué etapa está y cuál es la siguiente acción**.
+
+1. Episodio actual: tema, empresa, enfoque, origen de la elección y motivo resumido.
+2. Chat para dar instrucciones de tema y empresa.
+3. Avance comprensible: investigación, guion, voz, montaje, revisión y publicación; bloqueo concreto y posibilidad de reanudar cuando proceda.
+4. **Reproductor de video dentro del panel**, con audio, pausa y desplazamiento, vinculado al MP4 real de ese episodio. La descarga o un enlace a GitHub Actions no reemplazan este requisito.
+5. Revisión y acciones autorizadas de subida/publicación/programación, con estado y enlace YouTube cuando exista.
+6. Historial de episodios en un apartado secundario. Fuentes, citas, logs, comparativas y diagnósticos accesibles bajo demanda y asociados al episodio.
+
+Resolver entrega autenticada del MP4, permisos, reproducción parcial y conservación suficiente para la revisión. Mostrar disponibilidad y caducidad reales y un error recuperable cuando falte el archivo. No mostrar un montaje técnico como video final aceptado.
+
+## 5. Límites que corrigen el desvío
+
+- No investigar, extraer PDFs o armar expedientes de todas las empresas antes de elegir el episodio.
+- No desarrollar una enciclopedia de empresas ni un catálogo de monografías como objetivo operativo.
+- No usar acumulación de titulares, visitas Wikimedia o entidades como sustituto de una decisión editorial basada en YouTube.
+- No convertir el panel principal en un listado simultáneo de todas las etapas, candidatos y datos históricos.
+- La comparación previa puede conservar una evidencia mínima y acotada para explicar la selección; la investigación profunda queda vinculada al ganador.
+- Preservar registros anteriores como historial. Revisar las tareas programadas al implementar el nuevo flujo para retirar la recolección indiscriminada; esta actualización documental no borra datos ni modifica cron.
+- Reutilizar módulos útiles. No reiniciar el proyecto ni regenerar el episodio de desarrollo para simular cumplimiento.
+
+## 6. Prioridades de implementación y aceptación
+
+Todo lo siguiente queda **pendiente de implementación o validación integral**, salvo componentes acreditados en AVANCE. Una casilla histórica completada no completa estos criterios nuevos.
+
+### P0 — Corregir la entrada y el orden de ejecución
+
+- [ ] Modelar el ciclo diario y el episodio único con tema, empresa, enfoque, origen, decisión y estado persistentes.
+- [ ] Hacer que el descubrimiento comience por búsqueda YouTube del nicho; comparar candidatos de forma acotada y seleccionar uno antes de disparar investigación.
+- [ ] Impedir investigación profunda de candidatos no seleccionados y revisar los cron/colectores existentes.
+- [ ] Implementar chat conectado al orquestador para elegir tema y empresa sin radar obligatorio.
+- [ ] Evitar duplicados en el ciclo, doble envío del chat y reintentos; una nueva instrucción no destruye un episodio en curso.
+
+**Aceptación:** con proveedores simulados, comprobar ambos recorridos y el orden de llamadas; ningún investigador profundo se invoca antes de existir una selección ni para candidatos descartados. Validar después búsqueda real y decisión explicada, respetando la pausa vigente de investigadores hasta habilitación expresa.
+
+### P1 — Panel centrado en el video
+
+- [ ] Presentar episodio actual, chat, avance, bloqueo y siguiente acción como vista principal.
+- [ ] Entregar y reproducir el MP4 real dentro del panel autenticado; probar audio, desplazamiento, permisos y caducidad.
+- [ ] Relegar datos técnicos, fuentes e historial a vistas secundarias asociadas al episodio.
+
+**Aceptación:** el propietario puede indicar una empresa y tema por chat, seguir el episodio y ver el video en el panel sin preparar investigación, guion ni descargar un ZIP para reproducirlo.
+
+### P2 — Integrar las IA y cerrar producción
+
+- [ ] Unir selección → investigación enfocada → guion → voz canónica → escenas → MP4 y QA bajo la misma identidad de episodio.
+- [ ] Reanudar desde fallos conservando fuentes y resultados válidos; respetar presupuestos gratuitos y controles editoriales.
+- [ ] Validar un episodio automático y uno dirigido por chat; distinguir pruebas simuladas, ejecución real y aprobación humana.
+
+**Aceptación:** producción por el propio sistema, sin que Codex suministre manualmente fuentes o prosa para acreditar autonomía; video real reproducible y evidencias suficientes para revisión.
+
+### P3 — Publicación del canal y aprendizaje
+
+- [ ] Integrar metadatos, subtítulos, revisión, subida y publicación/programación con OAuth del canal y autorización explícita.
+- [ ] Confirmar resultado en YouTube, evitar duplicados y mostrar errores recuperables.
+- [ ] Incorporar resultados propios del canal a futuras búsquedas cuando exista acceso.
+
+**Aceptación final:** los dos modos de inicio llegan al mismo flujo; el propietario ve y revisa el video en el panel y el sistema publica/programa el episodio autorizado en el canal correcto. Una subida privada de prueba no acredita por sí sola publicación completa.
+
+## 7. Estado y reglas de continuidad
+
+La infraestructura existente —Worker, D1, proveedores IA, narrador, montaje, OAuth y subidor privado— se reutiliza según su estado verificado en [AVANCE.md](AVANCE.md). Hay un episodio narrado de desarrollo registrado, no una demostración del nuevo flujo autónomo. El chat operativo y el reproductor embebido son requisitos pendientes; avance/descarga no equivalen a reproducción.
+
+La pausa de investigadores registrada previamente se conserva. Actualizar el plan no autoriza llamadas a proveedores, nuevas producciones, publicaciones ni cambios de producción en esta intervención. Se mantienen cero pagos, voz canónica, fuentes verificables, recursos con derechos, secretos protegidos y `main` exclusiva.
+
+**Siguiente bloque de desarrollo:** implementar P0 y conectar P1 al episodio, antes de ampliar recolectores o volver a producir monografías de empresas. Registrar separadamente código, pruebas, despliegue y aceptación real.
+
+## Anexo — Plan e hitos anteriores, conservados como historial
+
+Las prioridades y los textos de estado dentro de este anexo reflejan decisiones pasadas. Ante incompatibilidad, rige la dirección del propietario y las prioridades P0–P3 de arriba. Los documentos técnicos enlazados se deben adecuar durante la implementación y no pueden reintroducir investigación masiva previa.
+
+<details>
+<summary>Consultar plan anterior e historial técnico (2026-10-20 a 2026-10-25)</summary>
+
+## Plan anterior — registro histórico
+
 > **Aceptación técnica 2026-10-25:** primera exportación de desarrollo completa **con narración real**, 11:11 y 56 tomas canónicas, workflow `40163555937` success y MP4 descargado/verificado. Panel con avance/descargas y conexión OAuth desplegados; cliente Google/consentimiento pendientes del propietario. Se mantiene revisión humana, licencia comercial y calidad profesional pendientes; la investigación de prueba fue preparada por Codex. Próximo bloque: subidor privado con autorización por episodio y aceptación integrada de investigadores cuando corresponda. Estado actual y enlaces en [`AVANCE.md`](AVANCE.md).
 
 > **Motor integrado 2026-10-25:** implementado montaje genérico con narrador canónico CPU reanudable, fuentes por párrafo, gráficos por escena, subtítulos, exportación y QA. Montaje técnico completo de 11:36 aprobado en Actions `40163254722` (señal técnica, sin locución). Panel y Worker desplegados; CI corregido aprobado. Investigación manual y programada pausadas por el propietario. Prueba final canónica `40163555937` en ejecución al registrar; no acredita todavía documental narrado aceptado, calidad profesional ni OAuth/publicación. Operación en [`PRODUCCION_EPISODIOS.md`](PRODUCCION_EPISODIOS.md), aceptación en AVANCE.
@@ -537,3 +665,5 @@ La nueva fase 2 tiene un motor experimental de consulta y redacción IA **ejecut
 
 **Criterio de aceptación pendiente:** la infraestructura YouTube y las coincidencias entre fuentes NO equivalen aún a un radar profesional que selecciona el mejor documental. Priorizar evidencias, comparación y decisión autónoma por delante de nuevas mejoras estéticas.
 
+
+</details>

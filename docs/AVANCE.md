@@ -1,6 +1,37 @@
 # Historial de avance — Factor de Gigantes
 
-> **Estado actual 2026-10-25:** documental de desarrollo **narrado completo**, 11:11, ocho escenas y 56 tomas Qwen CPU; montaje y QA reales aprobados. [Descargar video, guion, fuentes y subtítulos](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163555937/artifacts/12588892336). Panel con avance/descargas y conexión OAuth desplegados; CI de código `42fb42469c49dafcecd73b2a1bb524f56f2792d6` aprobado (112 Node y cobertura Python/FFmpeg). Material investigado directamente por Codex, no resultado autónomo del equipo investigador. Investigación pausada; audición, aceptación profesional y derechos comerciales pendientes. El canal Factor de Gigantes ya está conectado por OAuth; el subidor privado y su revisión final ya están desplegados, con el episodio registrado y la primera subida real pendiente de autorización por episodio. **El proyecto completo aún no está terminado y no se ha publicado en YouTube.**
+## 2026-10-25 · Dirección corregida por el propietario: automatización del canal
+
+**Alcance de esta entrega:** actualización documental en `main`. El propietario rechaza recopilar e investigar muchas empresas antes de seleccionar el video. Exige búsqueda diaria orientada a oportunidades YouTube del nicho conocido → selección de un tema y una empresa → investigación del elegido → producción → reproducción del video en el panel → publicación autorizada. Añade un segundo inicio por chat, indicando él mismo tema y empresa, que converge en el mismo flujo.
+
+### Cambios realizados
+
+- Se reorganiza `docs/PLAN_PROYECTO.md` con una dirección vigente al inicio, criterios de aceptación y prioridades P0–P3. El plan previo se conserva íntegro en un anexo identificado como histórico, con su encabezado adaptado.
+- Se distingue comparación acotada de candidatos de investigación profunda: esta última solo comienza después de elegir el episodio.
+- Se especifican chat operativo y reproductor embebido de MP4 real; descarga/Actions no cumplen el requisito de visualizar el video.
+- Se define la publicación/programación del canal como parte del objetivo final y se mantiene autorización humana, licencias, voz canónica y cero pagos.
+- Esta entrada fija las próximas prioridades sin borrar el historial técnico ni atribuir funcionalidades nuevas al código existente.
+
+### Verificación y límites de esta entrega
+
+Lectura por conexión GitHub de AGENTS, plan, avance, panel y rutas relevantes; comparación con las instrucciones actuales del propietario. Revisión documental del orden de etapas y de que los criterios nuevos permanecen pendientes. Conservación del cuerpo anterior del plan y del avance comprobada al construir los reemplazos. Commit base revisado: `ca0611b53d500ee0ada88893a5a1162103100d5b`.
+
+No se ejecutan suites de aplicación por ser cambios de documentación; no se modifica código, cron, D1, secretos, despliegues ni se lanzan investigadores, renders o publicaciones. Los resultados de CI y despliegue del historial pertenecen a entregas anteriores. La pausa de investigación continúa vigente. Esta actualización no demuestra el funcionamiento del flujo corregido.
+
+### Próximas tareas prioritarias — vigentes
+
+1. **P0:** búsqueda YouTube del nicho → selección persistente única → investigación solo del elegido; chat como entrada alternativa, misma orquestación y prevención de duplicados.
+2. **P1:** portada centrada en episodio/chat/avance y reproducción del MP4 dentro del panel, con entrega autenticada y manejo de caducidad.
+3. **P2:** integrar y aceptar el recorrido real de las IA para ambos inicios, con reanudación y presupuestos; habilitación de investigadores según autorización vigente.
+4. **P3:** publicación/programación autorizada y confirmada en YouTube; aprendizaje con métricas propias disponibles.
+
+**Siguiente paso exacto:** implementar el contrato de episodio y las dos entradas del P0 con pruebas del orden de llamadas que impidan investigación antes de selección. No ampliar la recolección de datos como sustituto de ese bloque.
+
+## Historial previo a la corrección de dirección
+
+Las menciones a «próximo paso», «prioridad» o «bloque actual» que siguen se conservan como registro de su fecha. Para continuar, rigen las prioridades vigentes de arriba y el plan actualizado.
+
+> **Estado técnico registrado antes de la corrección de dirección, 2026-10-25:** documental de desarrollo **narrado completo**, 11:11, ocho escenas y 56 tomas Qwen CPU; montaje y QA reales aprobados. [Descargar video, guion, fuentes y subtítulos](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163555937/artifacts/12588892336). Panel con avance/descargas y conexión OAuth desplegados; CI de código `42fb42469c49dafcecd73b2a1bb524f56f2792d6` aprobado (112 Node y cobertura Python/FFmpeg). Material investigado directamente por Codex, no resultado autónomo del equipo investigador. Investigación pausada; audición, aceptación profesional y derechos comerciales pendientes. El canal Factor de Gigantes ya está conectado por OAuth; el subidor privado y su revisión final ya están desplegados, con el episodio registrado y la primera subida real pendiente de autorización por episodio. **El proyecto completo aún no está terminado y no se ha publicado en YouTube.**
 
 
 > **Estado histórico 2026-10-22:** `main` incluye radar YouTube real y selección D1, investigación Qwen/Gemini/Groq E2E confirmada previamente, pero Theranos mantiene 7 afirmaciones no contrastadas de una sola noticia y cola `awaiting_sources`. **Bloque actual:** ampliación real de fuentes públicas (Wikimedia + GDELT sin clave + Tavily/Exa opcionales), 8 intentos acotados, historial D1 de hasta cinco rondas, reutilización solo ante evidencia nueva y omisión de IA si el documento no cambió. CI antiguo falló por expectativas del límite de 4 y el orden antiguo; tests corregidos en `main`, CI/E2E del HEAD aún por confirmar. Guion y publicación no autorizados.
