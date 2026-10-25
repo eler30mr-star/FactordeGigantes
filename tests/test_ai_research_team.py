@@ -111,6 +111,26 @@ class ClientsTests(unittest.TestCase):
 
 
 class DiscoveryTests(unittest.TestCase):
+    def test_corporate_documents_come_from_the_observed_site_and_host_spoofing_is_not_primary(self):
+        root = 'https://corporate.example/company'
+        report = 'https://corporate.example/investors/annual-report'
+        spoof = 'https://corporate.example.evil.example/company'
+        selected = {**SELECTION, 'observed_official_websites': [root], 'discovery_wikipedia_title': 'Empresa Ejemplo Limited'}
+        def wiki(url, **_):
+            self.assertIn('Empresa+Ejemplo+Limited', url)
+            return json.dumps({'parse': {'externallinks': [spoof]}}).encode(), url, 'application/json'
+        fetched = []
+        def document(url, **_):
+            fetched.append(url)
+            content = '<p>' + TEXT + '</p>'
+            if url == root: content += '<a href="/investors/annual-report">Annual Report</a>'
+            return content.encode(), url, 'text/html'
+        out = discover_sources(selected, clients=self.clients(), wiki_fetcher=wiki, document_fetcher=document)
+        self.assertIn(report, fetched)
+        self.assertTrue(any(e['url'] == report and e['source_class'] == 'potential_official_primary' for e in out['evidence_manifest']))
+        self.assertTrue(all(e['source_class'] == 'public_document_candidate' for e in out['evidence_manifest'] if e['url'] == spoof))
+        self.assertFalse(out['publication_authorized'])
+
     def clients(self):
         return FreeClients(env={}, reserve=lambda *_: self.fail("No hay claves"))
 
@@ -317,3 +337,4 @@ class TeamTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

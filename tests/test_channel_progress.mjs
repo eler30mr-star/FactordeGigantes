@@ -36,6 +36,9 @@ test('episode progress exposes the next real action and does not claim provider/
  const f=setup();let p=await channelProgress(f.env,f.id);assert.equal(p.next_step,'start_research');assert.equal(p.steps[3].state,'pending');
  f.env.FINAL_AI_INTEGRATION_ENABLED='0';p=await channelProgress(f.env,f.id);assert.equal(p.action_enabled,false);assert.equal(p.steps[1].state,'blocked');
  f.research('blocked','ai-saved');p=await channelProgress(f.env,f.id);assert.equal(p.next_step,'resume_research');assert.equal(p.research.checkpoint_available,true);
+ f.raw.prepare("INSERT INTO market_ai_pipeline_runs(id,collected_on,wikidata_id,status,analysis_provider,evidence_count,claims_count,report_json) VALUES('ai-saved',date('now'),'Q100','candidate_claims_generated','gemini',1,1,?)")
+  .run(JSON.stringify({candidate_claims:[{}],reviews:[],source_quality:{claim_gaps:[{gaps:['no_independent_domain']}]}}));
+ p=await channelProgress(f.env,f.id);assert.equal(p.research.checkpoint_stage,'corroboration');assert.equal(p.steps[1].state,'blocked');assert.equal(p.steps[2].state,'pending');
  f.env.FINAL_AI_INTEGRATION_ENABLED='1';f.job();p=await channelProgress(f.env,f.id);assert.equal(p.next_step,'submit_script');
  const response=await worker.fetch(new Request('https://factor.test/api/jobs/'+f.jobId+'/submit',{method:'POST',headers:{Authorization:'Bearer '+f.env.ADMIN_TOKEN}}),f.env);
  assert.equal(response.status,200);p=await channelProgress(f.env,f.id);assert.equal(p.next_step,'review_dossier');

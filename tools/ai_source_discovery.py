@@ -19,6 +19,7 @@ from tools.ai_clients import ProviderError
 from tools.pdf_sources import analyze_document, fetch_document_public
 from tools.research_engine import fetch_public, validate_url
 from tools.research_source_plan import search_plan, select_passages
+from tools.official_document_links import find_official_document_links
 
 MAX_DOCUMENTS = 8
 MAX_PRIMARY_ATTEMPTS = 5
@@ -220,6 +221,16 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     if not qid:
         out["status"] = "skipped_no_selection"
         return out
+    official_urls = selection.get('observed_official_websites', [])
+    if not isinstance(official_urls, list) or len(official_urls) > 2:
+        raise ValueError('Sitios oficiales fuera del presupuesto')
+    official_hosts = set()
+    for url in official_urls:
+        validate_url(url)
+        official_hosts.add(urlsplit(url).hostname.lower().rstrip('.').removeprefix('www.'))
+    def official_host(host):
+        host = (host or '').lower().rstrip('.').removeprefix('www.')
+        return any(host == parent or host.endswith('.' + parent) for parent in official_hosts)
     # La selección D1 informa qué enlaces ya fallaron y qué pasajes se
     # observaron anteriormente. Sólo usarlos para ampliar el dossier cuando
     # se consiga al menos UNA fuente nueva. Así evitamos gasto IA redundante.
@@ -254,11 +265,15 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         if passage["source_class"] == "public_authority_candidate" and not regulatory_host(urlsplit(passage["url"]).hostname):
             passage = {**passage, "source_class": "public_document_candidate"}
         preserved.append(passage)
-    leads = []
+    leads = [{'url': url, 'title': 'Sitio corporativo observado en la entidad elegida',
+              'discovered_by': 'wikidata_p856'} for url in official_urls]
     leads.extend({"url": u, "title": "Extraer referencias originales del documento ya citado",
                   "discovered_by": "d1_document_citation_expansion"} for u in expand_urls)
     try:
-        wiki_leads = wikipedia_links(title, fetcher=wiki_fetcher)
+        wiki_title = selection.get('discovery_wikipedia_title', title)
+        if not isinstance(wiki_title, str) or not 1 <= len(wiki_title) <= 200:
+            raise ValueError('Artículo corporativo inválido')
+        wiki_leads = wikipedia_links(wiki_title, fetcher=wiki_fetcher)
         leads.extend(wiki_leads)
         out["stages"].append({"provider": "wikipedia", "role": "discover",
                               "status": "success", "result_count": len(wiki_leads)})
@@ -279,7 +294,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     if focus is not None and (not isinstance(focus, str) or not 5 <= len(focus) <= 300):
         raise ValueError('Enfoque editorial inválido')
     queries = search_plan(title, targets, REGULATORY_HOSTS)
-    if focus:
+    if focus and not targets:
         queries = [{**q, 'query': f'"{title}" {focus} ' +
                     ('original documents annual report' if i == 0 else 'independent reporting')}
                    for i, q in enumerate(queries)]
@@ -336,16 +351,16 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         archive = parsed.hostname in {"web.archive.org", "archive.today",
                                      "archive.ph", "wayback.archive-it.org"}
         targeted=bool(targets) and lead.get('discovered_by') in ('tavily','exa')
-        return (-int(lead["url"] in expand_urls), -int(targeted), -int(regulatory_host(parsed.hostname)), int(archive), -int(relevant),
+        return (-int(lead["url"] in expand_urls), -int(targeted), -int(official_host(parsed.hostname)), -int(regulatory_host(parsed.hostname)), int(archive), -int(relevant),
                 -int(parsed.path.lower().endswith(".pdf")), lead["url"])
 
     # Intercalar gobierno/justicia con publicaciones independientes. El orden
     # alfabético de Wikipedia enviaba cuatro solicitudes y se detenía aunque
     # tres de ellas no entregaran extractos. Nunca rellenar con texto simulado.
     authorities = sorted((x for x in eligible
-                          if primary_host(urlsplit(x["url"]).hostname)), key=rank)
+                          if primary_host(urlsplit(x["url"]).hostname) or official_host(urlsplit(x["url"]).hostname)), key=rank)
     independent = sorted((x for x in eligible
-                          if not primary_host(urlsplit(x["url"]).hostname)), key=rank)
+                          if not primary_host(urlsplit(x["url"]).hostname) and not official_host(urlsplit(x["url"]).hostname)), key=rank)
     ordered = deque()
     while authorities or independent:
         if authorities:
@@ -364,8 +379,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         if lead["url"] in attempted_urls:
             continue
         host = urlsplit(lead["url"]).hostname
-        kind = "primary" if primary_host(host) else "secondary"
-        host_limit = 2 if regulatory_host(host) and host not in useful_hosts else MAX_PER_HOST
+        kind = "primary" if primary_host(host) or official_host(host) else "secondary"
+        host_limit = 3 if official_host(host) else 2 if regulatory_host(host) and host not in useful_hosts else MAX_PER_HOST
         if per_host[host] >= host_limit or per_kind[kind] >= (
                 MAX_PRIMARY_ATTEMPTS if kind == "primary" else MAX_SECONDARY_ATTEMPTS):
             continue
@@ -383,6 +398,10 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
             analysis = analyze_document(raw, mime, pdf_max_pages=350, pdf_scan_pages=12)
             if "html" in mime or "pdf" in mime:
                 references = document_references(raw, resolved, mime=mime, analysis=analysis, entity=title)
+                if official_host(urlsplit(resolved).hostname) and 'html' in mime:
+                    references = ([{'url': link['url'], 'title': link['anchor_text'] or 'Documento corporativo enlazado',
+                        'discovered_by': 'official_document_links', 'discovered_from': resolved}
+                        for link in find_official_document_links(resolved, raw, mime=mime)] + references)[:12]
                 record.update({"citation_links_scanned": True, "citation_scan_method": CITATION_SCAN_METHOD,
                                "reference_urls": [r["url"] for r in references]})
                 for reference in reversed(references):
@@ -402,7 +421,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                     **passage, "source_id": qid + "-observed-document",
                     "claim_id": "documentary_candidate",
                     "source_class": "public_authority_candidate" if regulatory_host(urlsplit(resolved).hostname)
-                                    else "public_document_candidate"})
+                                    else ('potential_official_pdf' if 'pdf' in mime else 'potential_official_primary')
+                                    if official_host(urlsplit(resolved).hostname) else "public_document_candidate"})
             record.update({"status": "text_extracted" if fragments else "no_relevant_passages",
                            "resolved_url": resolved, "sha256": digest,
                            "pages_total": analysis["total_pages"],

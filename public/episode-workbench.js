@@ -46,7 +46,8 @@ export function mountEpisodeWorkbench(root,{request,openDossier,openExport,fetch
     button('Revisar fuentes y derechos',()=>openDossier(data.job.id));
    }else{scriptJob=null;script.replaceChildren();}
    if(['start_research','resume_research'].includes(data.next_step))button(
-    data.research?.checkpoint_available?'Reanudar desde el guion':'Investigar este episodio',
+    data.research?.checkpoint_stage==='corroboration'?'Completar fuentes y contraste':data.research?.checkpoint_stage==='review'?
+     'Reanudar revisión de fuentes':data.research?.checkpoint_available?'Reanudar desde el guion':'Investigar este episodio',
     async()=>{const result=await request('/api/channel-control/research','POST',{episode_id:episode.id});
      if(!result.started)throw Error(result.reason==='research_paused'?'La investigación sigue pausada.':
       result.reason==='dispatch_unknown'?'Envío incierto. Revisa Actions antes de repetir.':'Ya hay una solicitud activa o se alcanzó el límite diario.');},data.action_enabled);

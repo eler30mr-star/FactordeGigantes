@@ -9,6 +9,16 @@ export async function channelProgress(env,id){
  if(!episode)return fail(404,'Episodio inexistente');
  const research=await env.DB.prepare('SELECT id,state,note,research_run_id,job_id FROM channel_episode_research WHERE episode_id=? ORDER BY rowid DESC LIMIT 1').bind(id).first();
  const job=research?.job_id?await env.DB.prepare('SELECT id,title,status,review_note,last_error FROM jobs WHERE id=?').bind(research.job_id).first():null;
+ let checkpointStage='script';
+ if(research?.research_run_id&&!job){
+  const checkpoint=await env.DB.prepare(`SELECT
+   json_array_length(report_json,'$.candidate_claims') AS claims,
+   json_array_length(report_json,'$.reviews') AS reviews,
+   EXISTS(SELECT 1 FROM json_each(report_json,'$.source_quality.claim_gaps') WHERE json_array_length(value,'$.gaps')>0) AS missing_sources
+   FROM market_ai_pipeline_runs WHERE id=?`).bind(research.research_run_id).first();
+  if(checkpoint?.missing_sources)checkpointStage='corroboration';
+  else if(checkpoint&&checkpoint.reviews<checkpoint.claims)checkpointStage='review';
+ }
  let dossier=null,preview=null,video=null,publication=null;
  if(job){
   dossier=await env.DB.prepare('SELECT editor_attested,editor_name FROM editorial_dossiers WHERE job_id=?').bind(job.id).first();
@@ -30,10 +40,13 @@ export async function channelProgress(env,id){
   const saved=!!research.research_run_id;
   steps[1].state=saved?'done':'current';
   if(saved)steps[2].state='current';
+  if(saved&&checkpointStage==='corroboration'){steps[1].state='current';steps[2].state='pending';}
   next='wait';message=saved?'La investigación está guardada. Preparando el guion.':'Buscando y contrastando fuentes del episodio.';
   if(['blocked','rejected'].includes(research.state)){
    steps[saved?2:1].state='blocked';next='resume_research';
    message=saved?'El guion se interrumpió. Puedes reanudarlo conservando la investigación.':'La investigación se interrumpió. Puedes reintentar esta misma elección.';
+   if(saved&&checkpointStage==='corroboration'){steps[1].state='blocked';steps[2].state='pending';message='La investigación está guardada, pero falta contraste. Puedes completar las fuentes de este mismo episodio.';}
+   else if(saved&&checkpointStage==='review')message='Las fuentes están guardadas. Puedes reanudar su revisión sin repetir las búsquedas.';
   }else if(research.state==='unknown'){
    steps[saved?2:1].state='blocked';next='check_dispatch';message='No se confirmó el envío. Revisa Actions antes de repetir para evitar duplicados.';
   }
@@ -62,8 +75,8 @@ export async function channelProgress(env,id){
   else if(publication){next='check_publication';message=publication.state==='unknown'?'Publicación incierta. Comprueba YouTube antes de repetir.':'Consulta el resultado de la autorización de publicación.';if(publication.state==='unknown'||publication.state==='failed')steps[5].state='blocked';}
  }
  const blockedByPause=paused&&['start_research','resume_research'].includes(next);
- if(blockedByPause){steps[research?.research_run_id?2:1].state='blocked';message+=' La investigación sigue pausada; la elección y los resultados se conservan.';}
- return {ok:true,episode,research:research?{id:research.id,state:research.state,checkpoint_available:!!research.research_run_id}:null,
+ if(blockedByPause){steps[research?.research_run_id&&checkpointStage!=='corroboration'?2:1].state='blocked';message+=' La investigación sigue pausada; la elección y los resultados se conservan.';}
+ return {ok:true,episode,research:research?{id:research.id,state:research.state,checkpoint_available:!!research.research_run_id,checkpoint_stage:checkpointStage}:null,
   job,steps,next_step:next,message,research_paused:paused,action_enabled:!blockedByPause,
   preview:video&&job?.status==='ready'?{export_id:video.id,state:video.state}:null,publication,publication_authorized:false};
 }

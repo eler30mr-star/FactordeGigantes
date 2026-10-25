@@ -4,11 +4,13 @@ import os
 import shutil
 import subprocess
 import uuid
+import hashlib
+from urllib.parse import urlsplit
 from pathlib import Path
 from tools.ai_clients import FreeClients, ProviderError
 from tools.ai_control import ControlClient
 from tools.ai_source_discovery import discover_sources
-from tools.channel_episode import run_episode, resolve_company
+from tools.channel_episode import run_episode
 
 FOLDER = Path('dist/final-directed-acceptance')
 COMPANY = 'BlackBerry'
@@ -35,7 +37,7 @@ def main():
         if previous:
             if not previous.isdigit():
                 raise ValueError('Run previo inválido')
-            for name in ('IDENTIDAD.json', 'FUENTES.json', 'INVESTIGACION.json', 'GUION.json', 'ACEPTACION.sqlite'):
+            for name in ('IDENTIDAD.json', 'FUENTES.json', 'FUENTES_CONTINUACION.json', 'INVESTIGACION.json', 'GUION.json', 'ACEPTACION.sqlite'):
                 source = Path('dist/previous-directed') / name
                 if source.is_file():
                     shutil.copyfile(source, FOLDER / name)
@@ -73,11 +75,15 @@ def main():
                     raise
         def discover(selection, **options):
             audit['phase'] = 'source_discovery'
-            saved = FOLDER / 'FUENTES.json'
-            if saved.exists():
+            continuing = bool(selection.get('prior_attempted_urls') or selection.get('prior_research_targets'))
+            saved = FOLDER / ('FUENTES_CONTINUACION.json' if continuing else 'FUENTES.json')
+            signature = hashlib.sha256(json.dumps(selection, sort_keys=True).encode()).hexdigest()
+            cached = json.loads(saved.read_text()) if saved.exists() else None
+            if cached and cached.get('_acceptance_selection_sha256') == signature:
                 audit['source_checkpoint_reused'] = True
-                return json.loads(saved.read_text())
+                return cached
             sources = discover_sources(selection, **options)
+            sources['_acceptance_selection_sha256'] = signature
             saved.write_text(json.dumps(sources, ensure_ascii=False, indent=2))
             return sources
         result = run_episode(Control(), identity['request_id'], client_factory=Clients, discover=discover)
@@ -87,6 +93,9 @@ def main():
             claim_count=len(report.get('candidate_claims', [])), stages=report.get('stages', []),
             source_quality=report.get('source_quality'), script_status=result.get('draft', {}).get('status'),
             blocking_reasons=result.get('draft', {}).get('blocking_reasons', []), job_id=result.get('job_id'))
+        audit['documents'] = [{'host': urlsplit(d['url']).hostname,
+                              'status': d['status'], 'error_type': d.get('error_type')}
+                             for d in report.get('source_documents', [])]
         print('ACEPTACION_EPISODIO:', json.dumps(audit, ensure_ascii=False))
     except (ValueError, RuntimeError, OSError, KeyError, TypeError) as exc:
         audit.update(state='blocked', error_type=type(exc).__name__)

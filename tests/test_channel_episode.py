@@ -1,10 +1,43 @@
 import json
 import unittest
 from unittest.mock import patch
-from tools.channel_episode import run_episode, resolve_company
+from tools.channel_episode import run_episode, resolve_company, resolve_company_identity
 
 
 class ChannelEpisodeTests(unittest.TestCase):
+    def test_incomplete_checkpoint_corroborates_without_repeating_the_analyst(self):
+        saved = {'company': 'BlackBerry', 'editorial_topic': 'Pérdida de liderazgo',
+                 'selected_episode_id': 'chosen', 'selected_wikidata_id': 'Q100',
+                 'observed_official_websites': ['https://www.blackberry.com'],
+                 'source_quality': {'claim_gaps': [{'claim_index': 1, 'gaps': ['no_independent_domain']}]}}
+        class Control:
+            def request(self, path, body):
+                if path.endswith('/context'): return {'allowed': True, 'episode': {'episode_id': 'chosen', 'company': 'BlackBerry',
+                    'topic': 'Pérdida de liderazgo', 'origin': 'chat'}, 'checkpoint': {'run_id': 'ai-' + 'b' * 28, 'report': saved}}
+                if path.endswith('/research'):
+                    self_test.assertEqual(body['report']['company'], 'BlackBerry')
+                    self_test.assertEqual(body['report']['editorial_topic'], 'Pérdida de liderazgo')
+                    return {'ok': True, 'run_id': 'ai-' + 'c' * 28}
+                return {'ok': True, 'job_id': 'job'}
+            def reserve(self, *_): return True
+        self_test = self
+        def corroborate(report, **options):
+            selected = {'selected_wikidata_id': 'Q100', 'prior_research_targets': [{'statement': 'El cambio'}]}
+            options['discover'](selected, clients=None)
+            return {'report': {**report, 'source_quality': {'claim_gaps': []}}}
+        def discover(selection, **_):
+            self.assertEqual(selection['observed_official_websites'], ['https://www.blackberry.com'])
+            self.assertEqual(selection['editorial_topic'], 'Pérdida de liderazgo')
+            return {}
+        def script(report, selection, **options):
+            self.assertEqual(options['research_run_id'], 'ai-' + 'c' * 28)
+            return {'status': 'editorial_draft_unapproved'}
+        forbidden = lambda *_a, **_k: self.fail('No repetir identidad/analistas')
+        with patch('tools.channel_episode.validate_report_locally'):
+            result = run_episode(Control(), 'request', resolver=forbidden, analyze=forbidden, discover=discover,
+                corroborate=corroborate, scriptwriter=script, client_factory=lambda **_: None)
+        self.assertEqual(result['state'], 'review')
+
     def test_retry_continues_from_saved_research_without_resolver_sources_or_analysts(self):
         saved = {'company': 'BlackBerry', 'editorial_topic': 'Pérdida de liderazgo',
                  'selected_episode_id': 'chosen', 'selected_wikidata_id': 'Q100'}
@@ -46,6 +79,12 @@ class ChannelEpisodeTests(unittest.TestCase):
         def fetch(url):
             return {'search': [{'id': 'Q100'}]} if 'wbsearchentities' in url else {'entities': {'Q100': entity}}
         self.assertEqual(resolve_company('BlackBerry', fetch), 'Q100')
+        entity['sitelinks'] = {'enwiki': {'title': 'BlackBerry Limited'}}
+        entity['claims']['P856'] = [{'mainsnak': {'datavalue': {'value': url}}} for url in
+            ['https://www.blackberry.com/en', 'https://127.0.0.1/private', 'http://invalid.example']]
+        identity = resolve_company_identity('BlackBerry', fetch)
+        self.assertEqual(identity['observed_official_websites'], ['https://www.blackberry.com/en'])
+        self.assertEqual(identity['discovery_wikipedia_title'], 'BlackBerry Limited')
         entity['labels']['en']['value'] = 'Different company'
         with self.assertRaises(ValueError): resolve_company('BlackBerry', fetch)
 

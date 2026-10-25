@@ -1,5 +1,15 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Primera aceptación IA real y continuación enfocada corregida
+
+Run `40207786180` completado: Tavily recuperó diez enlaces; Gemini `gemini-3.5-flash-lite` (1.164 entrada/386 salida) produjo seis afirmaciones candidatas y Groq `openai/gpt-oss-120b` completó su revisión (1.562 entrada/833 salida). La investigación persistida tiene tres pasajes de un único documento. El guion se bloqueó correctamente por falta de fuentes independientes y original corporativo. Artefacto `12604221536`, SHA ZIP `aa5013f8d4f6c033d0552c90107ab8b1b0d55c839a73ef7bc2465a0699ffd93e`. No se acredita guion/video.
+
+**Correcciones funcionales:** el runner distingue un expediente incompleto de un guion fallido. Con vacíos de contraste usa la continuación existente de fuentes y revisión, conserva las afirmaciones y no repite Gemini/Qwen; con fuentes suficientes continúa directamente el guion. También puede recuperar una revisión pendiente sin repetir descargas. Se mantiene empresa/enfoque en las búsquedas de continuación; la consulta factual concreta no se sustituye por la pregunta editorial larga.
+
+La resolución exacta conserva sitios P856 y artículo corporativo de la entidad observada. El descubrimiento usa esas rutas, sigue enlaces reales a informes y diferencia documentos corporativos candidatos de fuentes independientes. Dominios similares o redirecciones externas no se promueven a originales corporativos. Se mantienen presupuestos de ocho documentos, diez pasajes, contraste, revisión humana y publicación bloqueada. El panel muestra «Completar fuentes y contraste» cuando ese es el bloqueo real.
+
+**Verificación:** 46 pruebas Python enfocadas aprobadas, incluidas continuidad sin analistas, identidad oficial, informes enlazados y host suplantado; 13 contratos Node del episodio aprobados, incluido el estado específico de contraste. La segunda aceptación reutilizará el artefacto y la investigación guardada. Su resultado permanece pendiente; no se declara corregida la suficiencia documental por escribir código.
+
 ## 2026-10-25 · Aceptación integrada puntual del episodio dirigido iniciada
 
 Se implementa una fase explícita de prueba final para BlackBerry, ejemplo del plan, usando el runner real del episodio: resolución de identidad → fuentes observadas → análisis/revisión → guion → persistencia editorial. Los proveedores usan sus reservas D1 reales y modalidades gratuitas configuradas. La persistencia de investigación/guion usa las funciones de producción contra SQLite aislado dentro del artefacto; no crea episodios del propietario ni levanta la pausa global.
