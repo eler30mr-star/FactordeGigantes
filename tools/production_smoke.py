@@ -38,6 +38,8 @@ def probe(base):
     report = {"product": "Factor de Gigantes", "worker": EXPECTED_HOST,
               "checks": {}, "production_ready": False}
     checks = [
+        ('/youtube-publication.js', 200, [b'mountPublication', b'publication_authorized']),
+        ('/api/youtube/exports/' + '0' * 64 + '/publication', 401, [b'Acceso no autorizado']),
         ('/channel-control.js', 200, [b'mountChannelControl']),
         ('/video-preview.js', 200, [b'extractPreview', b'mountVideoPreview']),
         ('/api/channel-control', 401, [b'Acceso no autorizado']),

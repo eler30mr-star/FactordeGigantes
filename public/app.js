@@ -283,6 +283,7 @@ async function loadYoutubeConnection(){
     !data.configured?'Pendiente de configurar el cliente OAuth del canal. La clave del estudio de YouTube no sustituye esta conexión.':
     data.last_connection_result==='channel_mismatch'?'Google devolvió otro canal. Conecta la cuenta que administra el canal configurado.':'Canal todavía sin conectar.';
   $('youtube-connect').disabled=!data.configured;
+  $('youtube-publication-access').hidden=!data.connected||data.publication_scope_granted===true;
   $('youtube-disconnect').hidden=!data.connection_stored;
   $('youtube-connection-config').textContent=(data.missing.length?'Faltan: '+data.missing.join(', ')+'. ':'Configuración presente. ')+
     'URL de retorno para Google: '+data.callback_url;
@@ -295,6 +296,12 @@ async function loadYoutubeReviews(){
 }
 $('youtube-review-refresh').addEventListener('click',()=>loadYoutubeReviews().catch(e=>{$('youtube-review-status').textContent=e.message;}));
 $('youtube-connection-refresh').addEventListener('click',()=>loadYoutubeConnection().catch(e=>{$('youtube-connection-status').textContent=e.message;}));
+$('youtube-publication-access').addEventListener('click',async()=>{
+  const button=$('youtube-publication-access');button.disabled=true;
+  try{const result=await request('/api/youtube/connect','POST',{confirmed:true,publication_access:true});
+    window.location.assign(result.authorization_url);
+  }catch(e){$('youtube-connection-status').textContent=e.message;button.disabled=false;}
+});
 $('youtube-connect').addEventListener('click',async()=>{
   const button=$('youtube-connect');button.disabled=true;
   try{

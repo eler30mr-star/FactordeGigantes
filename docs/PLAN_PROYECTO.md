@@ -135,7 +135,7 @@ Todo lo siguiente queda **pendiente de implementación o validación integral**,
 
 ### P3 — Publicación del canal y aprendizaje
 
-- [ ] Integrar metadatos, subtítulos, revisión, subida y publicación/programación con OAuth del canal y autorización explícita.
+- [x] Integrar metadatos, subtítulos, revisión, subida y publicación/programación con OAuth del canal y autorización explícita. Código y contratos implementados; primer recorrido real de publicación pendiente.
 - [ ] Confirmar resultado en YouTube, evitar duplicados y mostrar errores recuperables.
 - [ ] Incorporar resultados propios del canal a futuras búsquedas cuando exista acceso.
 
@@ -147,7 +147,7 @@ La infraestructura existente —Worker, D1, proveedores IA, narrador, montaje, O
 
 La pausa de investigadores registrada previamente se conserva. La conexión implementada no levanta por sí sola la pausa ni concede autorización de publicación. Se mantienen cero pagos, voz canónica, fuentes verificables, recursos con derechos, secretos protegidos y `main` exclusiva.
 
-**Siguiente bloque de desarrollo:** aceptar con proveedores reales el recorrido de episodio → investigación enfocada → guion → aprobación → render y registro del MP4, y calibrar el estudio YouTube cuando se habilite la prueba integrada. Completar después la publicación/programación autorizada. El control, el reproductor y el estudio v2 ya tienen código y pruebas; no ampliar el radar antiguo. Registrar separadamente código, pruebas, despliegue y aceptación real.
+**Siguiente bloque de desarrollo:** aceptar con proveedores reales el recorrido de episodio → investigación enfocada → guion → aprobación → render y registro del MP4, y calibrar el estudio YouTube cuando se habilite la prueba integrada. La publicación/programación autorizada ya tiene código y pruebas con Google simulado; aceptar su primer recorrido real tras consentimiento ampliado, revisión del video y autorización. El control, el reproductor y el estudio v2 ya tienen código y pruebas; no ampliar el radar antiguo. Registrar separadamente código, pruebas, despliegue y aceptación real.
 
 ## Anexo — Plan e hitos anteriores, conservados como historial
 

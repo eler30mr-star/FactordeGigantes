@@ -1,5 +1,19 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Publicación inmediata y programación autorizadas implementadas
+
+Se añade al panel el cierre posterior a la subida privada: elegir publicar ahora o programar una fecha UTC, identificar responsable y autorizar explícitamente el SHA exacto del video revisado. Ningún cron, investigación ni callback de subida puede iniciar esta operación. El servidor comprueba revisión completa, archivo, estado privado y canal conectado antes de reservar.
+
+Se verifica la operación en YouTube con lectura posterior. Reservas e identificadores persistentes impiden doble envío; los resultados inciertos se reconcilian consultando sin repetir PUT. Se conserva la configuración editable de estado del video y no se modifica snippet. La autorización y confirmación quedan registradas en eventos.
+
+**OAuth:** documentación oficial `videos.update` exige un scope de edición adicional al de subida. Se implementa ampliación opcional mediante botón y consentimiento Google con `youtube.force-ssl`. Se guardan los scopes realmente devueltos y se rechaza un consentimiento ampliado incompleto conservando la conexión previa. La conexión normal no amplía permisos. El canal real no se ha reconectado ni se han leído credenciales.
+
+**Verificación:** 157 contratos Node aprobados localmente, incluidos siete nuevos de autorización independiente, hash/revisión, publicación inmediata, fecha UTC, preservación de campos, incertidumbre sin reenvío, canal equivocado, roles y consentimiento OAuth ampliado. Google simulado: no se atribuye publicación ni programación real. Sintaxis y YAML correctos.
+
+**D1:** migración aditiva 0020 aplicada y verificada, tabla de publicaciones vacía, exportación existente todavía en `review`, claves foráneas correctas. Ninguna subida, publicación o programación real iniciada.
+
+Operación y referencia oficial en `docs/PUBLICACION_YOUTUBE.md`. CI y despliegue del bloque se verificarán tras el commit. Siguen pendientes aceptación del nuevo flujo con proveedores, calibración del mercado, revisión humana del documental y primer recorrido real de subida/publicación autorizadas. La pausa de IA se conserva.
+
 ## 2026-10-25 · Conexión de episodio desplegada y CI final aprobado
 
 Código final `9bf621d` en main; CI `40196188102` aprobado en contratos, cobertura Python, QA audiovisual y smoke. La primera integración `f82bbe6` también pasó CI `40196092277`. Se verificó el código realmente servido por Cloudflare: incluye la tabla de episodios investigados, el control de respuesta de guion repetida y la guarda de confirmación tardía. Deployment `7cddd9c4-b442-4cc0-a10f-09c709895a96`, versión `381b6edc-45ef-4e80-b2a7-eb9a568ec54d`, al 100 %.

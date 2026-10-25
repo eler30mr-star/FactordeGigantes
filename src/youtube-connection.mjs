@@ -1,6 +1,7 @@
 // OAuth oficial, independiente de publicar. Nunca devuelve tokens al navegador.
 export const YOUTUBE_CALLBACK='https://factor-de-gigantes.martin30-eler.workers.dev/oauth/youtube/callback';
 const SCOPES=['https://www.googleapis.com/auth/youtube.readonly','https://www.googleapis.com/auth/youtube.upload'];
+export const PUBLICATION_SCOPE='https://www.googleapis.com/auth/youtube.force-ssl';
 const COOKIE='__Host-fdg-youtube-flow';
 const encoder=new TextEncoder();
 const seconds=()=>Math.floor(Date.now()/1000);
@@ -62,6 +63,7 @@ export async function youtubeConnectionStatus(env){
   connected=saved.client_id===env.YOUTUBE_CLIENT_ID&&saved.channel_id===row.channel_id&&validToken(saved.refresh_token);
  }catch{}
  return {ok:true,...config,connected,connection_stored:!!row,channel:connected?{id:row.channel_id,title:row.channel_title,connected_at:row.connected_at}:null,
+  publication_scope_granted:connected&&typeof row?.scopes==='string'&&row.scopes.split(' ').includes(PUBLICATION_SCOPE),
   last_connection_result:last?.outcome||null,callback_url:YOUTUBE_CALLBACK,automatic_publication_allowed:false};
 }
 export async function startYoutubeConnection(env,payload,{now=seconds()}={}){
@@ -69,7 +71,7 @@ export async function startYoutubeConnection(env,payload,{now=seconds()}={}){
  const config=youtubeConfiguration(env);if(!config.configured)return failure(503,'Falta configuración OAuth del canal. Consulta los campos indicados en el panel.');
  const state=random(),browser=random(),verifier=random(),stateSha=await sha(state);
  const challenge=b64(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(verifier))));
- const encrypted=await encryptYoutube(env,{verifier,client_id:env.YOUTUBE_CLIENT_ID,channel_id:env.YOUTUBE_CHANNEL_ID},'youtube-flow:'+stateSha);
+ const encrypted=await encryptYoutube(env,{verifier,client_id:env.YOUTUBE_CLIENT_ID,channel_id:env.YOUTUBE_CHANNEL_ID,publication_access:payload.publication_access===true},'youtube-flow:'+stateSha);
  await env.DB.batch([
   env.DB.prepare('DELETE FROM youtube_oauth_flows WHERE expires_at<?').bind(now),
   env.DB.prepare('INSERT INTO youtube_oauth_flows(state_sha256,cookie_sha256,payload_encrypted,expires_at) VALUES(?,?,?,?)')
@@ -77,7 +79,7 @@ export async function startYoutubeConnection(env,payload,{now=seconds()}={}){
  ]);
  const url=new URL('https://accounts.google.com/o/oauth2/v2/auth');
  url.search=new URLSearchParams({client_id:env.YOUTUBE_CLIENT_ID,redirect_uri:YOUTUBE_CALLBACK,response_type:'code',
-  scope:SCOPES.join(' '),access_type:'offline',prompt:'consent',state,code_challenge:challenge,code_challenge_method:'S256'}).toString();
+  scope:[...SCOPES,...(payload.publication_access===true?[PUBLICATION_SCOPE]:[])].join(' '),access_type:'offline',prompt:'consent',state,code_challenge:challenge,code_challenge_method:'S256'}).toString();
  return {ok:true,status:200,authorization_url:url.href,cookie:cookie(browser,600),automatic_publication_allowed:false};
 }
 function redirect(result){return new Response(null,{status:303,headers:{Location:'/?youtube='+result,
@@ -103,7 +105,7 @@ export async function finishYoutubeConnection(request,env,{now=seconds(),googleF
   const tokens=await tokenRequest(env,{code,grant_type:'authorization_code',redirect_uri:YOUTUBE_CALLBACK,code_verifier:flow.verifier},googleFetch);
   if(!validToken(tokens.access_token)||!validToken(tokens.refresh_token)||!Number.isFinite(tokens.expires_in)||
    tokens.expires_in<60||tokens.expires_in>86400||tokens.token_type?.toLowerCase()!=='bearer'||typeof tokens.scope!=='string'||
-   !SCOPES.every(s=>tokens.scope.split(' ').includes(s)))throw new Error('Permisos incompletos');
+   !SCOPES.every(s=>tokens.scope.split(' ').includes(s))||(flow.publication_access===true&&!tokens.scope.split(' ').includes(PUBLICATION_SCOPE)))throw new Error('Permisos incompletos');
   const channels=await googleJson('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&maxResults=50',
    {headers:{Authorization:'Bearer '+tokens.access_token}},googleFetch);
   const channel=Array.isArray(channels.items)?channels.items.find(c=>c.id===env.YOUTUBE_CHANNEL_ID):null;
@@ -118,7 +120,7 @@ export async function finishYoutubeConnection(request,env,{now=seconds(),googleF
     ON CONFLICT(id) DO UPDATE SET channel_id=excluded.channel_id,channel_title=excluded.channel_title,
     credentials_encrypted=excluded.credentials_encrypted,scopes=excluded.scopes,token_expires_at=excluded.token_expires_at,
     connected_at=excluded.connected_at,updated_at=excluded.updated_at`)
-    .bind(channel.id,String(channel.snippet?.title||'Canal autorizado').slice(0,160),cipher,SCOPES.join(' '),now+tokens.expires_in,now,now,stateSha,now,now),
+    .bind(channel.id,String(channel.snippet?.title||'Canal autorizado').slice(0,160),cipher,tokens.scope,now+tokens.expires_in,now,now,stateSha,now,now),
    env.DB.prepare("UPDATE youtube_oauth_flows SET outcome='connected' WHERE state_sha256=? AND EXISTS(SELECT 1 FROM youtube_connections WHERE id='primary' AND credentials_encrypted=?)").bind(stateSha,cipher)
   ]);
   return redirect(result[0].meta?.changes===1?'connected':'not_connected');
@@ -161,3 +163,4 @@ export async function youtubeAccessToken(env,{googleFetch=fetch,now=seconds()}={
   return {ok:true,access_token:next.access_token};
  }catch{return failure(409,'No se pudo renovar la autorización. Vuelve a conectar el canal con Google.');}
 }
+

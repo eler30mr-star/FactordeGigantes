@@ -1,3 +1,4 @@
+import {mountPublication} from './youtube-publication.js';
 import {mountVideoPreview} from './video-preview.js';
 const labels={review:'Pendiente de revisión',approved:'Revisión aprobada',queued:'Subida solicitada',initiating:'Iniciando sesión privada',
  uploading:'Transferencia privada en curso',uploaded:'Subido como privado',unknown:'Resultado incierto: revisar antes de repetir'};
@@ -19,7 +20,8 @@ export function mountYoutubeReviews(root,rows,{request,notify,refresh,fetchArchi
   card.append(el('p',row.origin==='codex_development_research'?'Material de desarrollo preparado por Codex':'Borrador del guionista autónomo','muted micro'));
   if(fetchArchive)root.videoCleanups.push(mountVideoPreview(card,row,{fetchArchive}));
   card.append(link('Descargar video, guion y fuentes',row.source_url));
-  if(row.video_url)card.append(link('Abrir video privado en YouTube',row.video_url));
+  if(row.video_url)card.append(link('Abrir video en YouTube',row.video_url));
+  if(row.state==='uploaded')mountPublication(card,row,{request,notify});
   if(row.last_error)card.append(el('p',row.last_error,'muted'));
   if(['queued','uploading'].includes(row.state)){
    const b=el('button','Reanudar la misma subida','secondary');b.type='button';card.append(b);

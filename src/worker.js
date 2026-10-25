@@ -1,3 +1,4 @@
+import {authorizePublication,publicationStatus,reconcilePublication} from './youtube-publication.mjs';
 import {dispatchChannelResearch,channelResearchContext,storeChannelResearch,storeChannelScript,channelResearchStatus} from './channel-research.mjs';
 import {beginOpportunityStudy,finishOpportunityStudy,checkOpportunityStudy,failOpportunityStudy,latestOpportunityStudy} from './opportunity-control.mjs';
 import {videoPreview} from './video-preview.mjs';
@@ -216,6 +217,19 @@ async function handle(request,env) {
   }
   const exportAdmin=!renderer&&parts[1]==='youtube'&&parts[2]==='exports';
   const exportRenderer=renderer&&parts[2]==='youtube';
+  if(exportAdmin && parts.length===5 && ['publication','publication-check'].includes(parts[4])){
+    try{
+      let result;
+      if(parts[4]==='publication'&&method==='GET')result=await publicationStatus(env,parts[3]);
+      else if(parts[4]==='publication'&&method==='POST')result=await authorizePublication(env,parts[3],await parseBody(request));
+      else if(parts[4]==='publication-check'&&method==='POST')result=await reconcilePublication(env,parts[3]);
+      return result?json(result,result.ok?200:result.status):err('Método no admitido',405);
+    }catch(e){
+      if(/no such table: youtube_publications/.test(String(e?.message||'')))return err('Falta migración 0020_youtube_publications.sql',503);
+      if(e instanceof RangeError||e instanceof SyntaxError)return err(e.message,400);
+      return err('No se pudo completar la operación de publicación',502);
+    }
+  }
   if(exportAdmin && parts.length===5 && parts[4]==='preview'){
     if(method!=='GET')return err('Método no admitido',405);
     return videoPreview(env,parts[3]);
