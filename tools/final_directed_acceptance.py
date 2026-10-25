@@ -37,7 +37,9 @@ def main():
         if previous:
             if not previous.isdigit():
                 raise ValueError('Run previo inválido')
-            for name in ('IDENTIDAD.json', 'FUENTES.json', 'FUENTES_CONTINUACION.json', 'INVESTIGACION.json', 'GUION.json', 'ACEPTACION.sqlite'):
+            names = ['IDENTIDAD.json', 'FUENTES.json', 'FUENTES_CONTINUACION.json', 'INVESTIGACION.json', 'GUION.json', 'ACEPTACION.sqlite']
+            names += [f'RESPUESTA_{p}_{role}.json' for p in ('gemini', 'groq', 'mistral', 'openrouter') for role in ('analyze', 'review', 'script')]
+            for name in names:
                 source = Path('dist/previous-directed') / name
                 if source.is_file():
                     shutil.copyfile(source, FOLDER / name)
@@ -48,6 +50,9 @@ def main():
         if identity['company'] != COMPANY or identity['topic'] != TOPIC:
             raise ValueError('La prueba previa corresponde a otra elección')
         identity_file.write_text(json.dumps(identity, ensure_ascii=False, indent=2))
+        old_report_file = FOLDER / 'INVESTIGACION.json'
+        if old_report_file.exists():
+            audit['previous_review_reason'] = json.loads(old_report_file.read_text()).get('corroboration_continuation', {}).get('review_pending_reason')
         store('init', identity=identity)
         budget = ControlClient()
         class Control:
@@ -66,8 +71,16 @@ def main():
         class Clients(FreeClients):
             def generate(self, provider, prompt, **options):
                 audit['phase'] = options.get('role') or ('review' if provider == 'groq' else 'analyze')
+                signature = hashlib.sha256(prompt.encode()).hexdigest()
+                cache_file = FOLDER / f"RESPUESTA_{provider}_{audit['phase']}.json"
+                if cache_file.exists():
+                    cached = json.loads(cache_file.read_text())
+                    if cached.get('prompt_sha256') == signature and isinstance(cached.get('text'), str) and len(cached['text']) <= 24000:
+                        audit['providers'].append({'provider': provider, 'state': 'reused_response'})
+                        return cached['text'], cached['metadata']
                 try:
                     text, metadata = super().generate(provider, prompt, **options)
+                    cache_file.write_text(json.dumps({'prompt_sha256': signature, 'text': text, 'metadata': metadata}, ensure_ascii=False, indent=2))
                     audit['providers'].append({'provider': provider, 'state': 'success', **metadata})
                     return text, metadata
                 except ProviderError as exc:
@@ -92,9 +105,10 @@ def main():
         audit.update(state=result['state'], evidence_count=len(report.get('evidence_manifest', [])),
             claim_count=len(report.get('candidate_claims', [])), stages=report.get('stages', []),
             source_quality=report.get('source_quality'), script_status=result.get('draft', {}).get('status'),
-            blocking_reasons=result.get('draft', {}).get('blocking_reasons', []), job_id=result.get('job_id'))
+            blocking_reasons=result.get('draft', {}).get('blocking_reasons', []), job_id=result.get('job_id'),
+            pending_review_reason=report.get('corroboration_continuation', {}).get('review_pending_reason'))
         audit['documents'] = [{'host': urlsplit(d['url']).hostname,
-                              'status': d['status'], 'error_type': d.get('error_type')}
+                              'status': d['status'], 'error_type': d.get('error_type'), 'error_code': d.get('error_code')}
                              for d in report.get('source_documents', [])]
         print('ACEPTACION_EPISODIO:', json.dumps(audit, ensure_ascii=False))
     except (ValueError, RuntimeError, OSError, KeyError, TypeError) as exc:

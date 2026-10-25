@@ -294,6 +294,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     if focus is not None and (not isinstance(focus, str) or not 5 <= len(focus) <= 300):
         raise ValueError('Enfoque editorial inválido')
     queries = search_plan(title, targets, REGULATORY_HOSTS)
+    if official_hosts and queries[0]['intent'] != 'find_regulatory_original':
+        queries[0]['include_domains'] = sorted(official_hosts)
     if focus and not targets:
         queries = [{**q, 'query': f'"{title}" {focus} ' +
                     ('original documents annual report' if i == 0 else 'independent reporting')}
@@ -437,6 +439,12 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         except (OSError, ValueError, TypeError, KeyError, ImportError, RuntimeError) as exc:
             record["status"] = "fetch_failed"
             record["error_type"] = type(exc).__name__
+            safe_errors = {'Tamaño declarado supera presupuesto': 'declared_size_exceeds_budget',
+                'Documento remoto demasiado grande': 'document_exceeds_budget',
+                'MIME no permitido para investigación documental': 'unsupported_mime',
+                'Demasiadas redirecciones': 'redirect_limit', 'El dominio no se pudo resolver': 'dns_unavailable',
+                'DNS devuelve una dirección privada/reservada': 'private_dns_rejected'}
+            if str(exc) in safe_errors: record['error_code'] = safe_errors[str(exc)]
         out["source_documents"].append(record)
         # Dos dominios con texto y al menos un regulador ofrecen un punto de
         # partida para contraste. No los declaramos hechos verificados.

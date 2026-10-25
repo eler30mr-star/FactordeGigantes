@@ -8,6 +8,7 @@ class ChannelEpisodeTests(unittest.TestCase):
     def test_incomplete_checkpoint_corroborates_without_repeating_the_analyst(self):
         saved = {'company': 'BlackBerry', 'editorial_topic': 'Pérdida de liderazgo',
                  'selected_episode_id': 'chosen', 'selected_wikidata_id': 'Q100',
+                 'candidate_claims': [{}], 'reviews': [{}],
                  'observed_official_websites': ['https://www.blackberry.com'],
                  'source_quality': {'claim_gaps': [{'claim_index': 1, 'gaps': ['no_independent_domain']}]}}
         class Control:
@@ -40,7 +41,8 @@ class ChannelEpisodeTests(unittest.TestCase):
 
     def test_retry_continues_from_saved_research_without_resolver_sources_or_analysts(self):
         saved = {'company': 'BlackBerry', 'editorial_topic': 'Pérdida de liderazgo',
-                 'selected_episode_id': 'chosen', 'selected_wikidata_id': 'Q100'}
+                 'selected_episode_id': 'chosen', 'selected_wikidata_id': 'Q100',
+                 'candidate_claims': [{}], 'reviews': [{}]}
         run_id = 'ai-' + 'b' * 28
         calls = []
         class Control:
@@ -73,6 +75,26 @@ class ChannelEpisodeTests(unittest.TestCase):
             def request(self, *args): return {'allowed': False}
         result = run_episode(Control(), 'unused', resolver=lambda _: self.fail('No resolver'))
         self.assertEqual(result['state'], 'paused_or_finished')
+
+    def test_failed_analyst_reuses_sources_and_drops_old_failed_analysis_stages(self):
+        saved = {'company': 'BlackBerry', 'editorial_topic': 'Pérdida de liderazgo', 'selected_episode_id': 'chosen',
+            'selected_wikidata_id': 'Q100', 'candidate_claims': [], 'evidence_manifest': [{'id': 'E001'}],
+            'stages': [{'provider': 'wikipedia', 'status': 'success'}, {'provider': 'gemini', 'status': 'quota_exhausted'}]}
+        class Control:
+            def request(self, path, body):
+                if path.endswith('/context'): return {'allowed': True, 'episode': {'episode_id': 'chosen', 'company': 'BlackBerry',
+                    'topic': 'Pérdida de liderazgo', 'origin': 'chat'}, 'checkpoint': {'run_id': 'ai-' + 'a' * 28, 'report': saved}}
+                return {'ok': True, 'run_id': 'ai-' + 'b' * 28, 'job_id': 'job'}
+            def reserve(self, *_): return True
+        def analyze(sources, **_):
+            self.assertEqual(sources['evidence_manifest'], saved['evidence_manifest'])
+            self.assertEqual(sources['stages'], [{'provider': 'wikipedia', 'status': 'success'}])
+            return {**sources, 'candidate_claims': [{}]}
+        forbidden = lambda *_a, **_k: self.fail('No repetir identidad o fuentes')
+        with patch('tools.channel_episode.validate_report_locally'):
+            result = run_episode(Control(), 'retry', resolver=forbidden, discover=forbidden, analyze=analyze,
+                scriptwriter=lambda *_a, **_k: {'status': 'editorial_draft_unapproved'}, client_factory=lambda **_: None)
+        self.assertEqual(result['state'], 'review')
 
     def test_company_resolution_requires_exact_unambiguous_observed_company(self):
         entity = {'labels': {'en': {'value': 'BlackBerry'}}, 'claims': {'P31': [{'mainsnak': {'datavalue': {'value': {'id': 'Q783794'}}}}]}}

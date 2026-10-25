@@ -103,6 +103,21 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
         receipt = control.request(path + 'research', {'request_id': request_id, 'report': report})
         if not receipt.get('ok') or not receipt.get('run_id'):
             raise RuntimeError('Research persistence not confirmed')
+    elif not report.get('candidate_claims'):
+        # A failed analyst can reuse the observed sources; empty discovery may
+        # continue within the same selection while avoiding earlier failed URLs.
+        if report.get('evidence_manifest'):
+            sources = {**report, 'editorial_topic': episode['topic'], 'stages': [s for s in report['stages']
+                if s['provider'] in {'wikipedia', 'gdelt', 'tavily', 'exa', 'd1_history', 'document_citations'}]}
+        else:
+            sources = focused_discover({**selection, 'prior_attempted_urls':
+                (report.get('retrieval_budget') or {}).get('attempted_urls', [])[-40:]}, clients=clients)
+        report = analyze(sources, clients=clients)
+        report.update(editorial_topic=episode['topic'], selected_episode_id=episode['episode_id'], **metadata)
+        validate_report_locally(report)
+        receipt = control.request(path + 'research', {'request_id': request_id, 'report': report})
+        if not receipt.get('ok') or not receipt.get('run_id'):
+            raise RuntimeError('Resumed analysis persistence not confirmed')
     elif any(row.get('gaps') for row in report.get('source_quality', {}).get('claim_gaps', [])):
         # An incomplete checkpoint needs new corroboration, not another analyst.
         if not metadata.get('observed_official_websites'):

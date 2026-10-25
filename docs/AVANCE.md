@@ -1,5 +1,15 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Continuación real conserva nueva fuente; revisión pendiente identificada
+
+Run `40208403147` completado sobre el expediente previo: no ejecutó Gemini ni Qwen. Tavily y las descargas añadieron tres pasajes; la investigación pasó de un documento/dominio a dos, seis pasajes y las seis afirmaciones originales conservadas. Groq respondió (2.331 entrada/1.040 salida), pero la revisión de las nuevas citas no superó el contrato y quedó pendiente, con las fuentes guardadas. El sitio corporativo devolvió un rechazo ValueError del lector; no se inventó fuente primaria ni se permitió guion/render.
+
+Artefacto `12604937138`, SHA ZIP `390151a2986f0c42ce27336487a885a156ac93d74d4d0fda3053e9eabea1e777`. CI `40208373162` success. Esta ejecución comprueba continuidad y conservación de resultados, no suficiencia documental.
+
+Se completa la recuperación de otros fallos del mismo bloque: analista fallido reutiliza los documentos guardados; búsqueda vacía evita URLs ya intentadas; revisión pendiente conserva pasajes antes de consultar de nuevo. El panel diferencia análisis, contraste, revisión y guion. Se dirige la búsqueda primaria al dominio corporativo observado cuando procede; las búsquedas regulatorias conservan sus restricciones.
+
+La aceptación conserva respuestas IA por huella exacta de prompt para inspeccionar o reevaluar contratos sin volver a consumir una respuesta válida. Añade motivos seguros del lector y de revisión. Una última continuación de esta prueba reanudará solo la revisión guardada, sin repetir descargas ni analistas. 47 pruebas Python enfocadas y 13 contratos Node del episodio aprobados. No se ha habilitado producción general.
+
 ## 2026-10-25 · Primera aceptación IA real y continuación enfocada corregida
 
 Run `40207786180` completado: Tavily recuperó diez enlaces; Gemini `gemini-3.5-flash-lite` (1.164 entrada/386 salida) produjo seis afirmaciones candidatas y Groq `openai/gpt-oss-120b` completó su revisión (1.562 entrada/833 salida). La investigación persistida tiene tres pasajes de un único documento. El guion se bloqueó correctamente por falta de fuentes independientes y original corporativo. Artefacto `12604221536`, SHA ZIP `aa5013f8d4f6c033d0552c90107ab8b1b0d55c839a73ef7bc2465a0699ffd93e`. No se acredita guion/video.
