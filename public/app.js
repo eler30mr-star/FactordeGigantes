@@ -1,4 +1,5 @@
 import {mountEditorialEditor} from "./dossier-editor.js";
+import {mountYoutubeReviews} from './youtube-review.js';
 let adminToken = "";
 let researchPaused = true;
 let productionRunId = null;
@@ -285,6 +286,12 @@ async function loadYoutubeConnection(){
   $('youtube-connection-config').textContent=(data.missing.length?'Faltan: '+data.missing.join(', ')+'. ':'Configuración presente. ')+
     'URL de retorno para Google: '+data.callback_url;
 }
+async function loadYoutubeReviews(){
+  const data=await request('/api/youtube/exports');
+  mountYoutubeReviews($('youtube-review-results'),data.exports,{request,notify:notice,refresh:loadYoutubeReviews});
+  $('youtube-review-status').textContent=data.exports.length+' exportaciones registradas. La revisión y la subida privada son acciones separadas.';
+}
+$('youtube-review-refresh').addEventListener('click',()=>loadYoutubeReviews().catch(e=>{$('youtube-review-status').textContent=e.message;}));
 $('youtube-connection-refresh').addEventListener('click',()=>loadYoutubeConnection().catch(e=>{$('youtube-connection-status').textContent=e.message;}));
 $('youtube-connect').addEventListener('click',async()=>{
   const button=$('youtube-connect');button.disabled=true;
@@ -799,6 +806,7 @@ $("connect").addEventListener("click",async () => {
     loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
     loadProductionRuns().catch(e=>{$('production-status').textContent=e.message;});
     loadYoutubeConnection().catch(e=>{$('youtube-connection-status').textContent=e.message;});
+    loadYoutubeReviews().catch(e=>{$('youtube-review-status').textContent=e.message;});
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
     loadOpportunities().catch(e=>{$("opportunities-status").textContent=e.message;});
     loadOfficialEvidence().catch(e=>{$("official-status").textContent=e.message;});

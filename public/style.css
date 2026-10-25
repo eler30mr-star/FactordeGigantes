@@ -24,3 +24,5 @@
   .editorial-evidence{padding:10px}
   .editorial-group button{max-width:100%;text-align:left}
 }
+
+.youtube-review-form{margin-top:18px;gap:14px}.youtube-review-form label{display:grid;gap:7px}.youtube-review-form .review-check{display:flex;align-items:flex-start;gap:10px;line-height:1.45}.youtube-review-form .review-check input{width:20px;height:20px;padding:0;flex:0 0 20px;accent-color:#deb66c}.job>a{display:inline-block;margin:8px 12px 8px 0}

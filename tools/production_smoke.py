@@ -39,11 +39,13 @@ def probe(base):
               "checks": {}, "production_ready": False}
     checks = [
         ("/health", 200, [b'Factor de Gigantes']),
-        ("/", 200, [b'Investigar con IA', b'id="research-form"', b'id="dossier-panel"', b'id="production-detail"', b'id="youtube-connect"']),
+        ("/", 200, [b'Investigar con IA', b'id="research-form"', b'id="dossier-panel"', b'id="production-detail"', b'id="youtube-connect"', b'id="youtube-review-results"']),
         ("/app.js", 200, [b'loadResearch', b'/api/research', b'/api/jobs', b'retry-render', b'/api/production/runs', 'Abrir exportación'.encode()]),
         ("/api/research", 401, [b'Acceso no autorizado']),
         ("/api/production/runs", 401, [b'Acceso no autorizado']),
         ("/api/youtube/connection", 401, [b'Acceso no autorizado']),
+        ("/api/youtube/exports", 401, [b'Acceso no autorizado']),
+        ("/youtube-review.js", 200, [b'mountYoutubeReviews', b'Subir como privado']),
         ("/oauth/youtube/callback?state=invalid", 303, []),
         ("/api/renderer/jobs/00000000-0000-0000-0000-000000000000/episode", 401, [b'Acceso no autorizado']),
     ]

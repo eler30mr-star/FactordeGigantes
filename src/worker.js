@@ -1,6 +1,8 @@
 import {readEpisodeInput,acceptEpisodeExport,failEpisodeExport,previewFromEvents} from './episode-production.mjs';
 import {readProductionProgress} from './production-progress.mjs';
 import {youtubeConnectionStatus,startYoutubeConnection,finishYoutubeConnection,disconnectYoutube} from './youtube-connection.mjs';
+import {listYoutubeExports,findYoutubeExport,registerYoutubeExport,reviewYoutubeExport,queueYoutubeUpload,resumeYoutubeUpload,
+ uploadContext,startYoutubeUpload,transferYoutubeChunk,finishYoutubeUpload} from './youtube-exports.mjs';
 import {storeAutonomousDraft,hasAutonomousOrigin,readEditorialScriptContext} from './autonomous-script-drafts.mjs';
 import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from "./ai-research-team.mjs";
@@ -154,6 +156,33 @@ async function handle(request,env) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  const exportAdmin=!renderer&&parts[1]==='youtube'&&parts[2]==='exports';
+  const exportRenderer=renderer&&parts[2]==='youtube';
+  if(exportAdmin||exportRenderer){
+    try{
+      let result;
+      if(exportAdmin){
+        if(parts.length===3&&method==='GET')result=await listYoutubeExports(env);
+        else if(parts.length===4&&method==='GET')result=await findYoutubeExport(env,parts[3]);
+        else if(parts.length===5&&method==='POST'&&parts[4]==='review')result=await reviewYoutubeExport(env,parts[3],await parseBody(request));
+        else if(parts.length===5&&method==='POST'&&parts[4]==='upload')result=await queueYoutubeUpload(env,parts[3],await parseBody(request));
+        else if(parts.length===5&&method==='POST'&&parts[4]==='resume')result=await resumeYoutubeUpload(env,parts[3],await parseBody(request));
+      }else{
+        if(parts.length===4&&parts[3]==='exports'&&method==='POST')result=await registerYoutubeExport(env,await parseBody(request));
+        else if(parts[3]==='uploads'&&parts[4]){
+          if(parts.length===5&&method==='GET')result=await uploadContext(env,parts[4]);
+          if(parts.length===6&&parts[5]==='start'&&method==='POST')result=await startYoutubeUpload(env,parts[4],await parseBody(request));
+          if(parts.length===6&&parts[5]==='chunk'&&method==='PUT')result=await transferYoutubeChunk(env,parts[4],request);
+          if(parts.length===6&&parts[5]==='report'&&method==='POST')result=await finishYoutubeUpload(env,parts[4],await parseBody(request));
+        }
+      }
+      return result?json(result,result.ok?200:result.status):err('Método o ruta de subida no admitidos',405);
+    }catch(e){
+      if(/no such table: youtube_/.test(String(e?.message||'')))return err('Falta migración 0016_youtube_exports.sql',503);
+      if(e instanceof RangeError||e instanceof SyntaxError||e instanceof TypeError)return err('Solicitud de exportación o revisión inválida',400);
+      return err('No se pudo completar la operación de subida privada.',502);
+    }
+  }
   if(!renderer&&parts[1]==='youtube'&&parts.length===3&&['connection','connect','disconnect'].includes(parts[2])){
     try{
       if(parts[2]==='connection'&&method==='GET')return json(await youtubeConnectionStatus(env));

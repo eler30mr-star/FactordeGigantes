@@ -1,0 +1,33 @@
+name: FDG - subir exportación aprobada como privada
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: 'Solicitud reservada por el panel después de revisión humana'
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: fdg-youtube-upload-${{ inputs.request_id }}
+  cancel-in-progress: false
+jobs:
+  upload:
+    if: github.event.repository.private == false && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recuperar archivo aprobado y continuar una única sesión privada
+        env:
+          REQUEST_ID: ${{ inputs.request_id }}
+          GH_TOKEN: ${{ github.token }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+        run: python -m tools.youtube_delivery upload "$REQUEST_ID" --out "$RUNNER_TEMP/fdg-upload"
