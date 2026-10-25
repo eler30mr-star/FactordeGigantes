@@ -133,7 +133,7 @@ def collect_study(api, generate, today=None):
     candidates = identify_candidates(list(videos.values()), generate)
     channels = []
     for c in candidates:
-        ids = search((c['company'] + ' ' + c['topic'])[:150])
+        ids = search(c['company'])
         c['video_ids'] = [v for v in ids if c['company'].casefold() in videos[v]['title'].casefold()][:20]
         local_channels = list(dict.fromkeys(videos[i]['channel_id'] for i in c['video_ids']))[:4]
         for cid in local_channels:

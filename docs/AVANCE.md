@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Primer estudio real comprobado y corrección de recuperación
+
+Run real `40202682856` success: tres búsquedas generales con doce resultados cada una, análisis Gemini `gemini-3.5-flash-lite` correcto (1.454 tokens de entrada, 313 salida), tres candidatas. Las consultas que concatenaban empresa y pregunta completa devolvieron 1, 1 y 0 resultados; el selector rechazó las tres por evidencia insuficiente. No se forzó selección ni se crearon episodios. Artefacto `12601419959`, SHA ZIP `81e2b0b46f73a4da3afc94240a2a32e5d3c75fd7bcb9f10443b80154f9cc2a11`.
+
+Se corrige la recuperación comparativa para consultar la empresa sin exigir coincidencia con toda la pregunta editorial. El enfoque se conserva como hipótesis editorial del candidato; la evidencia se refiere al interés observado por la empresa, no prueba por sí sola ese ángulo concreto. Se mantienen todos los umbrales y límites del selector.
+
+La segunda aceptación recupera el artefacto anterior y reutiliza búsquedas generales y salida Gemini. Solo repite las consultas específicas y las referencias de canales necesarias; no vuelve a gastar inferencia ni cambia producción. Sintaxis, YAML y cuatro contratos Python de estudio aprobados. Resultado de la segunda ejecución pendiente.
+
 ## 2026-10-25 · Prueba final real iniciada por instrucción del propietario
 
 El propietario pide avanzar sin más demoras. Se prepara y lanza una aceptación puntual con YouTube y un analista IA gratuito, usando las reservas D1 existentes. La fase requiere workflow_dispatch en main y confirmación explícita de prueba final. No cambia el modo automático del propietario ni la pausa general, no crea episodios, no investiga todas las empresas, no renderiza ni sube/publica videos.

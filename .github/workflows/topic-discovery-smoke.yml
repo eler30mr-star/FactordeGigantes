@@ -7,6 +7,9 @@ on:
         type: choice
         options: [acceptance, episode, opportunity, research, corroborate, review, script, profile]
         default: research
+      resume_acceptance_run:
+        type: string
+        default: ''
       confirm_final_acceptance:
         description: 'Prueba real puntual de YouTube e IA; no cambia automático ni crea/publica videos'
         type: boolean
@@ -39,6 +42,10 @@ concurrency:
   cancel-in-progress: false
 jobs:
   final-market-acceptance:
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
     if: github.event_name == 'workflow_dispatch' && inputs.phase == 'acceptance' && inputs.confirm_final_acceptance == true && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -50,8 +57,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - uses: actions/download-artifact@v4
+        if: inputs.resume_acceptance_run != ''
+        with:
+          name: fdg-final-market-acceptance
+          path: dist/previous/
+          run-id: ${{ inputs.resume_acceptance_run }}
+          github-token: ${{ github.token }}
       - name: Ejecutar una aceptación real aislada de la producción
         env:
+          RESUME_ACCEPTANCE_RUN: ${{ inputs.resume_acceptance_run }}
           CONFIRM_FINAL_ACCEPTANCE: ${{ inputs.confirm_final_acceptance }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           YOUTUBE_DATA_API_KEY: ${{ secrets.YOUTUBE_DATA_API_KEY }}
