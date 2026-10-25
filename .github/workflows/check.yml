@@ -132,6 +132,9 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -142,6 +145,7 @@ jobs:
           node --check src/worker.js
           node --check src/autonomous-script-drafts.mjs
           node --check src/episode-production.mjs
+          node --check src/production-progress.mjs
           node --check src/ai-research-team.mjs
           node --check src/market-radar.mjs
           node --check src/market-ingest.mjs
@@ -165,9 +169,15 @@ jobs:
       - name: Pruebas de contratos del renderizador
         run: python -m unittest discover -s tests -v
       - name: Verificar seguridad editorial en API Worker y contrato D1
-        run: node --test tests/test_editorial_gate.mjs tests/test_dossier_editor.mjs tests/test_research_control.mjs tests/test_system_readiness.mjs tests/test_market_radar_api.mjs tests/test_market_ingest.mjs tests/test_github_oidc.mjs tests/test_news_ingest.mjs tests/test_news_triage.mjs tests/test_youtube_market.mjs tests/test_market_cross_signals.mjs tests/test_news_entity_ingest.mjs tests/test_market_assessment.mjs tests/test_market_official_ingest.mjs tests/test_market_pdf_ingest.mjs tests/test_market_research_ingest.mjs tests/test_market_research_selection.mjs tests/test_ai_research_team.mjs tests/test_autonomous_script_drafts.mjs tests/test_episode_production.mjs
+        run: node --test tests/test_editorial_gate.mjs tests/test_dossier_editor.mjs tests/test_research_control.mjs tests/test_system_readiness.mjs tests/test_market_radar_api.mjs tests/test_market_ingest.mjs tests/test_github_oidc.mjs tests/test_news_ingest.mjs tests/test_news_triage.mjs tests/test_youtube_market.mjs tests/test_market_cross_signals.mjs tests/test_news_entity_ingest.mjs tests/test_market_assessment.mjs tests/test_market_official_ingest.mjs tests/test_market_pdf_ingest.mjs tests/test_market_research_ingest.mjs tests/test_market_research_selection.mjs tests/test_ai_research_team.mjs tests/test_autonomous_script_drafts.mjs tests/test_episode_production.mjs tests/test_production_progress.mjs
       - name: Validar manifest de ejemplo
         run: python tools/render.py --manifest examples/documental.json --validate-only
+
+      - name: Consultar progreso de producción real sin iniciar trabajos
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/production_progress_smoke.mjs
 
       - name: Comprobar Worker y panel de produccion sin credenciales
         # No bloqueante: un commit de codigo puede preceder al despliegue.

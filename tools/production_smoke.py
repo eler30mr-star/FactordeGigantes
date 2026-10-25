@@ -35,9 +35,10 @@ def probe(base):
               "checks": {}, "production_ready": False}
     checks = [
         ("/health", 200, [b'Factor de Gigantes']),
-        ("/", 200, [b'Investigar con IA', b'id="research-form"', b'id="dossier-panel"']),
-        ("/app.js", 200, [b'loadResearch', b'/api/research', b'/api/jobs', b'retry-render', 'Abrir exportación'.encode()]),
+        ("/", 200, [b'Investigar con IA', b'id="research-form"', b'id="dossier-panel"', b'id="production-detail"']),
+        ("/app.js", 200, [b'loadResearch', b'/api/research', b'/api/jobs', b'retry-render', b'/api/production/runs', 'Abrir exportación'.encode()]),
         ("/api/research", 401, [b'Acceso no autorizado']),
+        ("/api/production/runs", 401, [b'Acceso no autorizado']),
         ("/api/renderer/jobs/00000000-0000-0000-0000-000000000000/episode", 401, [b'Acceso no autorizado']),
     ]
     for path, expected_status, expected_text in checks:

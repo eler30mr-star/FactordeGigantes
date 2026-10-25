@@ -1,6 +1,7 @@
 import {mountEditorialEditor} from "./dossier-editor.js";
 let adminToken = "";
 let researchPaused = true;
+let productionRunId = null;
 let editingJobId = null;
 let dossierJobId = null;
 let dossierJobStatus = null;
@@ -223,6 +224,56 @@ async function loadSystemStatus() {
   ];
   $("system-status").textContent=parts.join(" · ");
 }
+function productionLink(label,url){
+  if(typeof url!=='string'||!/^https:\/\/github\.com\/eler30mr-star\/FactordeGigantes\/actions\/runs\/\d+(?:\/artifacts\/\d+)?$/.test(url))throw Error('Enlace de producción inválido');
+  const a=tag('a','',label);a.href=url;a.target='_blank';a.rel='noopener noreferrer';return a;
+}
+function productionState(stage){
+  if(stage.conclusion==='success')return 'Completado';
+  if(stage.conclusion==='skipped')return 'No requerido';
+  if(stage.status==='completed')return 'Interrumpido: '+String(stage.conclusion||'revisar');
+  return stage.status==='in_progress'?'En proceso':'En espera';
+}
+async function showProductionRun(id){
+  productionRunId=id;
+  const root=$('production-detail');root.replaceChildren(tag('p','muted','Consultando escenas y archivos…'));
+  try{
+    const data=await request('/api/production/runs/'+encodeURIComponent(id));
+    if(productionRunId!==id)return;
+    root.replaceChildren(tag('h3','',data.run.title));
+    root.append(tag('p','muted','Preparación: '+productionState(data.preparation)+' · Montaje: '+productionState(data.assembly)));
+    if(data.narration.total){
+      const n=data.narration;
+      root.append(tag('p','','Narración: '+n.completed+' de '+n.total+' escenas completadas'+(n.failed?' · '+n.failed+' pendientes de reintento':'')));
+      const list=tag('ul','','');
+      for(const scene of n.scenes)list.append(tag('li','','Escena '+Number(scene.scene.slice(2))+': '+productionState(scene)));
+      root.append(list);
+    }
+    for(const result of data.results){
+      const p=tag('p','','');p.append(productionLink('Descargar: '+result.label,result.download_url));
+      p.append(tag('span','muted',' · '+(result.size_bytes/1e6).toFixed(1)+' MB'+(result.expires_at?' · disponible hasta '+new Date(result.expires_at).toLocaleDateString('es'):'')));
+      root.append(p);
+    }
+    if(!data.results.length)root.append(tag('p','muted',data.run.status==='completed'?'Todavía no hay una exportación válida disponible. Revisa la ejecución.':'La descarga aparecerá cuando el montaje termine correctamente.'));
+    root.append(productionLink('Ver ejecución completa',data.run.run_url));
+    $('production-status').textContent='Última consulta: '+new Date().toLocaleTimeString('es')+'. Publicación en YouTube no autorizada.';
+  }catch(e){if(productionRunId===id){root.replaceChildren();$('production-status').textContent=e.message;}}
+}
+async function loadProductionRuns(){
+  const data=await request('/api/production/runs');
+  const root=$('production-runs');root.replaceChildren();
+  if(!data.runs.length){productionRunId=null;$('production-detail').replaceChildren();$('production-status').textContent='Aún no hay episodios en producción.';return;}
+  for(const run of data.runs){
+    const button=tag('button','secondary',run.title+' · '+new Date(run.created_at).toLocaleString('es')+' · '+productionState(run));button.type='button';
+    button.addEventListener('click',()=>showProductionRun(run.id));root.append(button);
+  }
+  const selected=data.runs.find(r=>r.id===productionRunId)||data.runs[0];
+  await showProductionRun(selected.id);
+}
+$('production-refresh').addEventListener('click',async()=>{
+  const button=$('production-refresh');button.disabled=true;
+  try{await loadProductionRuns();}catch(e){$('production-status').textContent=e.message;}finally{button.disabled=false;}
+});
 $("system-refresh").addEventListener("click",()=>loadSystemStatus().catch(e=>{
   $("system-status").textContent=e.message;
 }));
@@ -717,6 +768,7 @@ $("connect").addEventListener("click",async () => {
     notice("Conexión privada establecida");
     loadResearch().catch(e=>{$("research-status").textContent=e.message;});
     loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
+    loadProductionRuns().catch(e=>{$('production-status').textContent=e.message;});
     loadMarket().catch(e=>{$("market-status").textContent=e.message;});
     loadOpportunities().catch(e=>{$("opportunities-status").textContent=e.message;});
     loadOfficialEvidence().catch(e=>{$("official-status").textContent=e.message;});

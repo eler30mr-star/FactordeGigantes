@@ -1,5 +1,5 @@
 name: FDG - episodio completo de desarrollo
-run-name: Episodio de desarrollo · ${{ inputs.mode }}
+run-name: "Producción · ${{ inputs.job_id || 'desarrollo' }} · ${{ inputs.mode == 'technical' && 'montaje técnico' || 'narración canónica' }}"
 on:
   workflow_dispatch:
     inputs:

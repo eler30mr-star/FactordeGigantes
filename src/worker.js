@@ -1,4 +1,5 @@
 import {readEpisodeInput,acceptEpisodeExport,failEpisodeExport,previewFromEvents} from './episode-production.mjs';
+import {readProductionProgress} from './production-progress.mjs';
 import {storeAutonomousDraft,hasAutonomousOrigin,readEditorialScriptContext} from './autonomous-script-drafts.mjs';
 import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from "./ai-research-team.mjs";
@@ -151,6 +152,11 @@ async function handle(request,env) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  if(!renderer&&parts[1]==='production'&&parts[2]==='runs'&&(parts.length===3||parts.length===4)){
+    if(method!=='GET')return err('Método no admitido',405);
+    const result=await readProductionProgress(env,parts[3]??null);
+    return json(result,result.ok?200:result.status);
+  }
   if(aiWrite||url.pathname==='/api/market/ai-pipeline'){
     if(method!==(aiWrite?'POST':'GET'))return err('Método no admitido',405);
     try{

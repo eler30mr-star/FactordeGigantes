@@ -20,6 +20,13 @@
   </section>
   <div id="workspace" hidden>
    <div class="stats"><div class="stat"><span>Trabajos</span><strong id="total">0</strong></div><div class="stat"><span>En revisión</span><strong id="review">0</strong></div><div class="stat"><span>Listos</span><strong id="ready">0</strong></div></div>
+   <section class="card" aria-label="Montaje y narración de episodios">
+    <div class="heading"><h2>Producción de episodios</h2><button id="production-refresh" class="secondary" type="button">Actualizar avance</button></div>
+    <p id="production-status" class="muted" role="status">Conecta la administración para consultar el montaje.</p>
+    <div id="production-runs" class="jobs" aria-live="polite"></div>
+    <div id="production-detail" aria-live="polite"></div>
+    <p class="muted micro">El avance se consulta al actualizar. Las descargas caducan; guarda el paquete al terminar. Un montaje técnico no contiene locución y toda exportación requiere revisión.</p>
+   </section>
    <section class="card" aria-label="Estado técnico de producción">
     <div class="heading"><h2>Estado del sistema</h2><button id="system-refresh" class="secondary" type="button">Comprobar</button></div>
     <p id="system-status" class="muted" role="status">Conecta la administración para revisar los componentes.</p>
