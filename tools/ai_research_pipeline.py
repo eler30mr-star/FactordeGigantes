@@ -277,7 +277,7 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
         for p in ("cloudflare", "qwen", "gemini", "mistral", "openrouter", "groq"):
             report["stages"].append({"provider": p, "role": "analyze", "status": "disabled"})
         return report
-    topic = sources["company"] + (" — " + sources["editorial_topic"] if sources.get("editorial_topic") else "")
+    topic = sources["company"]
     if classifier is not None:
         try:
             result = classifier(evidence)
@@ -313,7 +313,7 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
         report["stages"].append({"provider": "qwen", "role": "extract", "status": "local_failure",
                                  "error_type": type(exc).__name__})
     result, chosen = None, None
-    prompt = request_document(topic, evidence, targets=sources.get("research_targets"))
+    prompt = request_document(topic, evidence, targets=sources.get("research_targets"), editorial_topic=sources.get('editorial_topic'))
     for provider in ("gemini", "mistral", "openrouter"):
         if result is not None:
             report["stages"].append({"provider": provider, "role": "fallback", "status": "not_needed"})

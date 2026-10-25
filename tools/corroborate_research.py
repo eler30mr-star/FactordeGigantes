@@ -57,6 +57,7 @@ def continuation_selection(research):
     batch = available[:3]
     target = batch[0] if batch else None
     attempted = list(dict.fromkeys([
+        *research.get('retrieval_history_urls', []),
         *previous.get('attempted_urls', []),
         *(research.get('retrieval_budget') or {}).get('attempted_urls', []),
         *(e['url'] for e in research['evidence_manifest']),

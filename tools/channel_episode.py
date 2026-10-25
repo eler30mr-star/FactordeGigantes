@@ -3,6 +3,7 @@ import json
 import os
 import re
 import unicodedata
+import hashlib
 from pathlib import Path
 from urllib.parse import urlencode
 from tools.ai_control import ControlClient
@@ -12,6 +13,7 @@ from tools.ai_research_pipeline import analyze_sources, validate_report_locally
 from tools.documentary_script import write_script
 from tools.corroborate_research import continue_corroboration
 from tools.review_research import review_existing
+from tools.editorial_focus import review_editorial_focus, valid_focus, focus_sha
 from tools.topic_discovery import property_ids, COMPANY_TYPES
 from tools.market_sources import get_json
 from tools.research_engine import fetch_public, validate_url
@@ -55,7 +57,7 @@ def resolve_company(company, fetcher=get_json):
     return resolve_company_identity(company, fetcher)['wikidata_id']
 
 
-def run_episode(control, request_id, *, resolver=resolve_company_identity, discover=discover_sources, analyze=analyze_sources, scriptwriter=write_script, client_factory=FreeClients, corroborate=continue_corroboration):
+def run_episode(control, request_id, *, resolver=resolve_company_identity, discover=discover_sources, analyze=analyze_sources, scriptwriter=write_script, client_factory=FreeClients, corroborate=continue_corroboration, focus_reviewer=review_editorial_focus):
     path = '/api/market/channel-episode/'
     context = control.request(path + 'context', {'request_id': request_id, 'include_checkpoint': True})
     if context.get('allowed') is not True:
@@ -94,11 +96,61 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
         return discover({**chosen, **metadata, 'editorial_topic': episode['topic']}, **{
             **options, 'wiki_fetcher': checked(fetch_public), 'gdelt_fetcher': checked(fetch_public),
             'document_fetcher': checked(fetch_document_public)})
-    if not checkpoint:
+    def persist(report):
+        validate_report_locally(report)
+        receipt = control.request(path + 'research', {'request_id': request_id, 'report': report})
+        if not receipt.get('ok') or not receipt.get('run_id'):
+            raise RuntimeError('Focused research persistence not confirmed')
+        return receipt
+    def analysis_binding(report):
+        return hashlib.sha256(json.dumps({'profile': 'chosen_topic_v2', 'topic': episode['topic'],
+            'evidence': report.get('evidence_manifest', [])}, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    old_focus = report.get('editorial_focus_review', {}) if checkpoint else {}
+    replanning = bool(checkpoint and old_focus.get('status') == 'misaligned' and old_focus.get('topic') == episode['topic']
+        and old_focus.get('claims_sha256') == focus_sha(episode['topic'], report.get('candidate_claims', [])))
+    if replanning:
+        prior = report
+        questions = prior['editorial_focus_review'].get('research_questions') or prior.get('editorial_research_questions', [])
+        history=list(dict.fromkeys([*prior.get('retrieval_history_urls', []),
+            *prior.get('corroboration_continuation', {}).get('attempted_urls', []),
+            *(prior.get('retrieval_budget') or {}).get('attempted_urls', [])]))[-40:]
+        if prior.get('focused_analysis_binding') == analysis_binding(prior):
+            sources = focused_discover({**selection, 'editorial_questions': questions,
+                'prior_attempted_urls': history}, clients=clients)
+            # The parent retains every old claim and citation. Prefer fresh focused
+            # evidence; the analyst may select new facts under the SAME topic.
+            fresh = sources['evidence_manifest']
+            keys = {(e['url'], e.get('page'), e['excerpt']) for e in fresh}
+            kept = fresh + [e for e in prior['evidence_manifest'] if (e['url'], e.get('page'), e['excerpt']) not in keys]
+            sources['evidence_manifest'] = [{**e, 'id': f'E{n:03d}'} for n, e in enumerate(kept[:10], 1)]
+        else:
+            sources = {**prior, 'stages': [s for s in prior['stages']
+                if s['provider'] in {'wikipedia', 'gdelt', 'tavily', 'exa', 'd1_history', 'document_citations'}]}
+        sources['editorial_topic'] = episode['topic']
+        report = analyze(sources, clients=clients)
+        report.update(editorial_topic=episode['topic'], selected_episode_id=episode['episode_id'], **metadata)
+        report['focused_analysis_binding'] = analysis_binding(report)
+        report['editorial_research_questions'] = questions
+        report['retrieval_history_urls'] = history
+        report['editorial_replanning'] = {'parent_run_id': receipt['run_id'],
+            'previous_claims_sha256': focus_sha(episode['topic'], prior['candidate_claims']), 'topic_unchanged': True}
+        receipt = persist(report)
+    # Check relevance before spending more searches on a legacy set of unrelated facts.
+    if checkpoint and not replanning and report.get('candidate_claims') and not valid_focus(
+            report.get('editorial_focus_review'), episode['topic'], report['candidate_claims']):
+        report['editorial_focus_review'] = focus_reviewer(report, episode['topic'], clients=client_factory(reserve=reserve))
+        receipt = persist(report)
+        if report['editorial_focus_review']['status'] != 'aligned':
+            return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_focus',
+                'blocking_reasons': ['editorial_review_unavailable' if report['editorial_focus_review']['status']=='unavailable' else 'chosen_topic_not_covered'], 'publication_authorized': False}}
+    if replanning:
+        pass
+    elif not checkpoint:
         sources = focused_discover(selection, clients=clients)
         sources['editorial_topic'] = episode['topic']
         report = analyze(sources, clients=clients)
         report.update(editorial_topic=episode['topic'], selected_episode_id=episode['episode_id'], **metadata)
+        report['focused_analysis_binding'] = analysis_binding(report)
         validate_report_locally(report)
         receipt = control.request(path + 'research', {'request_id': request_id, 'report': report})
         if not receipt.get('ok') or not receipt.get('run_id'):
@@ -142,6 +194,12 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
             receipt = control.request(path + 'research', {'request_id': request_id, 'report': report})
             if not receipt.get('ok') or not receipt.get('run_id'):
                 raise RuntimeError('Review persistence not confirmed')
+    if report.get('candidate_claims') and not valid_focus(report.get('editorial_focus_review'), episode['topic'], report['candidate_claims']):
+        report['editorial_focus_review'] = focus_reviewer(report, episode['topic'], clients=client_factory(reserve=reserve))
+        receipt = persist(report)
+    if not valid_focus(report.get('editorial_focus_review'), episode['topic'], report.get('candidate_claims', [])):
+        return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_focus',
+            'blocking_reasons': ['editorial_review_unavailable' if report.get('editorial_focus_review', {}).get('status')=='unavailable' else 'chosen_topic_not_covered'], 'publication_authorized': False}}
     draft = scriptwriter(report, selection, clients=client_factory(reserve=reserve), research_run_id=receipt['run_id'])
     if draft.get('status') != 'editorial_draft_unapproved':
         return {'state': 'blocked', 'research': report, 'draft': draft}

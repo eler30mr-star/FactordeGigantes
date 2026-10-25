@@ -21,9 +21,12 @@ def prioritized_targets(targets):
         "no_original_primary_document" not in t["gaps"], t["claim_index"]))
 
 
-def search_plan(title, targets, regulatory_domains):
+def search_plan(title, targets, regulatory_domains, editorial_questions=None):
     excluded = ["wikipedia.org", "wikimedia.org", "wikidata.org"]
     if not targets:
+        if editorial_questions:
+            return [{'intent': 'find_primary_documents', 'query': f'"{title}" {editorial_questions[0]} original documents', 'exclude_domains': excluded},
+                    {'intent': 'find_independent_context', 'query': f'"{title}" {editorial_questions[min(1, len(editorial_questions)-1)]} independent reporting', 'exclude_domains': excluded}]
         return [{"intent": "find_primary_documents", "query": f'"{title}" regulator court complaint financial statements',
                  "exclude_domains": excluded},
                 {"intent": "find_independent_context", "query": f'"{title}" history annual report investigation original documents',
@@ -60,7 +63,7 @@ def search_plan(title, targets, regulatory_domains):
     return [primary, contrast]
 
 
-def select_passages(analysis, title, targets, limit=3):
+def select_passages(analysis, title, targets, limit=3, editorial_questions=None):
     """Elegir bloques y ventanas literales; el localizador sigue siendo original."""
     blocks = [" ".join(b.split()) for b in analysis["blocks"]]
     company_words = set(re.findall(r"\w{3,}", normalized(title))) - {
@@ -71,6 +74,7 @@ def select_passages(analysis, title, targets, limit=3):
     def features(text):
         return set(re.findall(r"\d+(?:[.,]\d+)*|[^\W\d_]{4,}", normalized(text))) - company_words
     wanted = [features(t["statement"]) for t in prioritized_targets(targets)]
+    if not wanted and editorial_questions: wanted = [features(question) for question in editorial_questions]
     named = {i for i, text in enumerate(blocks) if mentions(text)}
     candidates = []
     for i, text in enumerate(blocks):

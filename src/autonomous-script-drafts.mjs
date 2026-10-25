@@ -1,6 +1,7 @@
 // Guion IA -> trabajo y expediente PENDIENTES. Ninguna aprobación de hechos/voz.
 import {readScriptContext,validateAiReport} from './ai-research-team.mjs';
 import {validateDossier} from './editorial.mjs';
+import {editorialFocusReady} from './editorial-focus.mjs';
 import voiceReference from '../assets/voice/approved/reference.json' with {type:'json'};
 
 const digest=async text=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))]
@@ -60,6 +61,7 @@ function chunks(text){
 }
 
 export async function prepareEditorialDraft(research,script,runId){
+ if(!await editorialFocusReady(research))fail('Las afirmaciones no responden al enfoque elegido');
  researchGate(research);
  if(!script||JSON.stringify(script).length>48000)fail('Guion fuera del presupuesto');
  noApprovals(script);
@@ -181,3 +183,4 @@ export async function storeAutonomousDraft(db,body){
  return stored.script_sha256===bundle.script_sha256?receipt(stored.job_id,stored.job_id===id):
   {ok:false,status:409,reason:'draft_already_exists_for_research',automatic_publication_allowed:false};
 }
+

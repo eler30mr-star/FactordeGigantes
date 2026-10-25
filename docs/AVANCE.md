@@ -1,5 +1,17 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Fuente corporativa recuperada y desvío del enfoque detectado
+
+Run 40223314920 recuperó fuente corporativa en blackberry.com, cuatro documentos/dominios y diez pasajes. Groq revisó el lote nuevo (3.369 entrada/1.418 salida), sin repetir Gemini/Qwen. Artefacto 12610142946, SHA ZIP 433f0befb8176b559d4c62b9dc4d5ed4a2e32569bafe710352ae605a33d15216. El guion sigue bloqueado por contraste específico insuficiente.
+
+El diagnóstico reveló un problema editorial: las seis afirmaciones originales tratan especificaciones de Priv/DTEK50, mientras el propietario eligió pérdida de liderazgo y cambio de negocio. Se implementa revisión IA de relación con la pregunta antes de gastar más búsquedas sobre hechos ajenos. El juicio se vincula por SHA al tema y texto exacto de las afirmaciones; no verifica hechos ni concede aprobaciones. El servidor rechaza crear un borrador del episodio dirigido sin correspondencia editorial válida.
+
+Cuando hay desvío, la reanudación conserva el expediente padre y permite volver a seleccionar hechos desde los documentos observados bajo la MISMA empresa/pregunta. El prompt analítico exige relevancia y permite menos hechos cuando falta evidencia. Si ya se analizó esa evidencia con el perfil nuevo, busca por las preguntas editoriales pendientes, conserva historial de URLs y no reanaliza el mismo material indefinidamente. El panel distingue ese bloqueo y muestra las preguntas faltantes. Un fallo de cuota se distingue de un desvío editorial.
+
+Pruebas: 60 Python enfocadas y 163 contratos Node aprobados; incluyen vinculación Python/Worker, cambio de tema/hecho, producto ajeno, presupuesto denegado, bloqueo antes de corroborar/render y servidor sin juicio editorial. La corrida completa local encontró fixtures/dependencias ausentes en esta copia parcial; no se atribuye aprobación local integral. CI con checkout completo y aceptación real del nuevo juicio se comprobarán después del commit.
+
+La prueba final hace como máximo una recuperación editorial puntual y respeta reservas gratuitas D1. No se cambia automático, pausa, voz, render o publicación.
+
 ## 2026-10-25 · Contraste de varias afirmaciones con el mismo presupuesto
 
 La continuación del episodio conserva las afirmaciones elegidas y cubre hasta tres objetivos pendientes por lote. Usa las dos consultas existentes para buscar el original del objetivo prioritario y contraste independiente de otro objetivo; cada consulta conserva las exclusiones del hecho correspondiente. La extracción literal puede repartir sus tres ventanas entre los objetivos. Se registra y rota el lote sin reescribir las afirmaciones ni aumentar las cuotas.

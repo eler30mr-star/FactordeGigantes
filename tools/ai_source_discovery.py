@@ -211,6 +211,9 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                      document_fetcher=fetch_document_public,gdelt_fetcher=None):
     qid, title = selection_identity(selection)
     targets = research_targets(selection)
+    questions = selection.get('editorial_questions', [])
+    if not isinstance(questions, list) or len(questions) > 4 or any(not isinstance(q, str) or not 10 <= len(q) <= 220 for q in questions):
+        raise ValueError('Preguntas editoriales inválidas')
     day = datetime.now(timezone.utc).date().isoformat()
     out = {"schema": "fdg_ai_sources_v1", "collected_on": day,
            "selected_wikidata_id": qid, "company": title, "evidence_manifest": [],
@@ -293,10 +296,10 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     focus = selection.get('editorial_topic')
     if focus is not None and (not isinstance(focus, str) or not 5 <= len(focus) <= 300):
         raise ValueError('Enfoque editorial inválido')
-    queries = search_plan(title, targets, REGULATORY_HOSTS)
+    queries = search_plan(title, targets, REGULATORY_HOSTS, editorial_questions=questions)
     if official_hosts and queries[0]['intent'] != 'find_regulatory_original':
         queries[0]['include_domains'] = sorted(official_hosts)
-    if focus and not targets:
+    if focus and not targets and not questions:
         queries = [{**q, 'query': f'"{title}" {focus} ' +
                     ('original documents annual report' if i == 0 else 'independent reporting')}
                    for i, q in enumerate(queries)]
@@ -419,7 +422,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                            "first_block_preview": str(next(iter(analysis["blocks"]), ""))[:160]})
             digest = hashlib.sha256(raw).hexdigest()
             fragments = []
-            for passage in select_passages(analysis, title, targets):
+            for passage in select_passages(analysis, title, targets, editorial_questions=questions):
                 fragments.append({"id": "", "wikidata_id": qid, "company": title,
                     "url": resolved, "document_sha256": digest,
                     **passage, "source_id": qid + "-observed-document",

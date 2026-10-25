@@ -5,6 +5,7 @@ import {readFileSync,readdirSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {dispatchChannelResearch,channelResearchContext,storeChannelResearch,storeChannelScript} from '../src/channel-research.mjs';
 import worker from '../src/worker.js';
+import {editorialFocusSha} from '../src/editorial-focus.mjs';
 function setup(){
  const raw=new DatabaseSync(':memory:');for(const p of ['0017_channel_control.sql','0019_episode_research.sql'])raw.exec(readFileSync(new URL('../migrations/'+p,import.meta.url),'utf8'));
  const id=crypto.randomUUID();raw.prepare("INSERT INTO channel_episodes(id,channel,origin,company,topic,instruction) VALUES (?,'factor-de-gigantes','chat','BlackBerry','La pérdida de liderazgo','instrucción del propietario')").run(id);
@@ -51,9 +52,18 @@ test('cited script creates real editorial draft without any legacy market select
  const {research,script}=JSON.parse(fixture.stdout);
  raw.prepare('UPDATE channel_episodes SET company=? WHERE id=?').run(research.company,id);
  research.editorial_topic='La pérdida de liderazgo';research.selected_episode_id=id;
+ research.editorial_focus_review={schema:'fdg_editorial_focus_v1',status:'aligned',topic:research.editorial_topic,
+  claims_sha256:await editorialFocusSha(research.editorial_topic,research.candidate_claims),publication_authorized:false,
+  judgments:research.candidate_claims.map((c,i)=>({claim_index:i+1,relevance:'central',reason:'Juicio simulado para el contrato del episodio.'}))};
  const request=await dispatchChannelResearch(env,id,async()=>({status:204}));
  const saved=await storeChannelResearch(env,{request_id:request.request_id,report:research});
  script.source_research_run_id=saved.run_id;
+ const original=raw.prepare('SELECT report_json FROM market_ai_pipeline_runs WHERE id=?').get(saved.run_id).report_json;
+ const unbound=JSON.parse(original);delete unbound.editorial_focus_review;
+ raw.prepare('UPDATE market_ai_pipeline_runs SET report_json=? WHERE id=?').run(JSON.stringify(unbound),saved.run_id);
+ await assert.rejects(()=>storeChannelScript(env,{request_id:request.request_id,script}),/enfoque elegido/);
+ assert.equal(raw.prepare('SELECT count(*) n FROM jobs').get().n,0);
+ raw.prepare('UPDATE market_ai_pipeline_runs SET report_json=? WHERE id=?').run(original,saved.run_id);
  // A script failure is retryable without a new source or analyst run.
  await storeChannelResearch(env,{request_id:request.request_id,blocked:true});
  const resumed=await dispatchChannelResearch(env,id,async()=>({status:204}));

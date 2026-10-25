@@ -38,7 +38,7 @@ def main():
             if not previous.isdigit():
                 raise ValueError('Run previo inválido')
             names = ['IDENTIDAD.json', 'FUENTES.json', 'FUENTES_CONTINUACION.json', 'INVESTIGACION.json', 'GUION.json', 'ACEPTACION.sqlite']
-            names += [f'RESPUESTA_{p}_{role}.json' for p in ('gemini', 'groq', 'mistral', 'openrouter') for role in ('analyze', 'review', 'script')]
+            names += [f'RESPUESTA_{p}_{role}.json' for p in ('gemini', 'groq', 'mistral', 'openrouter') for role in ('analyze', 'review', 'script', 'editorial')]
             for name in names:
                 source = Path('dist/previous-directed') / name
                 if source.is_file():
@@ -100,6 +100,12 @@ def main():
             saved.write_text(json.dumps(sources, ensure_ascii=False, indent=2))
             return sources
         result = run_episode(Control(), identity['request_id'], client_factory=Clients, discover=discover)
+        if result.get('research', {}).get('editorial_focus_review', {}).get('status') == 'misaligned':
+            # One bounded recovery in this explicit acceptance, not a provider loop.
+            (FOLDER / 'ENFOQUE_ANTERIOR.json').write_text(json.dumps(result['research']['editorial_focus_review'], ensure_ascii=False, indent=2))
+            audit['previous_editorial_focus'] = result['research']['editorial_focus_review']
+            audit['editorial_replan_attempted'] = True
+            result = run_episode(Control(), identity['request_id'], client_factory=Clients, discover=discover)
         (FOLDER / 'RESULTADO.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
         report = result.get('research', {})
         audit.update(state=result['state'], evidence_count=len(report.get('evidence_manifest', [])),
@@ -113,6 +119,7 @@ def main():
                              for d in report.get('source_documents', [])]
         audit['claims'] = [{'statement': claim['statement'], 'evidence_ids': claim['evidence_ids']}
                            for claim in report.get('candidate_claims', [])]
+        audit['editorial_focus'] = report.get('editorial_focus_review')
         audit['source_classes'] = {kind: sum(e['source_class'] == kind for e in report.get('evidence_manifest', []))
             for kind in ('potential_official_primary', 'potential_official_pdf', 'public_document_candidate', 'public_authority_candidate')}
         print('ACEPTACION_EPISODIO:', json.dumps(audit, ensure_ascii=False))

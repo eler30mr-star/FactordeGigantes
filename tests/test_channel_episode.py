@@ -2,15 +2,48 @@ import json
 import unittest
 from unittest.mock import patch
 from tools.channel_episode import run_episode, resolve_company, resolve_company_identity
+from tools.editorial_focus import focus_sha
+
+
+def focused(report):
+    report['candidate_claims']=[{**row, 'statement':row.get('statement', 'La empresa perdió liderazgo frente al cambio del mercado.')} for row in report.get('candidate_claims', [{}])]
+    topic=report.get('editorial_topic', 'Pérdida de liderazgo')
+    report['editorial_focus_review']={'schema':'fdg_editorial_focus_v1','status':'aligned','topic':topic,
+        'claims_sha256':focus_sha(topic,report['candidate_claims']),'publication_authorized':False,
+        'judgments':[{'claim_index':n,'relevance':'central','reason':'Fixture simulado que responde a la pregunta.'} for n in range(1,len(report['candidate_claims'])+1)]}
+    return report
 
 
 class ChannelEpisodeTests(unittest.TestCase):
+    def test_off_topic_facts_stop_before_more_downloads_or_scripting(self):
+        saved={'company':'BlackBerry','selected_episode_id':'chosen','editorial_topic':'Pérdida de liderazgo',
+            'selected_wikidata_id':'Q100','candidate_claims':[{'statement':'El teléfono tiene dos altavoces frontales.'}],
+            'source_quality':{'claim_gaps':[{'gaps':['no_original_primary_document']}]}}
+        class Control:
+            def request(self,path,body):
+                if path.endswith('/context'):return {'allowed':True,'episode':{'episode_id':'chosen','company':'BlackBerry',
+                    'topic':'Pérdida de liderazgo','origin':'chat'},'checkpoint':{'run_id':'ai-'+'a'*28,'report':saved}}
+                return {'ok':True,'run_id':'ai-'+'b'*28}
+            def reserve(self,*_):return True
+        def reviewer(report,topic,**_):
+            return {'schema':'fdg_editorial_focus_v1','status':'misaligned','topic':topic,
+                'claims_sha256':focus_sha(topic,report['candidate_claims']), 'publication_authorized':False,
+                'judgments':[{'claim_index':1,'relevance':'off_topic','reason':'Es un detalle de producto y no explica el negocio.'}],
+                'research_questions':['¿Qué decisiones afectaron su liderazgo?']}
+        forbidden=lambda *_a,**_k:self.fail('No gastar en un enfoque ajeno')
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode(Control(),'request',resolver=forbidden,discover=forbidden,analyze=forbidden,
+                corroborate=forbidden,scriptwriter=forbidden,focus_reviewer=reviewer,client_factory=lambda **_:None)
+        self.assertEqual(result['draft']['status'],'blocked_editorial_focus')
+        self.assertEqual(result['research']['editorial_topic'],'Pérdida de liderazgo')
+
     def test_incomplete_checkpoint_corroborates_without_repeating_the_analyst(self):
         saved = {'company': 'BlackBerry', 'editorial_topic': 'Pérdida de liderazgo',
                  'selected_episode_id': 'chosen', 'selected_wikidata_id': 'Q100',
                  'candidate_claims': [{}], 'reviews': [{}],
                  'observed_official_websites': ['https://www.blackberry.com'],
                  'source_quality': {'claim_gaps': [{'claim_index': 1, 'gaps': ['no_independent_domain']}]}}
+        focused(saved)
         class Control:
             def request(self, path, body):
                 if path.endswith('/context'): return {'allowed': True, 'episode': {'episode_id': 'chosen', 'company': 'BlackBerry',
@@ -43,6 +76,7 @@ class ChannelEpisodeTests(unittest.TestCase):
         saved = {'company': 'BlackBerry', 'editorial_topic': 'Pérdida de liderazgo',
                  'selected_episode_id': 'chosen', 'selected_wikidata_id': 'Q100',
                  'candidate_claims': [{}], 'reviews': [{}]}
+        focused(saved)
         run_id = 'ai-' + 'b' * 28
         calls = []
         class Control:
@@ -89,7 +123,7 @@ class ChannelEpisodeTests(unittest.TestCase):
         def analyze(sources, **_):
             self.assertEqual(sources['evidence_manifest'], saved['evidence_manifest'])
             self.assertEqual(sources['stages'], [{'provider': 'wikipedia', 'status': 'success'}])
-            return {**sources, 'candidate_claims': [{}]}
+            return focused({**sources, 'candidate_claims': [{}]})
         forbidden = lambda *_a, **_k: self.fail('No repetir identidad o fuentes')
         with patch('tools.channel_episode.validate_report_locally'):
             result = run_episode(Control(), 'retry', resolver=forbidden, discover=forbidden, analyze=analyze,
@@ -121,7 +155,7 @@ class ChannelEpisodeTests(unittest.TestCase):
             self.assertEqual(selection['editorial_topic'], 'Pérdida de liderazgo')
             self.assertEqual(selection['research_queue']['origin'], 'chat')
             return {'company': 'BlackBerry'}
-        def analyze(sources, **_): return {'company': sources['company']}
+        def analyze(sources, **_): return focused({'company': sources['company']})
         def script(research, selection, **_):
             self.assertEqual(research['selected_episode_id'], 'chosen')
             self.assertEqual(research['editorial_topic'], 'Pérdida de liderazgo')

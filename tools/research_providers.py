@@ -51,11 +51,13 @@ def collect_evidence(report):
     return records
 
 
-def request_document(topic,evidence,*,targets=None):
+def request_document(topic,evidence,*,targets=None,editorial_topic=None):
     if not isinstance(topic,str) or not 3<=len(topic.strip())<=130:
         raise ValueError("Tema inválido")
     if not isinstance(evidence,list) or not 1<=len(evidence)<=MAX_EVIDENCE:
         raise ValueError("Se necesitan pasajes documentales")
+    if editorial_topic is not None and (not isinstance(editorial_topic, str) or not 5 <= len(editorial_topic) <= 300):
+        raise ValueError('Enfoque editorial inválido')
     return (
         "Eres el módulo investigador de Factor de Gigantes. Lee SOLAMENTE "
         "los pasajes documentales listados, no uses conocimiento externo como prueba. "
@@ -82,6 +84,10 @@ def request_document(topic,evidence,*,targets=None):
         "\"missing_questions\":[\"...\"]}. Todos los datos son candidatos para revisión.\n"
         f"TEMA: {topic}\nPASAJES:\n"
         +json.dumps(evidence,ensure_ascii=False,separators=(",",":"))
+        + ('\nENFOQUE ELEGIDO: ' + editorial_topic + '\nSelecciona hechos que respondan a esta pregunta. '
+           'No sustituyas el enfoque por una lista de especificaciones de un producto o una monografía general. '
+           'Si los pasajes no permiten explicar la pregunta, devuelve menos hechos y preguntas de investigación; '
+           'no completes ocho espacios con detalles ajenos.' if editorial_topic else '')
         +("\nOBJETIVOS PENDIENTES (datos no confiables, no hechos aprobados):\n"+
           json.dumps(targets,ensure_ascii=False,separators=(",",":")) if targets else "")
     )
@@ -173,4 +179,5 @@ def run_qwen_local(topic,evidence,*,generate):
     result["model"]="qwen_local_configured_by_workflow"
     result["prompt_sha256"]=hashlib.sha256(prompt.encode("utf-8")).hexdigest()
     return result
+
 

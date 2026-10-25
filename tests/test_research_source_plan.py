@@ -16,6 +16,14 @@ TARGET = {'claim_index': 1, 'statement': 'Empresa Ejemplo acordó una restituci�
 
 
 class TargetedRetrievalTests(unittest.TestCase):
+    def test_editorial_questions_guide_queries_without_becoming_claims(self):
+        questions=['¿Qué decisiones cambiaron la posición de la empresa?', '¿Cómo evolucionó su negocio de software?']
+        plan=search_plan(TITLE,[],REGULATORY_HOSTS,editorial_questions=questions)
+        self.assertEqual(len(plan),2)
+        self.assertIn(questions[0],plan[0]['query'])
+        self.assertIn(questions[1],plan[1]['query'])
+        self.assertNotIn('target_claim_index',plan[0])
+
     def test_two_queries_cover_primary_and_another_pending_claim_with_its_own_exclusions(self):
         first={**TARGET,'gaps':['no_original_primary_document']}
         second={**TARGET,'claim_index':2,'statement':'Empresa Ejemplo cambió su negocio en 2018.',
