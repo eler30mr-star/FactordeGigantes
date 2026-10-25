@@ -1,3 +1,4 @@
+import {channelStatus,setAutomaticMode,receiveChannelInstruction,automaticGate} from './channel-control.mjs';
 import {readEpisodeInput,acceptEpisodeExport,failEpisodeExport,previewFromEvents} from './episode-production.mjs';
 import {readProductionProgress} from './production-progress.mjs';
 import {youtubeConnectionStatus,startYoutubeConnection,finishYoutubeConnection,disconnectYoutube} from './youtube-connection.mjs';
@@ -6,7 +7,7 @@ import {listYoutubeExports,findYoutubeExport,registerYoutubeExport,reviewYoutube
 import {storeAutonomousDraft,hasAutonomousOrigin,readEditorialScriptContext} from './autonomous-script-drafts.mjs';
 import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from "./ai-research-team.mjs";
-import {selectResearchFromD1,readResearchQueue} from "./market-research-selection.mjs";
+import {readResearchQueue} from "./market-research-selection.mjs";
 import {storeNewsEntities} from "./news-entity-ingest.mjs";
 import {storeOfficialEvidence,readOfficialEvidence} from "./market-official-ingest.mjs";
 import {storePdfEvidence,readPdfEvidence} from "./market-pdf-ingest.mjs";
@@ -148,14 +149,31 @@ async function handle(request,env) {
   const ingestPdf=parts[1]==="market" && parts[2]==="pdf" && parts[3]==="ingest" && parts.length===4;
   const ingestResearch=parts[1]==="market" && parts[2]==="research" && parts[3]==="ingest" && parts.length===4;
   const runResearchSelection=url.pathname==='/api/market/research-selection/run';
+  const automationGate=url.pathname==='/api/market/automation-control';
   const aiWrite=['/api/market/ai-budget/reserve','/api/market/ai-classify','/api/market/ai-pipeline/ingest','/api/market/ai-pipeline/script-context','/api/market/ai-pipeline/script-ingest'].includes(url.pathname);
   // Radar: autorización OIDC efímera firmada por GitHub; no admite tokens admin/render.
-  if (ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection || aiWrite) {
+  if (automationGate || ingest || ingestNews || ingestYoutube || ingestCross || ingestNewsEntities || runAssessment || ingestOfficial || ingestPdf || ingestResearch || runResearchSelection || aiWrite) {
     if (!await verifyMarketOIDC(request)) return err("Acceso no autorizado",401);
   } else if (!guard(request,env,renderer ? "RENDERER_TOKEN" : "ADMIN_TOKEN")) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  if(automationGate || (!renderer && parts[1]==='channel-control')){
+    try{
+      let result;
+      if(automationGate && method==='GET')result=await automaticGate(env);
+      else if(!automationGate && parts.length===2 && method==='GET')result=await channelStatus(env);
+      else if(!automationGate && parts.length===3 && method==='POST' && ['mode','chat'].includes(parts[2])){
+        const body=await parseBody(request);
+        result=parts[2]==='mode'?await setAutomaticMode(env,body):await receiveChannelInstruction(env,body);
+      }
+      return result?json(result,result.ok?200:result.status):err('Método o ruta de control no admitidos',405);
+    }catch(e){
+      if(/no such table: channel_/.test(String(e?.message||'')))return err('Falta migración 0017_channel_control.sql',503);
+      if(e instanceof RangeError||e instanceof SyntaxError||e instanceof TypeError)return err('Instrucción o versión inválida',400);
+      throw e;
+    }
+  }
   const exportAdmin=!renderer&&parts[1]==='youtube'&&parts[2]==='exports';
   const exportRenderer=renderer&&parts[2]==='youtube';
   if(exportAdmin||exportRenderer){
@@ -230,7 +248,7 @@ async function handle(request,env) {
   }
   if(runResearchSelection){
     if(method!=='POST')return err('Método no admitido',405);
-    return json(await selectResearchFromD1(env.DB),201);
+    return err('Selector anterior deshabilitado. Pendiente el estudio comparativo YouTube del nuevo flujo.',409);
   }
   if(url.pathname==='/api/market/research-queue'){
     if(method!=='GET')return err('Método no admitido',405);
@@ -607,3 +625,4 @@ export default {
     }
   }
 };
+

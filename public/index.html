@@ -19,6 +19,20 @@
    <p class="muted micro">El token permanece en memoria durante esta pestaña. No se guarda en el navegador.</p>
   </section>
   <div id="workspace" hidden>
+   <section class="card" aria-label="Dirección del canal">
+    <div class="heading"><h2>Tu próximo video</h2><button id="channel-refresh" class="secondary" type="button">Actualizar</button></div>
+    <button id="automatic-toggle" type="button" role="switch" aria-checked="false" disabled>Automático: sin consultar</button>
+    <p id="channel-status" class="muted" role="status">Conecta para consultar el modo del canal.</p>
+    <div id="channel-episode" aria-live="polite"></div>
+    <h3>Dime qué video quieres</h3>
+    <div id="channel-chat-history" role="log" aria-label="Conversación del canal" aria-live="polite"></div>
+    <form id="channel-chat-form">
+     <label for="channel-message">Tema y empresa</label>
+     <textarea id="channel-message" rows="2" required minlength="2" maxlength="600" placeholder="Haz un video sobre BlackBerry y por qué perdió el mercado"></textarea>
+     <button id="channel-send" type="submit" disabled>Enviar instrucción</button>
+    </form>
+    <p id="channel-chat-status" class="muted" role="status"></p>
+   </section>
    <div class="stats"><div class="stat"><span>Trabajos</span><strong id="total">0</strong></div><div class="stat"><span>En revisión</span><strong id="review">0</strong></div><div class="stat"><span>Listos</span><strong id="ready">0</strong></div></div>
    <section class="card" aria-label="Montaje y narración de episodios">
     <div class="heading"><h2>Producción de episodios</h2><button id="production-refresh" class="secondary" type="button">Actualizar avance</button></div>
@@ -154,3 +168,4 @@
  </main>
 </body>
 </html>
+

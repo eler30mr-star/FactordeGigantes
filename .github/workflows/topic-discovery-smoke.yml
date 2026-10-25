@@ -208,8 +208,28 @@ jobs:
           path: dist/script/
           retention-days: 5
           if-no-files-found: warn
-  topic-discovery:
+  automatic-preflight:
     if: >-
+      github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1' &&
+      (inputs.phase == 'research' || (github.event_name == 'schedule' && github.event.schedule == '17 10 * * *'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      allowed: ${{ steps.control.outputs.allowed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Consultar el modo del propietario antes de cualquier búsqueda
+        id: control
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: python -m tools.automatic_preflight
+  topic-discovery:
+    needs: automatic-preflight
+    if: >-
+      needs.automatic-preflight.outputs.allowed == 'true' &&
       github.event.repository.private == false && vars.FINAL_AI_INTEGRATION_ENABLED == '1' && inputs.phase != 'script' &&
       inputs.phase != 'profile' && inputs.phase != 'review' && inputs.phase != 'corroborate' &&
       (github.event_name != 'schedule' || github.event.schedule == '17 10 * * *')
@@ -509,4 +529,5 @@ jobs:
           path: dist/radar/
           retention-days: 5
           if-no-files-found: warn
+
 

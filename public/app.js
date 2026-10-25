@@ -1,3 +1,4 @@
+import {mountChannelControl} from './channel-control.js';
 import {mountEditorialEditor} from "./dossier-editor.js";
 import {mountYoutubeReviews} from './youtube-review.js';
 let adminToken = "";
@@ -17,7 +18,7 @@ async function request(path, method = "GET", body) {
     ...(body ? {body: JSON.stringify(body)} : {})
   });
   const data = await response.json();
-  if (!response.ok) throw Error(data.error || "Error HTTP "+response.status);
+  if (!response.ok) { const error=Error(data.error || "Error HTTP "+response.status); error.status=response.status; throw error; }
   return data;
 }
 function tag(name, className, text) {
@@ -793,6 +794,8 @@ $("research-form").addEventListener("submit",async event=>{
   }finally{btn.disabled=researchPaused;}
 });
 
+const channelControl=mountChannelControl({request});
+
 $("connect").addEventListener("click",async () => {
   const proposed=$("token").value.trim();
   if (!proposed) return notice("Introduce el token ADMIN_TOKEN");
@@ -802,6 +805,7 @@ $("connect").addEventListener("click",async () => {
     $("workspace").hidden=false;
     $("indicator").textContent="Conectado";
     notice("Conexión privada establecida");
+    channelControl.load().catch(e=>{$('channel-status').textContent=e.message;});
     loadResearch().catch(e=>{$("research-status").textContent=e.message;});
     loadSystemStatus().catch(e=>{$("system-status").textContent=e.message;});
     loadProductionRuns().catch(e=>{$('production-status').textContent=e.message;});
@@ -846,3 +850,4 @@ $("create").addEventListener("submit",async e => {
     await load();
   } catch(error) { notice(error.message); }
 });
+

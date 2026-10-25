@@ -1,5 +1,19 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Primer bloque implementado: control del canal y selección por chat
+
+**Implementación en main:** API ADMIN de estado, cambio de modo y chat; migración aditiva `0017_channel_control.sql`; botón automático encendido/apagado y conversación en el panel. El modo es persistente por canal, apagado por defecto, con revisión condicional y registro de actor autenticado. Las instrucciones explícitas seleccionan empresa y tema; las ambiguas abren un diálogo breve persistente. Reintentos conservan identificador y no duplican episodios. Un episodio activo no se reemplaza silenciosamente.
+
+El selector anterior deja de estar disponible por API. Se añade preflight OIDC al workflow de descubrimiento antes de cualquier recolección: apagado bloquea el inicio; el colector antiguo permanece retirado incluso si se solicita encendido. **El nuevo estudio comparativo YouTube todavía no está implementado**: encendido expresa el modo guardado y muestra un bloqueo concreto, sin elegir arbitrariamente ni activar el radar Wikimedia anterior.
+
+**Estado del chat:** guarda una selección real de episodio con origen chat. La interpretación inicial es conservadora y no invoca un LLM; pide empresa/enfoque cuando faltan. **No despacha aún investigación ni producción**. La respuesta lo declara y conserva la pausa de investigadores. No confundir registro de la instrucción con video generado.
+
+**Verificación local realizada:** 128 contratos Node aprobados (119 existentes y 9 nuevos con SQLite real, API y eventos del panel); cuatro pruebas Python del preflight aprobadas; sintaxis de Worker, app y módulos nuevos correcta; YAML de ambos workflows parseado. Node se ejecutó con `--test-isolation=none` por las restricciones del proceso hijo del entorno. No se ejecutó la suite Python audiovisual completa, que no cambia. La primera comprobación ampliada requirió recuperar el fixture existente de Theranos; tras recuperarlo pasan todos los contratos Node.
+
+**Infraestructura consultada:** D1 remota y binding del Worker corresponden a `ef699e75-b50a-4e28-a665-69316d10cdaf`; la pausa remota sigue en 0. No se leyeron secretos. **Migración remota y despliegue pendientes**: la conexión GitHub funciona, pero Git por terminal falla al conectar al proxy; un intento posterior de acceso de red quedó bloqueado y fue interrumpido por el usuario. No se alteraron datos ni modo reales del propietario, no se invocaron investigadores ni se publicaron videos.
+
+**Siguiente paso exacto:** aplicar/verificar migración 0017 y desplegar este bloque; aceptar el botón y el chat en el panel real. A continuación implementar el estudio comparativo YouTube y conectar el episodio elegido al investigador, respetando habilitación vigente. El reproductor embebido y la producción integrada siguen pendientes. P0/P1 han comenzado; no se declaran completos.
+
 ## 2026-10-25 · Estudio de mercado exigente y control automático encendido/apagado
 
 **Instrucción del propietario:** la selección de tema y empresa debe surgir de un estudio de mercado bien hecho, nunca de elegir por elegir. El panel tendrá botón automático encendido/apagado; apagado, el propietario da los temas y empresas que deben investigar las IA.
