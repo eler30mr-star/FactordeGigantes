@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Segunda muestra real y corrección de asociación de evidencia
+
+Run `40202996674` success; reutilizó Gemini y las búsquedas generales previas. Tres consultas por empresa devolvieron doce videos cada una; se midieron publicaciones de doce canales. Empresas observadas: Nikola, Palm y TomTom. El selector mantuvo cero candidatas elegibles y conservó los motivos, sin forzar episodio.
+
+La inspección detectó un error de asociación: las candidatas solo recibían IDs de su consulta específica y perdían los videos pertinentes ya encontrados en consultas generales. Se corrige para asociar todos los videos observados que mencionan a la empresa con límite por palabra (Palm no coincide con Palmolive). Se priorizan para referencias los canales con más ejemplos observados, manteniendo límites y umbrales. Nueva regresión Python aprobada; cinco pruebas del estudio correctas.
+
+La reevaluación recupera el artefacto `12602477780` del segundo run y usa únicamente sus datos ya obtenidos: cero nuevas consultas YouTube o inferencias. Se mantienen automático apagado, pausa general y publicación bloqueada. Resultado de reevaluación pendiente.
+
 ## 2026-10-25 · Primer estudio real comprobado y corrección de recuperación
 
 Run real `40202682856` success: tres búsquedas generales con doce resultados cada una, análisis Gemini `gemini-3.5-flash-lite` correcto (1.454 tokens de entrada, 313 salida), tres candidatas. Las consultas que concatenaban empresa y pregunta completa devolvieron 1, 1 y 0 resultados; el selector rechazó las tres por evidencia insuficiente. No se forzó selección ni se crearon episodios. Artefacto `12601419959`, SHA ZIP `81e2b0b46f73a4da3afc94240a2a32e5d3c75fd7bcb9f10443b80154f9cc2a11`.

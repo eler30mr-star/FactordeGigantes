@@ -7,6 +7,9 @@ on:
         type: choice
         options: [acceptance, episode, opportunity, research, corroborate, review, script, profile]
         default: research
+      reassess_only:
+        type: boolean
+        default: false
       resume_acceptance_run:
         type: string
         default: ''
@@ -66,6 +69,7 @@ jobs:
           github-token: ${{ github.token }}
       - name: Ejecutar una aceptación real aislada de la producción
         env:
+          REASSESS_ONLY: ${{ inputs.reassess_only }}
           RESUME_ACCEPTANCE_RUN: ${{ inputs.resume_acceptance_run }}
           CONFIRM_FINAL_ACCEPTANCE: ${{ inputs.confirm_final_acceptance }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}

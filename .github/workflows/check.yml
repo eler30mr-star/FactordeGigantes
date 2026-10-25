@@ -26,7 +26,7 @@ jobs:
       - name: Lanzar una prueba real autorizada sin activar producción
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=acceptance -f confirm_final_acceptance=true -f resume_acceptance_run=40202682856
+        run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=acceptance -f confirm_final_acceptance=true -f resume_acceptance_run=40202996674 -f reassess_only=true
   stage-export:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[stage-export]')
     needs: [checks, audiovisual-quality, production-smoke]

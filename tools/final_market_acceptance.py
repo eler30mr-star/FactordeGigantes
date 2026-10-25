@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from tools.ai_clients import FreeClients, ProviderError, readiness
 from tools.ai_control import ControlClient
-from tools.youtube_opportunity_study import YoutubeMetadata, collect_study
+from tools.youtube_opportunity_study import YoutubeMetadata, collect_study, link_candidate_videos
 
 
 def main():
@@ -66,10 +66,15 @@ def main():
                     known = {v['id']: v for v in old['videos']}
                     return [known[i] for i in ids if i in known] + api.videos([i for i in ids if i not in known])
                 def baselines(self, channels): return api.baselines(channels)
-            replay = ReuseBroad()
-            report = collect_study(replay, lambda _: json.dumps({'candidates': [
-                {k:v for k,v in c.items() if k != 'video_ids'} for c in prior]}))
-            report['extraction_provider'] = old['extraction_provider']
+            if os.environ.get('REASSESS_ONLY') == 'true':
+                report = old
+                link_candidate_videos(report['videos'], report['candidates'])
+                audit['reassessed_existing_evidence'] = True
+            else:
+                replay = ReuseBroad()
+                report = collect_study(replay, lambda _: json.dumps({'candidates': [
+                    {k:v for k,v in c.items() if k != 'video_ids'} for c in prior]}))
+                report['extraction_provider'] = old['extraction_provider']
             report['api_calls'], report['search_calls'] = api.calls, api.searches
         else:
             report = collect_study(api, generate)

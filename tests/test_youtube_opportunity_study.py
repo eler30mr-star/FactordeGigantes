@@ -2,10 +2,19 @@ import json
 import unittest
 from datetime import date
 from urllib.parse import urlsplit, parse_qs
-from tools.youtube_opportunity_study import YoutubeMetadata, collect_study, identify_candidates
+from tools.youtube_opportunity_study import YoutubeMetadata, collect_study, identify_candidates, link_candidate_videos
 
 
 class YoutubeOpportunityStudyTests(unittest.TestCase):
+    def test_broad_search_evidence_is_retained_and_company_names_are_not_substrings(self):
+        candidates = [{'company': 'Palm', 'video_ids': ['focused']}, {'company': 'Nokia', 'video_ids': []}]
+        videos = [{'id': 'broad', 'title': 'La historia de Palm y Nokia'},
+                  {'id': 'focused', 'title': 'Palm: su transformación'},
+                  {'id': 'unrelated', 'title': 'Palmolive y sus productos'}]
+        link_candidate_videos(videos, candidates)
+        self.assertEqual(candidates[0]['video_ids'], ['broad', 'focused'])
+        self.assertEqual(candidates[1]['video_ids'], ['broad'])
+
     def test_guard_stops_before_any_youtube_request(self):
         api = YoutubeMetadata('fake-key-for-unit-tests-only', guard=lambda: False,
             transport=lambda _: self.fail('No debe realizar red'))

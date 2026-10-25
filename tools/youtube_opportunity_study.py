@@ -116,6 +116,18 @@ def identify_candidates(videos, generate):
     return candidates
 
 
+def link_candidate_videos(videos, candidates):
+    """Retain evidence from both broad discovery and targeted queries."""
+    import unicodedata
+    def tokens(value):
+        value = ''.join(c for c in unicodedata.normalize('NFKD', value.casefold()) if not unicodedata.combining(c))
+        return ' '.join(re.findall(r'\w+', value))
+    for candidate in candidates:
+        name = ' ' + tokens(candidate['company']) + ' '
+        candidate['video_ids'] = [v['id'] for v in videos if name in ' ' + tokens(v['title']) + ' '][:20]
+    return candidates
+
+
 def collect_study(api, generate, today=None):
     today = today or date.today()
     queries, videos = [], {}
@@ -131,12 +143,15 @@ def collect_study(api, generate, today=None):
     for query in BROAD_QUERIES:
         search(query)
     candidates = identify_candidates(list(videos.values()), generate)
-    channels = []
     for c in candidates:
-        ids = search(c['company'])
-        c['video_ids'] = [v for v in ids if c['company'].casefold() in videos[v]['title'].casefold()][:20]
-        local_channels = list(dict.fromkeys(videos[i]['channel_id'] for i in c['video_ids']))[:4]
-        for cid in local_channels:
+        search(c['company'])
+    link_candidate_videos(list(videos.values()), candidates)
+    channels = []
+    from collections import Counter
+    for c in candidates:
+        counts = Counter(videos[i]['channel_id'] for i in c['video_ids']
+            if 300 <= videos[i]['duration_seconds'] <= 1800)
+        for cid, _ in counts.most_common(4):
             if cid not in channels:
                 channels.append(cid)
     # At most 12 channels with independent recent upload baselines.
