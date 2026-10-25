@@ -1,5 +1,15 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Estudio de mercado exigente y control automático encendido/apagado
+
+**Instrucción del propietario:** la selección de tema y empresa debe surgir de un estudio de mercado bien hecho, nunca de elegir por elegir. El panel tendrá botón automático encendido/apagado; apagado, el propietario da los temas y empresas que deben investigar las IA.
+
+**Actualización documental:** el plan incorpora comparación de alternativas YouTube, contexto por canal/edad/formato, actualidad y saturación, criterios versionados y mínimos de suficiencia que deben validarse antes de activar el selector. La decisión explica evidencias y descartes; sin evidencia suficiente no hay selección. También especifica persistencia por canal del modo, guardas en servidor/cron/colas, carreras al apagar y continuidad de episodios manuales. P0 y P1 incluyen estos requisitos.
+
+**Próximas tareas prioritarias:** implementar primero modo persistente y contrato de episodio con pruebas de apagado/cron/chat, estudio de mercado y selección antes de investigación; después panel y reproductor. Estas precisiones complementan P0–P3 de la entrada anterior. El modo apagado no significa desactivar IA: investiga y produce lo pedido por chat. La publicación sigue requiriendo autorización.
+
+**Verificación y alcance:** revisión de plan y avance actuales en main y conservación del historial. Solo documentación; sin pruebas de aplicación, despliegue, cambio real de modo, llamadas IA ni publicaciones. Los criterios se registran como pendientes, no implementados. La pausa previa se conserva. Base: `e94cf55d38555031471dcc66190fe00cefab2449`.
+
 ## 2026-10-25 · Dirección corregida por el propietario: automatización del canal
 
 **Alcance de esta entrega:** actualización documental en `main`. El propietario rechaza recopilar e investigar muchas empresas antes de seleccionar el video. Exige búsqueda diaria orientada a oportunidades YouTube del nicho conocido → selección de un tema y una empresa → investigación del elegido → producción → reproducción del video en el panel → publicación autorizada. Añade un segundo inicio por chat, indicando él mismo tema y empresa, que converge en el mismo flujo.

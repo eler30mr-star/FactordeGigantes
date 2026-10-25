@@ -23,6 +23,34 @@ Esta búsqueda busca potencial de viralización en YouTube; no promete viralidad
 
 El ciclo diario define la oportunidad del día; no impone publicar un video incompleto por cumplir una fecha. La duración real de producción, los límites gratuitos y las aprobaciones siguen siendo visibles.
 
+### Estudio de mercado obligatorio antes de elegir
+
+La IA debe realizar un estudio suficiente para justificar la elección; no elegir por completar el ciclo ni por el primer resultado. El presupuesto acotado evita gasto indiscriminado, pero no permite llamar «estudio de mercado» a una muestra insuficiente.
+
+- Buscar con varias consultas del nicho y del enfoque, comparar alternativas de tema y empresa, y registrar consultas, fechas, videos y canales observados. Declarar cobertura, antigüedad y límites de la muestra.
+- Evaluar afinidad con el público hispanohablante, actualidad, interés sostenido o emergente, competencia y saturación, ángulo diferenciador y antecedentes del canal. Separar Shorts de videos largos y comparar duraciones y edades semejantes.
+- Contextualizar las visitas por edad del video y rendimiento habitual del canal cuando haya datos suficientes. No equiparar el éxito de un canal grande con una oportunidad para este canal ni decidir por visitas absolutas, una noticia o un único video excepcional.
+- Medir evolución solo con observaciones fechadas comparables; visitas divididas por días es un promedio, no crecimiento demostrado. Identificar datos faltantes y no inventar demanda, CTR o retención de terceros.
+- Comparar candidatos mediante criterios y ponderaciones documentados y versionados, calidad de evidencia e incertidumbre. Antes de activar el selector, definir y validar mínimos de cobertura, frescura y suficiencia con muestras reales; no ajustar umbrales para forzar un ganador.
+- Entregar una decisión explicable: tema, empresa, enfoque, oportunidad detectada, evidencia enlazada, comparación con alternativas, motivos de descarte y límites. El panel muestra un resumen y permite abrir el detalle.
+- Si la evidencia no alcanza los mínimos, registrar **«sin selección: estudio insuficiente»**, explicar qué falta y esperar nueva búsqueda o instrucción del propietario. Solo el ganador habilita investigación profunda.
+
+**Aceptación:** una revisión de muestras reales debe poder reconstruir por qué se eligió ese episodio frente a alternativas. Las pruebas cubren muestra insuficiente, datos caducados, duplicados, sesgo por tamaño de canal y ausencia de tendencia medida; todos deben impedir conclusiones no sustentadas.
+
+### Botón del panel: Automático encendido / apagado
+
+El propietario controla un botón visible con estado inequívoco **«Automático: encendido» / «Automático: apagado»**, persistido en el servidor por canal y conservado al recargar.
+
+- **Encendido:** habilita el ciclo diario de búsqueda, estudio de mercado y selección por IA dentro del nicho. No garantiza un ganador cuando el estudio sea insuficiente.
+- **Apagado:** no se inician nuevas búsquedas de oportunidades, estudios ni selecciones automáticas, tampoco desde cron, tareas en cola o reintentos. El sistema espera los temas y empresas que el propietario indique por chat.
+- Apagado no desactiva los investigadores ni la producción de episodios pedidos por el propietario: estos recorren investigación → video → revisión y publicación autorizada con las mismas IA.
+- Al apagar durante una búsqueda, cancelar o descartar su resultado automático antes de crear un episodio. Un episodio ya seleccionado/en producción se conserva y se muestra como tal; el botón no lo borra ni cancela silenciosamente.
+- Verificar el modo en el servidor al iniciar la búsqueda y antes de confirmar una selección; cubrir carreras con el apagado e impedir que una tarea antigua lo reactive.
+- Confirmar al usuario el estado realmente guardado; si falla el cambio, mostrar el error sin aparentar otro modo. Configuración ausente implica apagado hasta activación expresa. Registrar quién cambió el modo y cuándo.
+- El modo automático no concede autorización de publicación ni elimina presupuestos, derechos o revisiones vigentes. Su implementación futura no levanta por sí sola la pausa de investigadores existente.
+
+**Aceptación:** tras apagar y recargar, cron/colas no generan búsquedas ni episodios automáticos; una instrucción válida por chat sí crea el episodio dirigido. Al encender se recupera el ciclo sin duplicados. Probar también apagado concurrente con la selección y fallos al guardar.
+
 ### Modo dirigido: chat del propietario
 
 El panel debe tener **un chat operativo** para indicar tema y empresa, por ejemplo: «Haz un video sobre BlackBerry y por qué perdió el mercado».
@@ -55,7 +83,7 @@ Ambas entradas convergen en:
 La portada debe responder: **qué video se está haciendo, por qué se eligió, en qué etapa está y cuál es la siguiente acción**.
 
 1. Episodio actual: tema, empresa, enfoque, origen de la elección y motivo resumido.
-2. Chat para dar instrucciones de tema y empresa.
+2. Botón persistente «Automático: encendido/apagado» y chat para dar instrucciones de tema y empresa. Apagado, se espera la elección del propietario.
 3. Avance comprensible: investigación, guion, voz, montaje, revisión y publicación; bloqueo concreto y posibilidad de reanudar cuando proceda.
 4. **Reproductor de video dentro del panel**, con audio, pausa y desplazamiento, vinculado al MP4 real de ese episodio. La descarga o un enlace a GitHub Actions no reemplazan este requisito.
 5. Revisión y acciones autorizadas de subida/publicación/programación, con estado y enlace YouTube cuando exista.
@@ -79,6 +107,8 @@ Todo lo siguiente queda **pendiente de implementación o validación integral**,
 
 ### P0 — Corregir la entrada y el orden de ejecución
 
+- [ ] Implementar el botón de modo persistente y su control efectivo en servidor, cron y colas; apagado permite solo episodios dirigidos por el propietario.
+- [ ] Definir y validar criterios de estudio de mercado, mínimos de suficiencia y decisión comparativa explicable; no elegir si faltan evidencias.
 - [ ] Modelar el ciclo diario y el episodio único con tema, empresa, enfoque, origen, decisión y estado persistentes.
 - [ ] Hacer que el descubrimiento comience por búsqueda YouTube del nicho; comparar candidatos de forma acotada y seleccionar uno antes de disparar investigación.
 - [ ] Impedir investigación profunda de candidatos no seleccionados y revisar los cron/colectores existentes.
@@ -89,7 +119,7 @@ Todo lo siguiente queda **pendiente de implementación o validación integral**,
 
 ### P1 — Panel centrado en el video
 
-- [ ] Presentar episodio actual, chat, avance, bloqueo y siguiente acción como vista principal.
+- [ ] Presentar episodio actual, botón automático encendido/apagado, chat, avance, bloqueo y siguiente acción como vista principal; permitir consultar el estudio que sustenta la selección.
 - [ ] Entregar y reproducir el MP4 real dentro del panel autenticado; probar audio, desplazamiento, permisos y caducidad.
 - [ ] Relegar datos técnicos, fuentes e historial a vistas secundarias asociadas al episodio.
 
