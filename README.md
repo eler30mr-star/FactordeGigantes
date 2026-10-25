@@ -2,7 +2,7 @@
 
 Repositorio oficial **eler30mr-star/FactordeGigantes**, rama de trabajo **main**. Panel: [Factor de Gigantes](https://factor-de-gigantes.martin30-eler.workers.dev).
 
-El sistema descubre temas, conserva investigación y borradores citados en D1, exige revisión humana y prepara documentales originales en español. La conexión OAuth de YouTube está preparada; falta configurar el cliente y conceder acceso al canal. La subida y publicación requieren su integración y autorización por episodio.
+El sistema descubre temas, conserva investigación y borradores citados en D1, exige revisión humana y prepara documentales originales en español. La conexión OAuth de YouTube está preparada; falta configurar el cliente y conceder acceso al canal. La subida privada está implementada y requiere revisión y autorización por episodio; no hay publicación pública automática.
 
 ## Entrega actual
 
@@ -14,6 +14,8 @@ El sistema descubre temas, conserva investigación y borradores citados en D1, e
 - **Investigadores pausados** por indicación del propietario, incluidos cron y lanzamiento desde el panel. Su prueba integrada se habilita expresamente; la prueba final individual del narrador no los reactiva.
 
 La prueba final de narración y montaje terminó correctamente en [Actions](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40163555937). El archivo se descargó y verificó por SHA; no acredita por sí solo identidad vocal aprobada ni aceptación profesional. El estado verificado y los pendientes se registran en [AVANCE](docs/AVANCE.md).
+
+- **Cola de revisión y subida privada desplegada:** el episodio está registrado con sus metadatos, sin aprobación fabricada. La transferencia es reanudable y conserva una única sesión; primera subida real pendiente de autorización. [Funcionamiento](docs/SUBIDA_PRIVADA.md).
 
 ## Operación y arquitectura
 

@@ -1,6 +1,6 @@
 # Conectar el canal de Factor de Gigantes
 
-La conexión oficial usa OAuth de Google. La clave YouTube del estudio de mercado no autoriza el acceso al canal ni una subida. El código de conexión está preparado; el consentimiento y las credenciales del cliente de Google siguen siendo del propietario. No hay publicación automática ni se ha implementado la subida en este bloque.
+La conexión oficial usa OAuth de Google. La clave YouTube del estudio de mercado no autoriza el acceso al canal ni una subida. El código de conexión está preparado; el consentimiento y las credenciales del cliente de Google siguen siendo del propietario. La revisión y subida privada están implementadas como acciones separadas; consulta [Subida privada](SUBIDA_PRIVADA.md). No hay publicación pública automática.
 
 ## Configuración concreta
 
@@ -40,7 +40,7 @@ La aplicación solicita acceso sin conexión y conserva el refresh token cifrado
 - Renovación interna de acceso, sin ruta pública que devuelva credenciales; desconectar durante una renovación no resucita la conexión.
 - Migración aditiva `0015_youtube_oauth.sql`, sin modificar expedientes, trabajos o aprobaciones.
 
-Las pruebas locales usan respuestas Google simuladas para verificar el protocolo, errores y aislamiento. No equivalen a una cuenta Google conectada. La aceptación real requiere guardar el cliente, entrar a Google y conceder acceso al canal esperado. El subidor privado, metadatos y aprobación final por episodio son el siguiente bloque; no se ha habilitado publicación por conectar OAuth.
+Las pruebas locales usan respuestas Google simuladas para verificar el protocolo, errores y aislamiento. No equivalen a una cuenta Google conectada. La aceptación real requiere guardar el cliente, entrar a Google y conceder acceso al canal esperado. La cola de revisión, metadatos y subida privada por episodio están descritos en [Subida privada](SUBIDA_PRIVADA.md); conectar OAuth no concede esa aprobación ni habilita publicación.
 
 ## Fuentes oficiales consultadas
 
