@@ -112,7 +112,7 @@ Todo lo siguiente queda **pendiente de implementación o validación integral**,
 - [x] Modelar el ciclo diario y el episodio único con tema, empresa, enfoque, origen, decisión y estado persistentes.
 - [ ] Hacer que el descubrimiento comience por búsqueda YouTube del nicho; comparar candidatos de forma acotada y seleccionar uno antes de disparar investigación.
 - [x] Impedir investigación profunda de candidatos no seleccionados y revisar los cron/colectores existentes.
-- [ ] Implementar chat conectado al orquestador para elegir tema y empresa sin radar obligatorio.
+- [x] Implementar chat conectado al orquestador para elegir tema y empresa sin radar obligatorio.
 - [x] Evitar duplicados en el ciclo, doble envío del chat y reintentos; una nueva instrucción no destruye un episodio en curso.
 
 **Aceptación:** con proveedores simulados, comprobar ambos recorridos y el orden de llamadas; ningún investigador profundo se invoca antes de existir una selección ni para candidatos descartados. Validar después búsqueda real y decisión explicada, respetando la pausa vigente de investigadores hasta habilitación expresa.
@@ -143,11 +143,11 @@ Todo lo siguiente queda **pendiente de implementación o validación integral**,
 
 ## 7. Estado y reglas de continuidad
 
-La infraestructura existente —Worker, D1, proveedores IA, narrador, montaje, OAuth y subidor privado— se reutiliza según su estado verificado en [AVANCE.md](AVANCE.md). Hay un episodio narrado de desarrollo registrado, no una demostración del nuevo flujo autónomo. El modo persistente, el chat de selección y el reproductor embebido están implementados. El reproductor se desplegó y verificó con el MP4 real; su aceptación auditiva y visual humana sigue pendiente. El estudio YouTube v2 conserva una puerta de calibración; la conexión del chat y de la elección automática al flujo de investigación y producción todavía está pendiente. Avance/descarga por sí solos no equivalen a reproducción.
+La infraestructura existente —Worker, D1, proveedores IA, narrador, montaje, OAuth y subidor privado— se reutiliza según su estado verificado en [AVANCE.md](AVANCE.md). Hay un episodio narrado de desarrollo registrado, no una demostración del nuevo flujo autónomo. El modo persistente, el chat de selección y el reproductor embebido están implementados. El reproductor se desplegó y verificó con el MP4 real; su aceptación auditiva y visual humana sigue pendiente. El estudio YouTube v2 conserva una puerta de calibración; el episodio elegido por chat o estudio ya conecta con investigación enfocada y guion editorial trazable, y reutiliza la aprobación/render canónico existentes. La aceptación real con proveedores y del recorrido completo sigue pendiente. Avance/descarga por sí solos no equivalen a reproducción.
 
-La pausa de investigadores registrada previamente se conserva. Actualizar el plan no autoriza llamadas a proveedores, nuevas producciones, publicaciones ni cambios de producción en esta intervención. Se mantienen cero pagos, voz canónica, fuentes verificables, recursos con derechos, secretos protegidos y `main` exclusiva.
+La pausa de investigadores registrada previamente se conserva. La conexión implementada no levanta por sí sola la pausa ni concede autorización de publicación. Se mantienen cero pagos, voz canónica, fuentes verificables, recursos con derechos, secretos protegidos y `main` exclusiva.
 
-**Siguiente bloque de desarrollo:** conectar el episodio elegido por chat o estudio a investigación y producción reanudables, y aceptar el estudio YouTube con muestras reales cuando se habilite la prueba integrada. El control, el reproductor y el estudio v2 ya tienen código y pruebas; no ampliar el radar antiguo. Registrar separadamente código, pruebas, despliegue y aceptación real.
+**Siguiente bloque de desarrollo:** aceptar con proveedores reales el recorrido de episodio → investigación enfocada → guion → aprobación → render y registro del MP4, y calibrar el estudio YouTube cuando se habilite la prueba integrada. Completar después la publicación/programación autorizada. El control, el reproductor y el estudio v2 ya tienen código y pruebas; no ampliar el radar antiguo. Registrar separadamente código, pruebas, despliegue y aceptación real.
 
 ## Anexo — Plan e hitos anteriores, conservados como historial
 

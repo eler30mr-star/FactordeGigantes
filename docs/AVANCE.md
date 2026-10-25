@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Conexión de episodio desplegada y CI final aprobado
+
+Código final `9bf621d` en main; CI `40196188102` aprobado en contratos, cobertura Python, QA audiovisual y smoke. La primera integración `f82bbe6` también pasó CI `40196092277`. Se verificó el código realmente servido por Cloudflare: incluye la tabla de episodios investigados, el control de respuesta de guion repetida y la guarda de confirmación tardía. Deployment `7cddd9c4-b442-4cc0-a10f-09c709895a96`, versión `381b6edc-45ef-4e80-b2a7-eb9a568ec54d`, al 100 %.
+
+La migración 0019 está aplicada. La aceptación local incluye 150 contratos Node y tres pruebas Python nuevas; el test integrado crea guion, trabajo y expediente pendientes sin usar la cola/selección de mercado antigua. No se han invocado proveedores reales ni renderizado otro documental y se mantiene la pausa. El registro posterior de MP4 queda conectado al fin correcto del workflow narrado; su primer recorrido con un nuevo episodio aún debe comprobarse.
+
+**Próximo paso:** aceptación real del nuevo flujo y calibración del mercado cuando se habilite la prueba integrada; después completar publicación/programación con autorización. No confundir esta entrega de integración con aceptación factual, licencia, escucha o publicación del documental.
+
 ### Reintentos y confirmaciones tardías
 
 Se refuerza la idempotencia del guardado del guion: repetir la misma respuesta conserva el trabajo existente; otra versión se rechaza sin sobrescribirlo. Una confirmación tardía de despacho no puede reactivar una investigación que ya quedó bloqueada. Regresiones con SQLite y el guion citado real de prueba aprobadas; total local **150 Node**. La aceptación con proveedores reales permanece pendiente y la pausa no cambia.
