@@ -15,6 +15,18 @@ on:
 permissions:
   contents: read
 jobs:
+  final-market-acceptance:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[ai-acceptance]')
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Lanzar una prueba real autorizada sin activar producción
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=acceptance -f confirm_final_acceptance=true
   stage-export:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[stage-export]')
     needs: [checks, audiovisual-quality, production-smoke]

@@ -1,5 +1,11 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-25 · Prueba final real iniciada por instrucción del propietario
+
+El propietario pide avanzar sin más demoras. Se prepara y lanza una aceptación puntual con YouTube y un analista IA gratuito, usando las reservas D1 existentes. La fase requiere workflow_dispatch en main y confirmación explícita de prueba final. No cambia el modo automático del propietario ni la pausa general, no crea episodios, no investiga todas las empresas, no renderiza ni sube/publica videos.
+
+Se conservan consultas, métricas, candidatos, evaluación del selector y diagnóstico de disponibilidad en artefactos. No se mostrarán claves ni excepciones con URLs sensibles. Una muestra insuficiente se registra sin forzar ganador. Sintaxis Python y YAML validados. Resultado real aún pendiente: esta entrada registra el inicio, no aprobación de calibración ni de todo el proyecto.
+
 ## 2026-10-25 · Publicación/programación desplegadas y CI comprobado
 
 Código `f6b8d93`, CI `40197571459` success en contratos, cobertura Python, QA audiovisual y smoke posterior. Cloudflare deployment `bda807e9-eba8-47d9-a3c2-6cf23bdf9cc1`, versión `4202ea2e-4fa8-4d52-b4db-302bcce1c35d`, al 100 %. Lectura del Worker desplegado confirma el módulo de publicaciones y la comprobación del scope ampliado. El smoke incluye el módulo nuevo del panel y la barrera ADMIN de publicación.
