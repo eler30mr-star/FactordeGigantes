@@ -1,4 +1,4 @@
-import {readEpisodeInput,acceptEpisodeExport,previewFromEvents} from './episode-production.mjs';
+import {readEpisodeInput,acceptEpisodeExport,failEpisodeExport,previewFromEvents} from './episode-production.mjs';
 import {storeAutonomousDraft,hasAutonomousOrigin,readEditorialScriptContext} from './autonomous-script-drafts.mjs';
 import {verifyMarketOIDC} from "./github-oidc.mjs";
 import {reserveAiBudget,storeAiReport,readAiReports,classifyWithCloudflare,readScriptContext} from "./ai-research-team.mjs";
@@ -356,10 +356,10 @@ async function handle(request,env) {
       if(parts[4]==='episode-report' && method==='POST'){
         const body=await parseBody(request);
         if(body.status==='failed'){
-          if(!['queued','rendering'].includes(row.status))return err('Render no activo',409);
-          await setStatus(env,id,'failed','episode_render_failed',{last_error:'Revisar ejecución del episodio en GitHub Actions'});
-          if(typeof body.run_id==='string'&&/^\d{1,20}$/.test(body.run_id))await record(env,id,'episode_failed_attempt',JSON.stringify({run_id:body.run_id}));
-          return json({ok:true,automatic_publication_allowed:false});
+          try{
+            const result=await failEpisodeExport(env.DB,row,body.run_id);
+            return json(result,result.ok?200:result.status);
+          }catch(e){if(e instanceof RangeError)return err('Ejecución de episodio inválida',400);throw e;}
         }
         const gate=await editorialGate(env,id,validateManifest(JSON.parse(row.manifest_json)));
         if(!gate.ok)return err(gate.reason,409);

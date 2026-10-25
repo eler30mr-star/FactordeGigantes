@@ -6,7 +6,7 @@ import {spawnSync} from 'node:child_process';
 import worker from '../src/worker.js';
 import {storeAiReport} from '../src/ai-research-team.mjs';
 import {storeAutonomousDraft} from '../src/autonomous-script-drafts.mjs';
-import {manifestSha} from '../src/episode-production.mjs';
+import {manifestSha,failEpisodeExport} from '../src/episode-production.mjs';
 const process=spawnSync('python',['tests/helpers/episode_contract.py'],{cwd:new URL('../',import.meta.url),encoding:'utf8'});
 assert.equal(process.status,0,process.stderr);const original=JSON.parse(process.stdout);
 function setup(){
@@ -72,11 +72,19 @@ test('señal técnica, permisos inventados o QA fallido jamás se reportan como 
  const hash=await manifestSha(raw.prepare('SELECT manifest_json FROM jobs').get().manifest_json);
  for(const mutate of [r=>r.contains_narration=false,r=>r.voice_kind='technical_test_signal',r=>r.publication_authorized=true,
   r=>r.technical_gate_passed=false,r=>r.canonical_reference_sha256='f'.repeat(64),r=>r.actual_seconds=450,
-  r=>r.approved_manifest_sha256='f'.repeat(64),r=>r.resolution=['1280','720']]){
+  r=>r.approved_manifest_sha256='f'.repeat(64),r=>r.resolution=['1280','720'],r=>r.sha256=[r.sha256],r=>r.episode_sha256=[r.episode_sha256]]){
   const report=successfulReport(hash);mutate(report);
   assert.equal((await request(`/api/renderer/jobs/${id}/episode-report`,{method:'POST',body:{status:'ready',run_id:'123456',export:report}})).status,400);
  }
  assert.equal(raw.prepare('SELECT status FROM jobs').get().status,'rendering');
+});
+test('callback de fallo atrasado no revoca un episodio listo ni cambia su ejecución recuperable',async()=>{
+ const {id,raw,db}=await ready();raw.prepare("UPDATE jobs SET status='rendering'").run();
+ const stale=raw.prepare('SELECT * FROM jobs WHERE id=?').get(id);
+ raw.prepare("UPDATE jobs SET status='ready'").run();
+ const result=await failEpisodeExport(db,stale,'123456');assert.equal(result.status,409);
+ assert.equal(raw.prepare('SELECT status FROM jobs').get().status,'ready');
+ assert.equal(raw.prepare("SELECT COUNT(*) n FROM events WHERE action='episode_failed_attempt'").get().n,0);
 });
 test('resultado canónico válido queda ready una sola vez y el panel recibe enlace oficial sin autorización de publicación',async()=>{
  const {id,raw,request}=await ready();raw.prepare("UPDATE jobs SET status='rendering'").run();

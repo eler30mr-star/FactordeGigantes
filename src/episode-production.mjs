@@ -30,7 +30,8 @@ export function previewFromEvents(events){
   if(event.action!=='episode_preview_ready')continue;
   try{
    const note=JSON.parse(event.note);
-   if(!/^\d{1,20}$/.test(note.run_id)||!SHA.test(note.export_sha256))return null;
+   if(typeof note.run_id!=='string'||!/^\d{1,20}$/.test(note.run_id)||
+      typeof note.export_sha256!=='string'||!SHA.test(note.export_sha256))return null;
    return {run_url:'https://github.com/eler30mr-star/FactordeGigantes/actions/runs/'+note.run_id,
     sha256:note.export_sha256,seconds:note.seconds,contains_narration:true,publication_authorized:false};
   }catch{return null;}
@@ -40,7 +41,8 @@ export function previewFromEvents(events){
 
 export async function acceptEpisodeExport(db,row,body){
  const r=body.export;
- if(body.status!=='ready'||!r||r.schema!=='fdg_episode_export_v1'||!SHA.test(r.sha256)||!SHA.test(r.episode_sha256)||
+ if(body.status!=='ready'||!r||r.schema!=='fdg_episode_export_v1'||
+    typeof r.sha256!=='string'||!SHA.test(r.sha256)||typeof r.episode_sha256!=='string'||!SHA.test(r.episode_sha256)||
     r.approved_manifest_sha256!==await manifestSha(row.manifest_json)||
     r.canonical_reference_sha256!==voiceReference.sha256||r.canonical_reference_unchanged!==true||
     r.contains_narration!==true||r.voice_kind!=='canonical_qwen_pending_audition'||
@@ -71,4 +73,18 @@ export async function acceptEpisodeExport(db,row,body){
  const preview=saved?previewFromEvents([saved]):null;
  if(!preview||preview.sha256!==r.sha256)return {ok:false,status:409,reason:'episode_state_changed'};
  return {ok:true,reused:result[0].meta?.changes!==1,preview,automatic_publication_allowed:false};
+}
+
+export async function failEpisodeExport(db,row,runId){
+ if(typeof runId!=='string'||!/^\d{1,20}$/.test(runId))throw new RangeError('Ejecución inválida');
+ // Un fallo atrasado no puede revocar un resultado que ya quedó listo.
+ const result=await db.batch([
+  db.prepare(`UPDATE jobs SET status='failed',last_error='Revisar ejecución del episodio en GitHub Actions',
+   updated_at=datetime('now') WHERE id=? AND manifest_json=? AND status IN ('queued','rendering')`)
+   .bind(row.id,row.manifest_json),
+  db.prepare(`INSERT INTO events(job_id,action,note) SELECT ?,'episode_failed_attempt',? WHERE changes()=1`)
+   .bind(row.id,JSON.stringify({run_id:runId}))
+ ]);
+ return result[0].meta?.changes===1?{ok:true,automatic_publication_allowed:false}:
+  {ok:false,status:409,reason:'render_not_active'};
 }
