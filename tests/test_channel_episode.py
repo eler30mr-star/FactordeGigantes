@@ -197,6 +197,22 @@ class ChannelEpisodeTests(unittest.TestCase):
 
 
 class BoundedContinuationTests(unittest.TestCase):
+    def test_successful_reviewer_or_public_source_fallback_can_continue_without_repeating_denied_reservation(self):
+        for provider in ('groq','tavily'):
+            control=self.setup_control(self.saved());reservations=[];rounds=[]
+            control.reserve=lambda p,r:reservations.append((p,r)) or False
+            def corroborate(report,**options):
+                rounds.append(1);self.assertFalse(options['clients'].reserve(provider,'review' if provider=='groq' else 'discover'))
+                return {'report':{**report,'evidence_manifest':[{'id':'E001','excerpt':'Literal public evidence'}],
+                    'stages':[{'provider':'gemini','role':'review','status':'success'}],
+                    'retrieval_budget':{'documents_with_relevant_text':1},
+                    'source_quality':{'claim_gaps':[] if len(rounds)==2 else [{'gaps':['no_independent_domain']}]}}}
+            def script(report,*a,**k):
+                return {'status':'blocked_sources' if report['source_quality']['claim_gaps'] else 'editorial_draft_unapproved'}
+            with patch('tools.channel_episode.validate_report_locally'):
+                result=run_episode_until_review(control,'request',corroborate=corroborate,scriptwriter=script)
+            self.assertEqual(result['state'],'review');self.assertEqual(len(reservations),1);self.assertEqual(len(rounds),2)
+
     def test_failed_editorial_discovery_reuses_query_plan_and_hands_terms_to_real_selection(self):
         import hashlib
         report=self.saved();report['editorial_focus_review']['status']='misaligned'

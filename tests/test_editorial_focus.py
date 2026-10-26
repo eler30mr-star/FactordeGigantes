@@ -9,18 +9,18 @@ TOPIC='Por qué perdió su liderazgo y cómo cambió su negocio'
 
 
 class EditorialFocusTests(unittest.TestCase):
-    def test_independent_editorial_reviewer_preserves_analyst_allowance(self):
+    def test_gemini_handles_editorial_work_with_its_own_reserved_role(self):
         calls=[]
         value={'judgments':[{'claim_index':n,'relevance':'central','reason':'Responde directamente a la pregunta elegida.'} for n in range(1,7)],
             'research_questions':[],'reason':'Las afirmaciones corresponden al enfoque empresarial seleccionado.'}
         def transport(url,body,headers):
-            calls.append(url);return {'choices':[{'message':{'content':json.dumps(value)}}]}
+            calls.append(url);return {'candidates':[{'content':{'parts':[{'text':json.dumps(value)}]}}]}
         env={p.upper()+'_API_KEY':'fixture-not-a-real-key' for p in ('gemini','groq')}
         env.update({p.upper()+'_RESEARCH_FREE_CONFIRMED':'1' for p in ('gemini','groq')})
         reservations=[]
         client=FreeClients(env=env,reserve=lambda p,r:reservations.append((p,r)) or True,transport=transport)
         review=review_editorial_focus(self.report(),TOPIC,clients=client)
-        self.assertEqual(review['provider'],'groq');self.assertEqual(reservations,[('groq','editorial')])
+        self.assertEqual(review['provider'],'gemini');self.assertEqual(reservations,[('gemini','editorial')])
         self.assertEqual(len(calls),1);self.assertTrue(valid_focus(review,TOPIC,self.report()['candidate_claims']))
 
     def report(self):

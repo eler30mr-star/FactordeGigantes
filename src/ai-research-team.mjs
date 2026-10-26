@@ -55,7 +55,7 @@ export function validateAiReport(r,now=new Date()){
  if(r.schema!=='fdg_ai_pipeline_v1'||!/^\d{4}-\d{2}-\d{2}$/.test(r.collected_on)||
     !['skipped_no_documentary_evidence','sources_only','candidate_claims_generated'].includes(r.status)||
     !Array.isArray(r.evidence_manifest)||r.evidence_manifest.length>10||
-    !Array.isArray(r.stages)||r.stages.length>12||
+    !Array.isArray(r.stages)||r.stages.length>14||
     !Array.isArray(r.source_documents)||r.source_documents.length>8||
     !Array.isArray(r.classification)||r.classification.length>10||
     !Array.isArray(r.missing_questions)||r.missing_questions.length>8||
@@ -229,7 +229,7 @@ export function validateAiReport(r,now=new Date()){
     (row.assessment!=='insufficient_context'&&!row.evidence_ids.length))throw new RangeError('Revisión inválida');
   reviewed.add(row.claim_index);
  }
- if(r.reviews.length&&(!r.stages.some(s=>s.provider==='groq'&&s.status==='success')||
+ if(r.reviews.length&&(!r.stages.some(s=>['groq','gemini'].includes(s.provider)&&s.role==='review'&&s.status==='success')||
     r.reviews.length!==r.candidate_claims.length))throw new RangeError('Revisión incompleta');
  return r;
 }

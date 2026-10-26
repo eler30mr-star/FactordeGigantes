@@ -139,7 +139,7 @@ class FreeClients:
             raise ProviderError("not_selected")
         if provider not in MODELS or not isinstance(prompt, str) or len(prompt) > 24_000:
             raise ValueError("Solicitud de IA fuera del perfil permitido")
-        if role not in (None, "script", "editorial") or type(max_output_tokens) is not int or not 256 <= max_output_tokens <= 6000:
+        if role not in (None, "script", "editorial", "review") or type(max_output_tokens) is not int or not 256 <= max_output_tokens <= 6000:
             raise ValueError("Perfil de generación inválido")
         key, model = self.env.get(KEYS[provider], ""), MODELS[provider]
         if provider == "gemini":

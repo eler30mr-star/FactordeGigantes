@@ -1,5 +1,15 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Gemini asume trabajo editorial y respaldo de revisión documental
+
+Tras el presupuesto autorizado de Gemini, el propietario pidió continuar y señaló su papel principal. El runner conserva clientes separados y acotados para análisis y revisión; Gemini lleva análisis, juicio editorial, formulación de búsquedas y guion. Groq sigue siendo primer revisor documental; si falta disponibilidad o cupo, Gemini puede revisar con su propia reserva D1 y rol explícito review. No se incrementan cupos de Groq/Tavily ni se toma una coincidencia de modelos como fuente independiente.
+
+El validador del Worker exige una etapa review exitosa del proveedor realmente utilizado; una etapa de análisis Gemini no basta. La matriz por pasaje, referencias conocidas, contraste entre documentos/emisores, fuente primaria y aprobación humana permanecen. Se amplía el máximo acotado de etapas de 12 a 14 para registrar ambos intentos de revisión, sin ocultar el rechazo de Groq. Las revisiones reanudables y la corroboración conservan esa procedencia.
+
+Una reserva denegada de un proveedor no se vuelve a pedir en la misma ejecución. El runner puede continuar si Gemini realizó la revisión de respaldo o si documentos públicos aportaron evidencia pese al límite del buscador. El freno sigue activo para una etapa sin respaldo, un fallo remoto no recuperado o falta de avance. El diagnóstico de aceptación identifica ahora función y proveedor de cada inferencia.
+
+Validación local: 86 pruebas Python enfocadas aprobadas, más 17 del runner repetidas tras agregar el caso de continuación por respaldo; 167 contratos Node aprobados. Incluyen rechazo de citas inventadas/matriz omitida, separación de clientes/reservas y rechazo de revisión fingida con solo análisis. Se reanuda una prueba puntual desde 40269205149; resultado real y CI de este cambio pendientes. Pausa general, automático y publicación conservan sus controles.
+
 ## 2026-10-26 · Presupuesto Gemini autorizado: 100 llamadas diarias y 3.000 mensuales
 
 El propietario eligió expresamente este presupuesto y pidió implementar el plan. Se cambia solo Gemini en AI_CAPS de [4,100] a [100,3000]. La reserva condicional D1, los identificadores de un solo uso y los períodos UTC se conservan; no se eliminan reservas ni se reinician contadores. La respuesta de reserva y la lectura administrativa de caps usan la misma constante, por lo que exponen automáticamente los nuevos valores. No requiere migración.

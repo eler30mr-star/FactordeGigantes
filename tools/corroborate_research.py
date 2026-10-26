@@ -170,7 +170,7 @@ def continue_corroboration(research, *, source_run_id, clients, discover=discove
         return {**result, 'status': 'no_new_passages', 'report': report}
     report['reviews'] = []
     report.pop('support_review_method', None)
-    report['stages'] = [s for s in report['stages'] if s['provider'] != 'groq'] + [
+    report['stages'] = [s for s in report['stages'] if not (s['provider'] in ('groq','gemini') and s['role']=='review')] + [
         {'provider': 'groq', 'role': 'review', 'status': 'pending_new_passages'}]
     validate_report_locally(report)
     reviewed = review_existing(report, clients=clients, source_run_id=source_run_id)

@@ -1,4 +1,4 @@
-"""Reanudar sólo la revisión de un expediente D1; sin radar, búsquedas ni Qwen."""
+"""Reanudar revisión Groq/Gemini sin repetir investigación ni descargas."""
 from __future__ import annotations
 
 import argparse
@@ -18,6 +18,7 @@ from tools.documentary_script import revalidate_source_metadata
 from tools.documentary_blueprint import inspect_episode
 from tools.research_diagnostics import research_summary
 from tools.review_candidates import review_tasks, METHOD
+from tools.support_reviewer import generate_support_review
 
 def review_existing(research, *, clients, source_run_id):
     if not isinstance(source_run_id,str) or not re.fullmatch(r'ai-[a-f0-9]{28}',source_run_id):
@@ -44,25 +45,26 @@ def review_existing(research, *, clients, source_run_id):
             return {**base,'status':'support_reconciled_without_inference','report':report}
         return {**base,'status':'skipped_already_reviewed'}
     prompt=review_prompt(report['evidence_manifest'],report['candidate_claims'])
-    previous_calls=clients.calls['groq']
+    previous_calls=sum(clients.calls[p] for p in ('groq','gemini'))
+    reviewer='groq'
     try:
-        text,metadata=clients.generate('groq',prompt,max_output_tokens=3200)
+        text,metadata,reviewer,attempts=generate_support_review(clients,prompt)
         reviews=parse_review(text,report['evidence_manifest'],report['candidate_claims'],
             expected_tasks=review_tasks(report['evidence_manifest'],report['candidate_claims']))
         if not all('source_assessments' in row for row in reviews):
             raise ValueError('Falta matriz por pasaje')
     except ProviderError as exc:
         return {**base,'status':'blocked_provider','reason':exc.code,
-                'review_inference_calls':clients.calls['groq']-previous_calls}
+                'review_inference_calls':sum(clients.calls[p] for p in ('groq','gemini'))-previous_calls}
     except ReviewContractError as exc:
         return {**base,'status':'blocked_invalid_review','reason':exc.code,
-                'review_inference_calls':clients.calls['groq']-previous_calls}
+                'review_inference_calls':sum(clients.calls[p] for p in ('groq','gemini'))-previous_calls}
     except (ValueError,TypeError,KeyError):
         return {**base,'status':'blocked_invalid_review','reason':'per_excerpt_contract_failed',
-                'review_inference_calls':clients.calls['groq']-previous_calls}
-    old_stage=next((s for s in report['stages'] if s['provider']=='groq'),{})
-    report['stages']=[s for s in report['stages'] if s['provider']!='groq']+[{
-        'provider':'groq','role':'review','status':'success',
+                'review_inference_calls':sum(clients.calls[p] for p in ('groq','gemini'))-previous_calls}
+    old_stage=next((s for s in report['stages'] if s['provider'] in ('groq','gemini') and s['role']=='review'),{})
+    report['stages']=[s for s in report['stages'] if not(s['provider'] in ('groq','gemini') and s['role']=='review')]+attempts+[{
+        'provider':reviewer,'role':'review','status':'success',
         'prompt_sha256':hashlib.sha256(prompt.encode()).hexdigest(),**metadata}]
     report['reviews']=reviews
     report['candidate_claims']=assign_reviewed_support(report['candidate_claims'],reviews)
@@ -71,12 +73,13 @@ def review_existing(research, *, clients, source_run_id):
     if isinstance(report.get('corroboration_continuation'), dict):
         report['corroboration_continuation'].pop('review_pending_reason', None)
     report['review_resumption']={'method':METHOD,'source_run_id':source_run_id,
+        'review_provider':reviewer,
         'source_report_sha256':hashlib.sha256(json.dumps(research,ensure_ascii=False,sort_keys=True).encode()).hexdigest(),
         'reviewed_on':datetime.now(timezone.utc).date().isoformat(),
         'source_collected_on':research['collected_on'],
         'previous_review_prompt_sha256':old_stage.get('prompt_sha256')}
     validate_report_locally(report)
-    return {**base,'status':'review_completed_candidate_only','review_inference_calls':1,'report':report}
+    return {**base,'status':'review_completed_candidate_only','review_inference_calls':1,'review_provider':reviewer,'report':report}
 
 
 def main():
@@ -108,7 +111,8 @@ def main():
     args.out.parent.mkdir(parents=True,exist_ok=True)
     args.out.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print('REVISION_REANUDADA:',result['status'],'MOTIVO:',result.get('reason','none'),
-          'GROQ_SOLICITUDES:',result.get('review_inference_calls',0),'DESCARGAS: 0','QWEN_GEMINI_REPETIDOS: NO')
+          'REVISION_SOLICITUDES:',result.get('review_inference_calls',0),'REVISOR:',result.get('review_provider','none'),
+          'DESCARGAS: 0','ANALISIS_REPETIDO: NO')
 
 
 if __name__=='__main__':main()

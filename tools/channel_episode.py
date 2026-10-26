@@ -166,7 +166,7 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
             'stages', 'retrieval_budget', 'research_targets', 'discovery_plan', 'editorial_topic', 'editorial_retrieval_plan')
             if k in sources}}
         persist({**prior, 'pending_editorial_analysis': pending})
-        report = analyze(sources, clients=clients)
+        report = analyze(sources, clients=clients, review_clients=client_factory(reserve=reserve))
         if not report.get('candidate_claims'):
             pending['last_attempt_stages'] = report.get('stages', [])
             report = {**prior, 'pending_editorial_analysis': pending}
@@ -199,7 +199,7 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
     elif not checkpoint:
         sources = focused_discover(selection, clients=clients)
         sources['editorial_topic'] = episode['topic']
-        report = analyze(sources, clients=clients)
+        report = analyze(sources, clients=clients, review_clients=client_factory(reserve=reserve))
         report.update(editorial_topic=episode['topic'], selected_episode_id=episode['episode_id'], **metadata)
         report['focused_analysis_binding'] = analysis_binding(report)
         validate_report_locally(report)
@@ -215,7 +215,7 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
         else:
             sources = focused_discover({**selection, 'prior_attempted_urls':
                 (report.get('retrieval_budget') or {}).get('attempted_urls', [])[-40:]}, clients=clients)
-        report = analyze(sources, clients=clients)
+        report = analyze(sources, clients=clients, review_clients=client_factory(reserve=reserve))
         report.update(editorial_topic=episode['topic'], selected_episode_id=episode['episode_id'], **metadata)
         validate_report_locally(report)
         receipt = control.request(path + 'research', {'request_id': request_id, 'report': report})
@@ -271,7 +271,7 @@ def run_episode_until_review(control, request_id, *, max_rounds=3, **options):
     """
     if type(max_rounds) is not int or not 1 <= max_rounds <= 3:
         raise ValueError('Continuación fuera del presupuesto')
-    denied = False
+    denied_providers = set()
     stopped_providers = set()
     factory = options.pop('client_factory', FreeClients)
     def guarded_factory(**kwargs):
@@ -295,9 +295,10 @@ def run_episode_until_review(control, request_id, *, max_rounds=3, **options):
         def request(self, *args, **kwargs):
             return control.request(*args, **kwargs)
         def reserve(self, *args, **kwargs):
-            nonlocal denied
+            provider = args[0]
+            if provider in denied_providers: return False
             accepted = control.reserve(*args, **kwargs)
-            if not accepted: denied = True
+            if not accepted: denied_providers.add(provider)
             return accepted
     def material(report):
         return hashlib.sha256(json.dumps({k: report.get(k) for k in (
@@ -312,10 +313,17 @@ def run_episode_until_review(control, request_id, *, max_rounds=3, **options):
     seen = {previous} if previous else set()
     for round_number in range(1, max_rounds + 1):
         result = run_episode(GuardedControl(), request_id, client_factory=guarded_factory, **options)
+        report = result.get('research', {})
+        stages = report.get('stages', [])
+        recovered = set()
+        if any(s.get('provider')=='gemini' and s.get('role')=='review' and s.get('status')=='success' for s in stages):
+            recovered.add('groq')
+        if (report.get('retrieval_budget') or {}).get('documents_with_relevant_text', 0)>0:
+            recovered.update({'tavily','exa'})
         reason = 'round_limit'
         if result['state'] != 'blocked': reason = result['state']
-        elif denied: reason = 'budget_denied'
-        elif stopped_providers: reason = 'provider_unavailable'
+        elif denied_providers-recovered: reason = 'budget_denied'
+        elif stopped_providers-recovered: reason = 'provider_unavailable'
         elif result.get('draft', {}).get('status') == 'blocked_editorial_analysis': reason = 'saved_sources_await_analysis'
         elif not result.get('research'): reason = 'no_saved_research'
         else:

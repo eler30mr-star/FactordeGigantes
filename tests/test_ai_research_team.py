@@ -278,6 +278,24 @@ class DiscoveryTests(unittest.TestCase):
 
 
 class TeamTests(unittest.TestCase):
+    def test_gemini_analysis_and_review_use_distinct_bounded_clients_and_reservations(self):
+        from test_review_support_assignment import context, review
+        reservations=[];calls=[]
+        def reserve(provider,role):reservations.append((provider,role));return provider=='gemini'
+        def transport(url,body,headers):
+            calls.append(url)
+            value=candidate() if len(calls)==1 else json.dumps({'reviews':[review()]})
+            return {'candidates':[{'content':{'parts':[{'text':value}]}}]}
+        opts={'env':configured('gemini','groq'),'reserve':reserve,'transport':transport}
+        analyst=FreeClients(**opts);reviewer=FreeClients(**opts)
+        result=analyze_sources(context(),clients=analyst,review_clients=reviewer,local_generate=lambda _:candidate())
+        self.assertEqual(result['analysis_provider'],'gemini');self.assertEqual(len(result['reviews']),1)
+        self.assertEqual(reservations,[('gemini','analyze'),('groq','review'),('gemini','review')])
+        self.assertEqual(analyst.calls['gemini'],1);self.assertEqual(reviewer.calls['gemini'],1)
+        with self.assertRaisesRegex(ProviderError,'run_budget_exhausted'):analyst.generate('gemini','No repetir análisis')
+        from tools.ai_research_pipeline import validate_report_locally
+        validate_report_locally(result)
+
     def test_without_keys_qwen_works_and_others_report_missing(self):
         clients = FreeClients(env={}, reserve=lambda *_: self.fail("sin claves"))
         result = analyze_sources(sources(), clients=clients, local_generate=lambda _: candidate())

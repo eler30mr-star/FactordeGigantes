@@ -109,6 +109,15 @@ test('ingesta conserva citas e impide aprobación, mezclas e inventar referencia
  }
 });
 
+test('la revisión Gemini exige su etapa explícita y conserva las aprobaciones cerradas',()=>{
+ const r=report();r.analysis_provider='gemini';r.stages=[{provider:'gemini',role:'analyze',status:'success'}];
+ r.reviews=[{claim_index:1,assessment:'insufficient_context',evidence_ids:[],reason:'La evidencia no basta para acreditar el hecho.',human_verified:false}];
+ assert.throws(()=>validateAiReport(r),/Revisión incompleta/);
+ r.stages.push({provider:'gemini',role:'review',status:'success'});
+ assert.doesNotThrow(()=>validateAiReport(r));assert.equal(r.ready_for_script,false);assert.equal(r.publication_authorized,false);
+ r.stages[1].provider='mistral';assert.throws(()=>validateAiReport(r),/Revisión incompleta/);
+});
+
 test('PubMed, archivos públicos y dominios parecidos no acreditan reguladores',()=>{
  for(const url of ['https://pubmed.ncbi.nlm.nih.gov/27018593',
    'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4855945',

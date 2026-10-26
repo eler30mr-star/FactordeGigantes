@@ -16,7 +16,7 @@ def plan_editorial_search(company, topic, questions, *, clients, previous=None):
     if valid_search_plan(previous, company, topic): return previous
     base = {'schema': 'fdg_editorial_search_v1', 'company': company, 'topic': topic,
         'status': 'unavailable', 'search_terms': [], 'publication_authorized': False}
-    provider = next((p for p in ('groq', 'gemini', 'mistral', 'openrouter')
+    provider = next((p for p in ('gemini', 'groq', 'mistral', 'openrouter')
         if readiness(p, clients.env) == 'ready'), None)
     if not provider: return {**base, 'reason': 'free_search_planner_unavailable'}
     prompt = ('Planifica SOLO dos consultas documentales sobre la empresa y pregunta elegidas. '

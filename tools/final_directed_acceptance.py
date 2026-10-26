@@ -76,15 +76,15 @@ def main():
                 if cache_file.exists():
                     cached = json.loads(cache_file.read_text())
                     if cached.get('prompt_sha256') == signature and isinstance(cached.get('text'), str) and len(cached['text']) <= 24000:
-                        audit['providers'].append({'provider': provider, 'state': 'reused_response'})
+                        audit['providers'].append({'provider': provider, 'role': audit['phase'], 'state': 'reused_response'})
                         return cached['text'], cached['metadata']
                 try:
                     text, metadata = super().generate(provider, prompt, **options)
                     cache_file.write_text(json.dumps({'prompt_sha256': signature, 'text': text, 'metadata': metadata}, ensure_ascii=False, indent=2))
-                    audit['providers'].append({'provider': provider, 'state': 'success', **metadata})
+                    audit['providers'].append({'provider': provider, 'role': audit['phase'], 'state': 'success', **metadata})
                     return text, metadata
                 except ProviderError as exc:
-                    audit['providers'].append({'provider': provider, 'state': exc.code, 'http_status': exc.status})
+                    audit['providers'].append({'provider': provider, 'role': audit['phase'], 'state': exc.code, 'http_status': exc.status})
                     raise
         def discover(selection, **options):
             audit['phase'] = 'source_discovery'

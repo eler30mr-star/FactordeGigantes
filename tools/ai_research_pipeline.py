@@ -22,6 +22,7 @@ from tools.market_investigator import prepare_evidence, select_one_company
 from tools.research_providers import parse_candidate_output, request_document, run_qwen_local
 from tools.research_diagnostics import research_summary
 from tools.review_candidates import review_tasks, METHOD as SUPPORT_METHOD
+from tools.support_reviewer import generate_support_review, ReviewProviderUnavailable
 CLAIM_POLICY = json.loads((Path(__file__).resolve().parents[1] / "src/research-claim-policy.json").read_text(encoding="utf-8"))
 
 
@@ -263,7 +264,7 @@ def validate_report_locally(report):
         raise ValueError("Expediente incompatible con el contrato local del Worker")
 
 
-def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
+def analyze_sources(sources, *, clients, classifier=None, local_generate=None, review_clients=None):
     evidence = sources["evidence_manifest"]
     report = source_report(sources)
     if not evidence:
@@ -339,23 +340,27 @@ def analyze_sources(sources, *, clients, classifier=None, local_generate=None):
         report["source_quality"] = evidence_gaps(evidence, report["candidate_claims"])
     if report["candidate_claims"]:
         prompt = review_prompt(evidence, report["candidate_claims"])
+        reviewer = 'groq'
         try:
-            text, metadata = clients.generate("groq", prompt, max_output_tokens=3200)
+            text, metadata, reviewer, attempts = generate_support_review(review_clients or clients, prompt)
+            report['stages'].extend(attempts)
             report["reviews"] = parse_review(text, evidence, report["candidate_claims"],
                 expected_tasks=review_tasks(evidence,report['candidate_claims']))
             if all('source_assessments' in row for row in report['reviews']):
                 report['support_review_method']=SUPPORT_METHOD
             report["candidate_claims"] = assign_reviewed_support(report["candidate_claims"], report["reviews"])
             report["source_quality"] = evidence_gaps(evidence, report["candidate_claims"])
-            report["stages"].append({"provider": "groq", "role": "review", "status": "success",
+            report["stages"].append({"provider": reviewer, "role": "review", "status": "success",
                                      "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(), **metadata})
+        except ReviewProviderUnavailable as exc:
+            report['stages'].extend(exc.attempts)
         except ProviderError as exc:
-            report["stages"].append({"provider": "groq", "role": "review", "status": exc.code})
+            report["stages"].append({"provider": reviewer, "role": "review", "status": exc.code})
         except ReviewContractError as exc:
-            report['stages'].append({'provider':'groq','role':'review','status':'invalid_output',
+            report['stages'].append({'provider':reviewer,'role':'review','status':'invalid_output',
                                      'contract_failure':exc.code})
         except (ValueError, KeyError, TypeError):
-            report["stages"].append({"provider": "groq", "role": "review", "status": "invalid_output"})
+            report["stages"].append({"provider": reviewer, "role": "review", "status": "invalid_output"})
     else:
         report["stages"].append({"provider": "groq", "role": "review", "status": "no_claims"})
     report["status"] = "candidate_claims_generated" if report["candidate_claims"] else "sources_only"

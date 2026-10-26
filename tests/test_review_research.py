@@ -18,6 +18,30 @@ RUN='ai-'+'a'*28
 
 
 class ReviewResumeTests(unittest.TestCase):
+    def test_gemini_reviews_when_groq_budget_is_denied_without_claiming_independent_verification(self):
+        calls=[];reservations=[]
+        def reserve(provider,role):
+            reservations.append((provider,role));return provider=='gemini'
+        def transport(url,body,headers):
+            calls.append(url);self.assertIn('googleapis',url)
+            return {'candidates':[{'content':{'parts':[{'text':json.dumps({'reviews':[review()]})}]}}]}
+        client=FreeClients(env=configured('groq','gemini'),reserve=reserve,transport=transport)
+        research=self.research();before=copy.deepcopy(research)
+        result=review_existing(research,clients=client,source_run_id=RUN)
+        self.assertEqual(reservations,[('groq','review'),('gemini','review')])
+        self.assertEqual(len(calls),1);self.assertEqual(result['review_inference_calls'],1)
+        self.assertEqual(result['report']['review_resumption']['review_provider'],'gemini')
+        self.assertFalse(result['report']['source_quality']['all_claims_verified'])
+        self.assertTrue(all(not row['human_verified'] for row in result['report']['reviews']))
+        self.assertEqual(research,before);validate_report_locally(result['report'])
+
+    def test_gemini_fallback_cannot_invent_a_citation_or_omit_the_source_matrix(self):
+        for row in ({**review(),'evidence_ids':['E999']},{k:v for k,v in review().items() if k!='source_assessments'}):
+            client=FreeClients(env=configured('gemini'),reserve=lambda *_:True,
+                transport=lambda *_:{'candidates':[{'content':{'parts':[{'text':json.dumps({'reviews':[row]})}]}}]})
+            result=review_existing(self.research(),clients=client,source_run_id=RUN)
+            self.assertEqual(result['status'],'blocked_invalid_review');self.assertIsNone(result['report'])
+
     def test_old_active_citations_are_reconciled_without_any_inference(self):
         report=self.research()
         report['candidate_claims'][0]['evidence_ids']=['E001','E002']
