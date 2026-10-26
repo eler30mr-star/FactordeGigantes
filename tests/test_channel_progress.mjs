@@ -126,6 +126,16 @@ test('uncertain dispatch blocks blind repetition; unfinished or unrelated episod
  }finally{f.raw.close();}
 });
 
+test('missing registration callback becomes a visible check instead of waiting indefinitely or dispatching twice',async()=>{
+ const f=finishedWithoutRegistration();
+ try{
+  await recoverEpisodeVideo(f.env,f.id,async()=>new Response(null,{status:204}));
+  f.raw.exec("UPDATE events SET created_at=datetime('now','-16 minutes') WHERE action='episode_delivery_requested'");
+  assert.equal((await channelProgress(f.env,f.id)).next_step,'check_video_delivery');
+  assert.equal((await recoverEpisodeVideo(f.env,f.id,()=>assert.fail('No blind repeated dispatch'))).started,false);
+ }finally{f.raw.close();}
+});
+
 test('closing needs the exact confirmed publication, is idempotent and frees the next episode slot',async()=>{
  const f=setup();f.research();f.job('ready');f.video();f.publish();
  assert.equal((await completeChannelEpisode(f.env,{episode_id:f.id})).status,400);

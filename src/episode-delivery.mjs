@@ -8,7 +8,7 @@ async function preview(db,jobId){
  return event?previewFromEvents([event]):null;
 }
 export async function episodeDeliveryStatus(db,jobId){
- const row=await db.prepare("SELECT note FROM events WHERE job_id=? AND action='episode_delivery_requested' ORDER BY id DESC LIMIT 1").bind(jobId).first();
+ const row=await db.prepare("SELECT note,created_at<datetime('now','-15 minutes') AS stale FROM events WHERE job_id=? AND action='episode_delivery_requested' ORDER BY id DESC LIMIT 1").bind(jobId).first();
  if(!row)return null;
  const note=JSON.parse(row.note);
  const result=await db.prepare(`SELECT action FROM events WHERE job_id=?
@@ -16,7 +16,9 @@ export async function episodeDeliveryStatus(db,jobId){
   AND json_extract(note,'$.request_id')=?
   ORDER BY CASE WHEN action IN ('episode_delivery_failed','episode_delivery_ready','episode_delivery_rejected') THEN 0 ELSE 1 END,id DESC LIMIT 1`)
   .bind(jobId,note.request_id).first();
- return {...note,state:result?result.action.replace('episode_delivery_',''):'reserved'};
+ let state=result?result.action.replace('episode_delivery_',''):'reserved';
+ if(row.stale&&['reserved','sent'].includes(state))state='unknown';
+ return {...note,state};
 }
 export async function recoverEpisodeVideo(env,episodeId,fetcher=fetch){
  if(typeof episodeId!=='string'||!UUID.test(episodeId))throw new RangeError('Episodio inválido');

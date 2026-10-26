@@ -115,7 +115,8 @@ def run(out):
             page.evaluate("document.querySelector('video').dispatchEvent(new Event('error'))")
             page.get_by_role('button', name='Volver a preparar el video').click()
             page.wait_for_function('window.revoked.length===1 && document.querySelector("video").readyState>=2')
-            page.evaluate('window.dispose();document.querySelector("#player").replaceChildren();window.mount()')
+            # evaluate invokes a returned function. Do not return mount's disposer.
+            page.evaluate('()=>{window.dispose();document.querySelector("#player").replaceChildren();window.mount();}')
             flags['expired'] = True
             page.get_by_role('button', name='Ver video en el panel').click()
             try:
