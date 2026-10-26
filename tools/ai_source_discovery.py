@@ -147,9 +147,9 @@ def selection_identity(selection):
     return qid, title.strip()
 
 
-def wikipedia_links(title, *, fetcher=fetch_public):
+def wikipedia_links(title, *, fetcher=fetch_public, editorial_context=False):
     url = "https://en.wikipedia.org/w/api.php?" + urlencode({
-        "action": "parse", "page": title, "prop": "externallinks",
+        "action": "parse", "page": title, "prop": "externallinks|wikitext" if editorial_context else "externallinks",
         "format": "json", "redirects": "1"})
     raw, resolved, mime = fetcher(url, timeout=12)
     if urlsplit(resolved).hostname != "en.wikipedia.org" or "json" not in mime:
@@ -160,12 +160,28 @@ def wikipedia_links(title, *, fetcher=fetch_public):
     links = (data.get("parse") or {}).get("externallinks", [])
     if not isinstance(links, list):
         raise ValueError("Lista de enlaces inválida")
-    return [{"url": link if isinstance(link, str) else link.get("*"),
+    leads = [{"url": link if isinstance(link, str) else link.get("*"),
              "title": "Referencia externa observada en Wikipedia",
              "discovered_by": "wikipedia_external_links"}
             # Parse devuelve enlaces ordenados por URL. Cortar antes de ordenar
             # por relevancia puede excluir autoridades situadas al final.
             for link in links[:800] if isinstance(link, (str, dict))]
+    # Citation labels and their article context only rank observed URLs.
+    # They never become documentary excerpts or factual evidence.
+    wiki = data['parse'].get('wikitext', {})
+    text = wiki.get('*', '') if isinstance(wiki, dict) else ''
+    if editorial_context and isinstance(text,str) and len(text)<=600_000:
+        metadata={}
+        for match in re.finditer(r'<ref\b[^>]*>(.*?)</ref>',text,re.S|re.I):
+            body=match.group(1)
+            label=re.search(r'\|\s*title\s*=\s*([^|}\n]+)',body,re.I)
+            context=' '.join(text[max(0,match.start()-450):match.start()].split())[-350:]
+            for url in re.findall(r'https://[^\s|<>\]"}]+',body):
+                if len(metadata)>=800:break
+                metadata[url]={'title':label.group(1).strip()[:200] if label else 'Referencia documental observada',
+                    'retrieval_context':context,'retrieval_context_is_evidence':False}
+        leads=[{**lead,**metadata.get(lead['url'],{})} for lead in leads]
+    return leads
 
 
 
@@ -280,7 +296,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         wiki_title = selection.get('discovery_wikipedia_title', title)
         if not isinstance(wiki_title, str) or not 1 <= len(wiki_title) <= 200:
             raise ValueError('Artículo corporativo inválido')
-        wiki_leads = wikipedia_links(wiki_title, fetcher=wiki_fetcher)
+        wiki_leads = wikipedia_links(wiki_title, fetcher=wiki_fetcher,
+            **({'editorial_context':True} if selection.get('editorial_topic') else {}))
         leads.extend(wiki_leads)
         out["stages"].append({"provider": "wikipedia", "role": "discover",
                               "status": "success", "result_count": len(wiki_leads)})
@@ -355,7 +372,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                      if w not in generic and w not in words}
     def rank(lead):
         parsed = urlsplit(lead["url"])
-        path = normalized(parsed.path + " " + (lead.get("title") if isinstance(lead.get("title"), str) else ""))
+        path = normalized(parsed.path + " " + (lead.get("title") if isinstance(lead.get("title"), str) else "")
+            + ' ' + str(lead.get('retrieval_context',''))[:350])
         relevant = any(w in path for w in words)
         # La URL archivada puede terminar en CAPTCHA/HTML y consumir presupuesto
         # sin poder abrir el documento original. Probar primero el editor original.

@@ -16,6 +16,33 @@ TARGET = {'claim_index': 1, 'statement': 'Empresa Ejemplo acordó una restituci�
 
 
 class TargetedRetrievalTests(unittest.TestCase):
+    def test_observed_citation_context_prioritizes_the_original_without_becoming_evidence(self):
+        from tools.ai_clients import ProviderError
+        root='https://corporate.example/company'
+        document='https://corporate.example/z-quarterly-results'
+        manual='https://corporate.example/a-device-manual'
+        wiki_context='WIKI_ONLY_MARKER The company ended hardware development and shifted to software services.'
+        text=wiki_context+'<ref>{{cite web|url='+document+'|title=Quarterly financial results}}</ref>'
+        def wiki(url,**_):
+            self.assertIn('wikitext',url)
+            return json.dumps({'parse':{'externallinks':[manual,document],'wikitext':{'*':text}}}).encode(),url,'application/json'
+        class Search:
+            def search(self,*a,**k):raise ProviderError('missing_key')
+        downloads=[]
+        original=TITLE+' published its operations report and software development strategy, which still requires independent documentary corroboration.'
+        def fetch(url,**_):
+            downloads.append(url);return ('<p>'+original+'</p>').encode(),url,'text/html'
+        result=discover_sources({'selected_wikidata_id':'Q100','research_queue':{'wikidata_id':'Q100','title':TITLE},
+            'observed_official_websites':[root],'editorial_topic':'Su transformación del negocio',
+            'editorial_search_terms':['hardware development software services original financial results',
+                'hardware software transition independent market analysis']},
+            clients=Search(),wiki_fetcher=wiki,document_fetcher=fetch)
+        self.assertEqual(downloads[0],document)
+        self.assertTrue(result['evidence_manifest'])
+        self.assertTrue(all(e['excerpt'] in original for e in result['evidence_manifest']))
+        self.assertTrue(all('WIKI_ONLY_MARKER' not in e['excerpt'] for e in result['evidence_manifest']))
+        self.assertFalse(result['publication_authorized']);validate_report_locally(source_report(result))
+
     def test_english_retrieval_terms_reach_queries_and_literal_passage_ranking(self):
         from tools.ai_clients import ProviderError
         terms=['leadership loss smartphone market share annual report','hardware exit software transition independent analysis']

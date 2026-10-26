@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Cinco afirmaciones pertinentes y originales conservados; contexto de referencias para dirigir lecturas
+
+Run 40306828485 success, CI 40306767114 aprobado. Gemini completó tres rondas reales y la depuración conservó cinco afirmaciones clasificadas como centrales/de contexto. El expediente mantiene diez pasajes de siete documentos/dominios y una fuente primaria candidata; los cinco hechos todavía necesitan contraste y la cobertura mínima aún no alcanza seis. Artefacto 12643341530, ZIP 61245ab1ceb1abefec9ed34513311fcb31e7667b6dfea8db5924959ec45792b3. Son candidatos, sin guion ni video aceptados. 168 contratos Node aprobados.
+
+Se corrige una pérdida de información del descubrimiento: el artículo corporativo elegido puede entregar, en la misma consulta pública, enlaces y wikitext acotado. El título observado de cada cita y hasta 350 caracteres de su contexto ayudan a priorizar el documento original por las preguntas editoriales. No se convierten en evidencia ni se envían al analista como hechos: el manifiesto sigue conteniendo solo ventanas literales del archivo descargado. Se mantienen URLs observadas, 8 intentos documentales, 10 pasajes, controles de red y etiquetas candidatas.
+
+49 pruebas Python de búsqueda/pipeline aprobadas, incluida prioridad de un original empresarial sobre un manual y exclusión de un marcador existente solo en Wikipedia de todas las citas factuales. Se reanuda desde 40306828485 para comprobar el nuevo orden real; resultado pendiente.
+
 ## 2026-10-26 · Tres rondas reales con Gemini; conservación de hechos pertinentes y originales
 
 Aceptación 40305484324 success (CI 40305414936 aprobado). Reutilizó por SHA las respuestas de análisis y revisión de la corrida fallida, y Gemini continuó juicio editorial, análisis y revisión de dos lotes adicionales pese a Groq/Tavily sin cupo. Tras tres rondas quedaron cinco afirmaciones candidatas sobre cuota, reestructuración y ciberseguridad; una cifra de empleados fue declarada ajena al enfoque. Aún faltan contraste y fuente primaria activa. Artefacto 12641849135, ZIP 4f0f14328aa9efa686a17900c9f0aab5623b5297457d0e10baf35487e1b971e8. No hubo guion ni video nuevo.
