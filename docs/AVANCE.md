@@ -1,5 +1,20 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Una sola ruta operativa: estudio YouTube → selección → episodio
+
+Se encontró que, al habilitar la automatización validada, la programación aún podía ejecutar el recolector antiguo de Wikimedia/empresas además del estudio YouTube. También conservaba cron independientes de revisión/contraste de la cola antigua. La pausa actual impedía esas ejecuciones, pero su reactivación habría conservado dos recorridos distintos y consumo fuera del episodio nuevo.
+
+Se retiran ocho jobs antiguos del workflow del canal: recolector masivo, preflight de esa ruta, revisión/contraste y sus disparadores de guion sobre la cola histórica. Se eliminan las fases research/corroborate/review/script y los cron 00:20/00:40. La única tarea diaria es el estudio YouTube de las 10:17 UTC; sus guardas respetan modo, pausa y episodio activo. Investigación y guion pasan por phase=episode con la solicitud del episodio ya seleccionado. Se mantienen la aceptación manual explícita del estudio y la consulta de perfil; todas las rutas operativas quedan restringidas a main. No se borran registros ni módulos históricos.
+
+Comprobar base queda limitado a contratos, QA audiovisual y smoke de lectura. Se retiran sus ocho jobs de disparo por marcas del commit y las opciones run_radar/run_script: un commit de pruebas ya no inicia investigadores ni episodios de desarrollo. No se modifican presupuestos, modo automático, pausa, fuentes, voz o autorizaciones de publicación.
+
+Se añade una comprobación conjunta de los HTTP handlers reales, firma OIDC RSA local y SQLite con todas las migraciones. Antes de selección no se crea una solicitud investigadora; un estudio válido persiste un único ganador antes del despacho y su contexto conserva empresa/enfoque. Un estudio insuficiente/no validado no despacha nada. Apagar durante el estudio cancela la elección. El chat con automático apagado usa el mismo recorrido y conserva la elección del propietario. Repetir finish o chat no duplica el despacho. Las únicas conexiones admitidas por estas pruebas son sustitutos locales de JWKS y GitHub; no se delega ninguna petición a servicios reales.
+
+Pruebas locales aprobadas: 24 Python de política/retirada/runner; 172 contratos Node, incluidos cuatro escenarios integrados nuevos. YAML y dependencias de ambos workflows comprobados localmente. Todo con servicios simulados y cero reservas de proveedor en las pruebas. CI de este commit pendiente de verificación; no se ha ejecutado una nueva selección real, búsqueda de pago/gratuita con clave ni inferencia.
+
+El siguiente objetivo de aceptación sigue siendo una selección real que supere las políticas de mercado, seguida de investigación del elegido. La comprobación local acredita el cableado y las guardas, no una selección real, un video ni la finalización del proyecto.
+
+
 ## 2026-10-26 · Corrección del propietario: retirar pruebas de empresa fija y volver a selección real
 
 El propietario cuestionó el consumo y reiteró el orden obligatorio: selección de tema/empresa según políticas, después investigación de lo necesario para ese video. Se comprobó por consulta D1 de solo lectura el gasto Gemini del día: 8 reservas de análisis, 8 de enfoque editorial y 6 de revisión documental; 22 en total y ninguna de guion. Corresponden a las pruebas de desarrollo que el agente encadenó con BlackBerry como ejemplo fijo. No acreditan una selección de mercado ni una empresa indicada por el propietario para producir hoy. Se detienen esas corridas; no se incrementa Tavily para continuarlas.

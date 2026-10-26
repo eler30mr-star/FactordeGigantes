@@ -1,30 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
+import {generateKeyPairSync,sign} from 'node:crypto';
+import worker from '../src/worker.js';
+import {MARKET_AUDIENCE} from '../src/github-oidc.mjs';
 import {assessOpportunityStudy} from '../src/opportunity-study.mjs';
 import {beginOpportunityStudy,finishOpportunityStudy,checkOpportunityStudy,failOpportunityStudy} from '../src/opportunity-control.mjs';
 const NOW=new Date('2026-10-25T12:00:00Z');
 const vid=n=>'v'+String(n).padStart(10,'0'),channel=n=>'UC'+String(n).padStart(22,'0');
-function sample(){
+function sample(observedOn='2026-10-25'){
+ const published=new Date(Date.parse(observedOn+'T00:00:00Z')-10*86400000).toISOString().slice(0,10);
  const videos=[],baselines=[],candidates=[];let serial=1;
  for(const [k,company] of ['Empresa Alfa','Empresa Beta'].entries()){
   const ids=[];
   for(let n=0;n<4;n++){
    const id=vid(serial++);ids.push(id);videos.push({id,title:company+' transforma la industria',channel_id:channel(k*3+n%3),
-    published_on:'2026-10-15',views:k?2500:3000,duration_seconds:600});
+    published_on:published,views:k?2500:3000,duration_seconds:600});
   }
   for(let n=0;n<3;n++)baselines.push({channel_id:channel(k*3+n),videos:[0,1,2].map(i=>({id:vid(serial++),title:'Otra historia tecnológica',
-   channel_id:channel(k*3+n),published_on:'2026-10-15',views:1000,duration_seconds:600}))});
+   channel_id:channel(k*3+n),published_on:published,views:1000,duration_seconds:600}))});
   candidates.push({company,topic:'Las decisiones que transformaron su mercado',rationale:'Hay ejemplos medidos de interés relativo en varios canales.',
    niche_reason:'Su transformación tecnológica encaja con la identidad del canal.',video_ids:ids});
  }
- return {schema:'fdg_youtube_opportunity_study_v2',source:'youtube_data_api_v3',observed_on:'2026-10-25',extraction_provider:'gemini',videos,baselines,candidates,
+ return {schema:'fdg_youtube_opportunity_study_v2',source:'youtube_data_api_v3',observed_on:observedOn,extraction_provider:'gemini',videos,baselines,candidates,
   queries:[{query:'historia de empresas tecnología',video_ids:videos.map(v=>v.id)},{query:'innovación auge y caída',video_ids:videos.map(v=>v.id)}]};
 }
 function db(){
  const raw=new DatabaseSync(':memory:');raw.exec('PRAGMA foreign_keys=ON');
- for(const file of ['0017_channel_control.sql','0018_opportunity_studies.sql'])raw.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
+ for(const file of readdirSync(new URL('../migrations/',import.meta.url)).filter(p=>p.endsWith('.sql')).sort())
+  raw.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
  raw.exec('UPDATE channel_control SET automatic_enabled=1');
  let tail=Promise.resolve();
  const prepare=sql=>{let args=[];return {bind(...p){args=p;return this;},async first(){return raw.prepare(sql).get(...args)||null;},
@@ -97,4 +102,103 @@ test('an incomplete study leaves a visible blocker and cannot overwrite a select
  assert.equal((await failOpportunityStudy(env,{id,reason:'study_incomplete'})).state,'insufficient');
  assert.equal((await finishOpportunityStudy(env,{id,report:sample()},NOW)).state,'insufficient');
  assert.equal(env.DB.raw.prepare('SELECT count(*) n FROM channel_episodes').get().n,0);
+});
+
+// Exercise the actual HTTP handlers, OIDC signatures and D1 transitions together.
+// The only outbound calls accepted here are local JWKS and dispatch substitutes.
+function apiSession(t,{validated=true}={}){
+ const database=db(),env={DB:database,FINAL_AI_INTEGRATION_ENABLED:'1',
+  YOUTUBE_SELECTOR_VALIDATED:validated?'1':'0',GITHUB_REPO:'eler30mr-star/FactordeGigantes',
+  GITHUB_DISPATCH_TOKEN:'fake-local-dispatch-token-00000',ADMIN_TOKEN:'fake-local-owner-token-000000'};
+ const {publicKey,privateKey}=generateKeyPairSync('rsa',{modulusLength:2048});
+ const now=Math.floor(Date.now()/1000),b64=o=>Buffer.from(JSON.stringify(o)).toString('base64url');
+ const header=b64({alg:'RS256',typ:'JWT',kid:'local-selected-episode-proof'});
+ const claims=b64({iss:'https://token.actions.githubusercontent.com',aud:MARKET_AUDIENCE,
+  repository_id:'1426522491',repository:env.GITHUB_REPO,ref:'refs/heads/main',
+  workflow_ref:env.GITHUB_REPO+'/.github/workflows/topic-discovery-smoke.yml@refs/heads/main',
+  event_name:'workflow_dispatch',runner_environment:'github-hosted',iat:now-1,nbf:now-1,exp:now+240});
+ const input=header+'.'+claims;
+ const token=input+'.'+sign('RSA-SHA256',Buffer.from(input),privateKey).toString('base64url');
+ const dispatched=[],trace=[],previous=globalThis.fetch;
+ globalThis.fetch=async(url,options)=>{
+  if(url==='https://token.actions.githubusercontent.com/.well-known/jwks')return {ok:true,json:async()=>({keys:[{
+   ...publicKey.export({format:'jwk'}),kid:'local-selected-episode-proof',alg:'RS256',use:'sig'}]})};
+  assert.equal(url,'https://api.github.com/repos/'+env.GITHUB_REPO+'/actions/workflows/topic-discovery-smoke.yml/dispatches','Unexpected network request; no real services allowed');
+  const body=JSON.parse(options.body);assert.equal(body.inputs.phase,'episode');
+  const episode=database.raw.prepare('SELECT * FROM channel_episodes WHERE id=?').get(body.inputs.episode_id);
+  assert.ok(episode,'Selection must exist before dispatch');assert.equal(episode.state,'selected');
+  if(episode.origin==='automatic')assert.equal(database.raw.prepare('SELECT state FROM channel_opportunity_studies WHERE id=?').get(episode.id).state,'selected');
+  const reservation=database.raw.prepare('SELECT episode_id,state FROM channel_episode_research WHERE id=?').get(body.inputs.episode_request_id);
+  assert.equal(reservation.episode_id,episode.id);assert.equal(reservation.state,'reserved');
+  trace.push('selection_persisted_before_research');dispatched.push(body.inputs);
+  return {status:204};
+ };
+ let disposed=false;
+ const dispose=()=>{if(disposed)return;disposed=true;globalThis.fetch=previous;database.raw.close();};
+ t.after(dispose);
+ const request=async(path,body)=>{
+  const response=await worker.fetch(new Request('https://factor.test'+path,{method:'POST',
+   headers:{Authorization:'Bearer '+(path.startsWith('/api/channel-control')?env.ADMIN_TOKEN:token),'Content-Type':'application/json'},
+   body:JSON.stringify(body)}),env);
+  return {status:response.status,body:await response.json()};
+ };
+ return {database,env,dispatched,trace,request,dispose};
+}
+
+test('HTTP selection precedes research, only the winner is dispatched, and replay does not spend another request',async t=>{
+ const f=apiSession(t),id=crypto.randomUUID();
+ const premature=await f.request('/api/channel-control/research',{episode_id:crypto.randomUUID()});
+ assert.equal(premature.body.started,false);assert.equal(f.dispatched.length,0);
+ assert.equal((await f.request('/api/market/opportunity-study/start',{id})).body.allowed,true);
+ assert.equal(f.database.raw.prepare('SELECT count(*) n FROM channel_episodes').get().n,0);
+ assert.equal(f.database.raw.prepare('SELECT count(*) n FROM channel_episode_research').get().n,0);
+ const report=sample(new Date().toISOString().slice(0,10));
+ const selected=await f.request('/api/market/opportunity-study/finish',{id,report});
+ assert.equal(selected.status,200);assert.equal(selected.body.state,'selected');assert.equal(selected.body.pipeline.started,true);
+ assert.equal(f.dispatched.length,1);assert.deepEqual(f.trace,['selection_persisted_before_research']);
+ const context=await f.request('/api/market/channel-episode/context',{request_id:f.dispatched[0].episode_request_id});
+ assert.equal(context.body.allowed,true);assert.equal(context.body.episode.company,selected.body.assessment.selected.company);
+ assert.equal(context.body.episode.company,'Empresa Alfa');assert.equal(context.body.episode.topic,selected.body.assessment.selected.topic);
+ const replay=await f.request('/api/market/opportunity-study/finish',{id,report});assert.equal(replay.body.replayed,true);
+ assert.equal(f.dispatched.length,1);assert.equal(f.database.raw.prepare('SELECT count(*) n FROM channel_episode_research').get().n,1);
+ assert.equal(f.database.raw.prepare('SELECT count(*) n FROM ai_budget_reservations').get().n,0);
+ assert.equal(f.database.raw.prepare('SELECT count(*) n FROM market_entities').get().n,0); // No company catalogue was built.
+});
+
+test('HTTP insufficient or unvalidated study never starts deep research',async t=>{
+ for(const calibrated of [false,true]){
+  const f=apiSession(t,{validated:calibrated}),id=crypto.randomUUID();
+  await f.request('/api/market/opportunity-study/start',{id});
+  const report=sample(new Date().toISOString().slice(0,10));if(calibrated)report.candidates.pop();
+  const result=await f.request('/api/market/opportunity-study/finish',{id,report});
+  assert.equal(result.body.state,calibrated?'insufficient':'calibration');assert.equal(f.dispatched.length,0);
+  assert.equal(f.database.raw.prepare('SELECT count(*) n FROM channel_episodes').get().n,0);
+  assert.equal(f.database.raw.prepare('SELECT count(*) n FROM channel_episode_research').get().n,0);
+  assert.equal(f.database.raw.prepare('SELECT count(*) n FROM ai_budget_reservations').get().n,0);
+  f.dispose();
+ }
+});
+
+test('HTTP turning automatic off before study completion cancels selection and prevents research dispatch',async t=>{
+ const f=apiSession(t),id=crypto.randomUUID();
+ await f.request('/api/market/opportunity-study/start',{id});
+ await f.request('/api/channel-control/mode',{revision:0,request_id:crypto.randomUUID(),enabled:false});
+ const result=await f.request('/api/market/opportunity-study/finish',{id,report:sample(new Date().toISOString().slice(0,10))});
+ assert.equal(result.body.state,'cancelled');assert.equal(f.dispatched.length,0);
+ assert.equal(f.database.raw.prepare('SELECT count(*) n FROM channel_episodes').get().n,0);
+ assert.equal(f.database.raw.prepare('SELECT count(*) n FROM channel_episode_research').get().n,0);
+});
+
+test('HTTP owner chat with automatic off preserves the exact choice and starts the same selected-episode path once',async t=>{
+ const f=apiSession(t);f.database.raw.exec('UPDATE channel_control SET automatic_enabled=0');
+ const instruction={revision:0,request_id:crypto.randomUUID(),message:'Haz un video sobre Empresa Beta y cómo cambió su mercado'};
+ const selected=await f.request('/api/channel-control/chat',instruction);
+ assert.equal(selected.status,200);assert.equal(selected.body.episode.company,'Empresa Beta');assert.equal(selected.body.pipeline.started,true);
+ const context=await f.request('/api/market/channel-episode/context',{request_id:f.dispatched[0].episode_request_id});
+ assert.equal(context.body.episode.company,'Empresa Beta');assert.equal(context.body.episode.topic,'cómo cambió su mercado');
+ assert.equal(context.body.episode.origin,'chat');assert.equal(context.body.allowed,true);
+ assert.equal(f.database.raw.prepare('SELECT count(*) n FROM channel_opportunity_studies').get().n,0);
+ assert.equal(f.database.raw.prepare('SELECT automatic_enabled FROM channel_control').get().automatic_enabled,0);
+ await f.request('/api/channel-control/chat',instruction);assert.equal(f.dispatched.length,1);
+ assert.equal(f.database.raw.prepare('SELECT count(*) n FROM ai_budget_reservations').get().n,0);
 });

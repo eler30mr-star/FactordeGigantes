@@ -109,7 +109,7 @@ Resolver entrega autenticada del MP4, permisos, reproducción parcial y conserva
 
 | Bloque | Implementación comprobada | Aceptación pendiente |
 | --- | --- | --- |
-| P0 | Modo persistente, chat, episodio único, reservas, estudio YouTube y conexión a investigación del elegido | Calibrar cobertura real; todavía ninguna selección automática validada |
+| P0 | Modo, chat, estudio YouTube y conexión al episodio único; recolector/cron antiguos retirados y orden HTTP/D1 probado sin APIs reales | Calibrar cobertura real; todavía ninguna selección automática validada |
 | P1 | Panel con seis etapas y acciones del episodio, lectura/revisión del guion, reproductor vinculado por SHA/run y extracción del MP4 real verificados | Revisión humana en navegador de audio, desplazamiento y experiencia completa |
 | P2 | Conexión episodio → investigación → guion y registro del video; reanudación diferenciada de análisis, contraste, revisión y guion desde resultados guardados; cierre por publicación confirmada implementado | La prueba fija queda archivada; aceptar el recorrido de un episodio elegido por estudio o chat, desde selección hasta video |
 | P3 | Subida privada y autorización separada de publicación/programación implementadas | Consentimiento Google ampliado y primera publicación/programación autorizadas |
@@ -156,6 +156,9 @@ Todo lo siguiente queda **pendiente de implementación o validación integral**,
 **Aceptación final:** los dos modos de inicio llegan al mismo flujo; el propietario ve y revisa el video en el panel y el sistema publica/programa el episodio autorizado en el canal correcto. Una subida privada de prueba no acredita por sí sola publicación completa.
 
 ## 7. Estado y reglas de continuidad
+
+**Recorrido operativo único (2026-10-26):** la programación diaria inicia únicamente el estudio YouTube. Se retiraron la recolección antigua de empresas, sus revisiones programadas y los arranques de proveedores desde CI. El estudio debe persistir un ganador antes del despacho investigador; en chat, debe existir la elección del propietario. Los escenarios HTTP/OIDC/SQLite se comprobaron con datos simulados y no equivalen a aceptación de mercado ni a activar la pausa.
+
 
 La infraestructura existente —Worker, D1, proveedores IA, narrador, montaje, OAuth y subidor privado— se reutiliza según su estado verificado en [AVANCE.md](AVANCE.md). Hay un episodio narrado de desarrollo registrado, no una demostración del nuevo flujo autónomo. El modo persistente, el chat de selección y el reproductor embebido están implementados. El reproductor se desplegó y verificó con el MP4 real; su aceptación auditiva y visual humana sigue pendiente. El estudio YouTube v2 conserva una puerta de calibración; el episodio elegido por chat o estudio ya conecta con investigación enfocada y guion editorial trazable, y reutiliza la aprobación/render canónico existentes. La aceptación real con proveedores y del recorrido completo sigue pendiente. Avance/descarga por sí solos no equivalen a reproducción.
 

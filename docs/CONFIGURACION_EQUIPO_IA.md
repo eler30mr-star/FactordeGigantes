@@ -6,6 +6,9 @@ guion/publicación. El narrador canónico no cambia.
 
 ## Funciones y orden de ejecución
 
+**Operación vigente:** `topic-discovery-smoke.yml` programa solo el estudio de oportunidades YouTube. El siguiente paso es `phase=episode`, con la solicitud del episodio seleccionado. Las fases antiguas `research`, `corroborate`, `review` y `script`, los cron de la cola histórica y los disparadores desde `check.yml` están retirados. La reanudación conserva el contexto del mismo episodio. Los módulos históricos permanecen para consulta; no son el recorrido operativo del canal.
+
+
 | Componente | Función | Cuándo se ejecuta |
 | --- | --- | --- |
 | Referencias Wikipedia | Descubrir URLs externas observadas, priorizando autoridades | Una consulta pública por empresa seleccionada; no usa Wikipedia como prueba |
@@ -174,16 +177,15 @@ generar otro guion ni sobrescribir cambios del editor. El render autónomo con
 voz canónica y recursos de escena sigue pendiente; estos trabajos están protegidos
 frente al renderizador de previsualización.
 
-El cron de las 00:20 UTC sólo reanuda revisión (19:20 America/Lima). El radar
-principal mantiene las 10:17 UTC. Las cuotas D1 originales no cambian.
+**Programación actual:** el cron de las 10:17 UTC inicia solo el estudio YouTube. Los cron antiguos de las 00:20 y 00:40 UTC fueron retirados; no revisan ni investigan la cola histórica al reactivar el canal.
 
 
-## Continuar contraste desde D1
+## Historial técnico: contraste de la cola D1 (ruta retirada)
 
-`phase=corroborate` en `topic-discovery-smoke.yml` busca fuentes de los vacíos del
+Antes de su retirada, `phase=corroborate` en `topic-discovery-smoke.yml` buscaba fuentes de los vacíos del
 expediente activo y compara pasajes. Reutiliza afirmaciones y citas; no invoca
 Qwen/Gemini ni repite el radar. Usa Tavily/Exa sólo si ya están configurados y
 confirmados gratis, con dos búsquedas y el presupuesto D1 existente. Groq revisa
 una vez como máximo. Si no hay cuota, las fuentes nuevas quedan en D1 para la
-revisión siguiente. Cron 00:40 UTC (19:40 America/Lima), tras revisión 00:20 UTC.
+revisión siguiente. Ese cron de las 00:40 UTC y la revisión de las 00:20 UTC ya no están programados.
 No crea trabajos ni autoriza render/publicación por descubrir nuevas fuentes.
