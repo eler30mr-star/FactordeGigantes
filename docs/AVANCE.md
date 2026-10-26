@@ -1,5 +1,9 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Reanudación integrada del episodio y continuidad de investigación
+
+Se retoma la aceptación desde el run 40224493562 después del cambio de día UTC, conservando identidad, fuentes, preguntas y SQLite. Se incorpora el contrato de progreso del episodio a CI. Resultado de proveedores y siguiente implementación pendientes de comprobación; no se afirma guion o video aceptado ni se cambian pausa o publicación.
+
 ## 2026-10-25 · Desvío editorial rechazado en prueba real y resultado preservado por límite
 
 Run 40224493562 success. Gemini revisó el enfoque (427 entrada/561 salida) y clasificó las seis afirmaciones sobre Priv/DTEK50 como ajenas a la pérdida de liderazgo y transformación elegidas. Propuso cuatro preguntas documentales. La recuperación puntual conservó el padre y reanalizó los diez pasajes (3.411 entrada/171 salida), obteniendo solo dos afirmaciones candidatas pertinentes: software/servicios y unidades de Ciberseguridad/IoT. No se completaron seis hechos de relleno.
