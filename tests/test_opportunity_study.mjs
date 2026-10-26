@@ -6,7 +6,7 @@ import {generateKeyPairSync,sign} from 'node:crypto';
 import worker from '../src/worker.js';
 import {MARKET_AUDIENCE} from '../src/github-oidc.mjs';
 import {assessOpportunityStudy} from '../src/opportunity-study.mjs';
-import {beginOpportunityStudy,finishOpportunityStudy,checkOpportunityStudy,failOpportunityStudy} from '../src/opportunity-control.mjs';
+import {beginOpportunityStudy,finishOpportunityStudy,checkOpportunityStudy,failOpportunityStudy,latestOpportunityStudy} from '../src/opportunity-control.mjs';
 const NOW=new Date('2026-10-25T12:00:00Z');
 const vid=n=>'v'+String(n).padStart(10,'0'),channel=n=>'UC'+String(n).padStart(22,'0');
 function sample(observedOn='2026-10-25'){
@@ -41,6 +41,34 @@ test('selects from two genuinely comparable companies, preserving evidence and l
  const out=assessOpportunityStudy(sample(),NOW);assert.equal(out.selected.company,'Empresa Alfa');assert.equal(out.rankings.length,2);
  assert.equal(out.rankings[0].baseline_channels,3);assert.equal(out.rankings[0].median_relative_average_views,3);
  assert.equal(out.publication_authorized,false);assert.ok(out.limitations.some(s=>s.includes('no crecimiento')));
+});
+
+test('sample coverage is computed from dated long videos, ignoring supplied summaries',()=>{
+ const r=sample();r.sample_summary={observed_videos:999,comparable_long_videos:999,distinct_channels:999,recent_examples:999};
+ const complete=assessOpportunityStudy(r,NOW);
+ assert.deepEqual(complete.sample_summary,{observed_videos:8,comparable_long_videos:8,distinct_channels:6,recent_examples:8});
+ assert.deepEqual(complete.minimum_sample_reasons,[]);
+ r.videos.forEach((v,i)=>{v.channel_id=channel(0);if(i<3)v.duration_seconds=60;else v.published_on='2026-08-01';});
+ const insufficient=assessOpportunityStudy(r,NOW);
+ assert.deepEqual(insufficient.sample_summary,{observed_videos:8,comparable_long_videos:5,distinct_channels:1,recent_examples:0});
+ assert.deepEqual(insufficient.minimum_sample_reasons,['need_three_observed_channels','need_two_recent_examples']);
+ assert.equal(insufficient.selected,null);
+});
+
+test('empty observations persist as an insufficient study and expose missing evidence to the panel',async()=>{
+ const env={DB:db(),FINAL_AI_INTEGRATION_ENABLED:'1',YOUTUBE_SELECTOR_VALIDATED:'1'},id=crypto.randomUUID();
+ const r=sample();r.videos=[];r.candidates=[];r.baselines=[];r.queries.forEach(q=>q.video_ids=[]);
+ r.extraction_provider='not_invoked_insufficient_evidence';
+ try{
+  await beginOpportunityStudy(env,{id},NOW);
+  const result=await finishOpportunityStudy(env,{id,report:r},NOW);
+  assert.equal(result.state,'insufficient');assert.equal(result.assessment.selected,null);
+  const visible=(await latestOpportunityStudy(env)).study;
+  assert.deepEqual(visible.sample_summary,{observed_videos:0,comparable_long_videos:0,distinct_channels:0,recent_examples:0});
+  assert.deepEqual(visible.minimum_sample_reasons,['need_four_comparable_long_videos','need_three_observed_channels','need_two_recent_examples']);
+  assert.equal(env.DB.raw.prepare('SELECT count(*) n FROM channel_episodes').get().n,0);
+  assert.equal(env.DB.raw.prepare('SELECT count(*) n FROM channel_episode_research').get().n,0);
+ }finally{env.DB.raw.close();}
 });
 
 test('one measurable company, missing channel baselines and Shorts cannot force a choice',()=>{

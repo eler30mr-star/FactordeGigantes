@@ -24,6 +24,13 @@ export function assessOpportunityStudy(r,now=new Date(),history=[]){
  for(const q of r.queries){if(!text(q.query,4,150)||queryIds.has(norm(q.query))||!Array.isArray(q.video_ids)||q.video_ids.length>30||
   new Set(q.video_ids).size!==q.video_ids.length||q.video_ids.some(id=>!videos.has(id)))throw new RangeError('Consulta sin evidencia');queryIds.add(norm(q.query));}
  if([...videos.keys()].some(id=>!r.queries.some(q=>q.video_ids.includes(id))))throw new RangeError('Video sin consulta de origen');
+ const observedRows=[...videos.values()].filter(v=>v.duration_seconds>=300&&v.duration_seconds<=1800&&v.age>=2&&v.age<=90);
+ const sampleSummary={observed_videos:videos.size,comparable_long_videos:observedRows.length,
+  distinct_channels:new Set(observedRows.map(v=>v.channel_id)).size,recent_examples:observedRows.filter(v=>v.age<=30).length};
+ const minimumSampleReasons=[];
+ if(sampleSummary.comparable_long_videos<4)minimumSampleReasons.push('need_four_comparable_long_videos');
+ if(sampleSummary.distinct_channels<3)minimumSampleReasons.push('need_three_observed_channels');
+ if(sampleSummary.recent_examples<2)minimumSampleReasons.push('need_two_recent_examples');
  const baseline=new Map();for(const b of r.baselines){
   if(!CHANNEL.test(b.channel_id)||baseline.has(b.channel_id)||!Array.isArray(b.videos)||b.videos.length>10)throw new RangeError('Comparación de canal inválida');
   const seen=new Set(),rows=[];
@@ -73,6 +80,7 @@ export function assessOpportunityStudy(r,now=new Date(),history=[]){
  // A winner requires a genuine comparison, not a sole measurable candidate.
  const selected=qualified.length>=2?qualified[0]:null;
  return {method:'youtube_comparative_opportunity_v2',observed_on:r.observed_on,rankings,
+  sample_summary:sampleSummary,minimum_sample_reasons:minimumSampleReasons,
   selected,reason:selected?'comparative_selection':'insufficient_comparative_evidence',
   limitations:['Muestra de búsquedas, no demanda total','Promedio de visitas por edad, no crecimiento medido',
    'Comparación con hasta diez videos del mismo canal','No incluye CTR ni retención de terceros','Las regiones de búsqueda no identifican el país de los espectadores',

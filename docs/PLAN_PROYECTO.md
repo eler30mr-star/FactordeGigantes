@@ -39,6 +39,8 @@ La IA debe realizar un estudio suficiente para justificar la elección; no elegi
 
 **Aceptación:** una revisión de muestras reales debe poder reconstruir por qué se eligió ese episodio frente a alternativas. Las pruebas cubren muestra insuficiente, datos caducados, duplicados, sesgo por tamaño de canal y ausencia de tendencia medida; todos deben impedir conclusiones no sustentadas.
 
+**Control de consumo implementado — 2026-10-26:** si las búsquedas YouTube no aportan videos observados, registrar el estudio insuficiente sin llamar a IA. Validar empresas por nombre completo observado, normalizando acentos y rechazando duplicados antes de consultas específicas. Tras ampliar la muestra con búsquedas por empresa, omitir las comparaciones de canal si el conjunto final no puede cumplir los mínimos existentes de videos largos, canales y frescura. Este corte no exige esos mínimos en la muestra inicial ni modifica puntuaciones o criterios de selección. El servidor calcula la cobertura desde los videos y el panel explica qué falta, incluso sin empresas propuestas. Verificación con servicios simulados; no constituye una selección aceptada ni habilita automatización.
+
 ### Botón del panel: Automático encendido / apagado
 
 El propietario controla un botón visible con estado inequívoco **«Automático: encendido» / «Automático: apagado»**, persistido en el servidor por canal y conservado al recargar.

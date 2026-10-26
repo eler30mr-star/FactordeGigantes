@@ -124,6 +124,22 @@ class Element{
  replaceChildren(){this.children=[];}
  setAttribute(key,value){this.attrs[key]=value;}
 }
+test('panel explains an insufficient observed sample without presenting a company selection',async()=>{
+ const elements=new Map();
+ const doc={getElementById(id){if(!elements.has(id))elements.set(id,new Element());return elements.get(id);},createElement(){return new Element();}};
+ const request=async path=>path==='/api/market/opportunity-study'?{study:{
+  state:'insufficient',observed_on:'2026-10-25',rankings:[],selected:null,
+  sample_summary:{observed_videos:2,comparable_long_videos:2,distinct_channels:1,recent_examples:1},
+  minimum_sample_reasons:['need_four_comparable_long_videos','need_three_observed_channels','need_two_recent_examples']
+ }}:{automatic_enabled:false,message:'Esperando tu instrucción.',conversation:[],episode:null,revision:0};
+ await mountChannelControl({request,documentRef:doc}).load();
+ const paragraphs=elements.get('channel-study').children.map(p=>p.textContent);
+ assert.ok(paragraphs.some(p=>p.includes('2 videos largos comparables, 1 canal y 1 ejemplo reciente')));
+ assert.ok(paragraphs.some(p=>p.startsWith('Todavía no se puede elegir:')&&p.includes('cuatro videos')&&p.includes('tres canales')&&p.includes('recientes')));
+ assert.equal(elements.get('channel-episode').children.length,0);
+ assert.ok(paragraphs.every(p=>!p.includes('undefined')));
+});
+
 test('panel switch reflects saved state, chat reaches API, rendering is text only',async()=>{
  const env=environment(),elements=new Map();
  const doc={getElementById(id){if(!elements.has(id))elements.set(id,new Element());return elements.get(id);},createElement(){return new Element();}};

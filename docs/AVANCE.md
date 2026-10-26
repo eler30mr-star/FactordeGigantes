@@ -1,5 +1,17 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Estudio acotado y motivos visibles antes de gastar más consultas
+
+Se corrigen tres fallos del estudio YouTube: con cero videos observados todavía podía solicitar una propuesta a IA; una coincidencia parcial como Palm dentro de Palmolive podía pasar la validación inicial; y se pedían comparaciones habituales de canales aun cuando la muestra final no reunía condiciones necesarias de selección.
+
+El runner registra ahora una búsqueda vacía como estudio insuficiente, sin invocar modelos ni reservar cuota de IA. Las empresas propuestas deben figurar como nombre completo en títulos observados; se normalizan acentos y separadores para rechazar también duplicados equivalentes antes de consultas específicas. Después de las búsquedas por empresa se comprueban los mínimos existentes: cuatro videos largos comparables de 2–90 días, tres canales y dos ejemplos de hasta 30 días. Si el conjunto final no llega, se conservan consultas, videos y propuestas para evaluación, sin solicitar baselines que no podrían remediar la carencia. Una muestra inicial pequeña sí puede crecer con las consultas por empresa: no se impone un nuevo umbral antes de ellas.
+
+El Worker calcula la cobertura desde videos y fechas validados, sin confiar en los totales enviados por el runner. El panel informa videos largos, canales, ejemplos recientes y motivos de insuficiencia, incluso cuando no hay ninguna empresa propuesta. No se elige un ganador ficticio ni se crean solicitudes de investigación por estos casos.
+
+Verificación local aprobada: 175 pruebas Node y 34 Python dirigidas a estudio, workflow, retirada de pruebas fijas y runner. Incluye búsqueda vacía a través del main Python, cero invocaciones/reservas de modelo, persistencia del estado insuficiente y su lectura para el panel, crecimiento de muestra pequeña, corte de baselines y validación de empresas observadas. Todo con servicios simulados, sin llamar Gemini, Groq, Tavily ni YouTube. CI y despliegue de este cambio pendientes al registrar esta entrada.
+
+Se conservan los presupuestos autorizados, modo y pausa. No se ejecuta otra prueba BlackBerry ni se activa investigación o publicación. La aceptación integrada de estudio → único elegido → investigación → video en panel continúa pendiente; estas correcciones acreditan prevención de consumo innecesario y explicación de insuficiencia.
+
 ## 2026-10-26 · Una sola ruta operativa: estudio YouTube → selección → episodio
 
 Se encontró que, al habilitar la automatización validada, la programación aún podía ejecutar el recolector antiguo de Wikimedia/empresas además del estudio YouTube. También conservaba cron independientes de revisión/contraste de la cola antigua. La pausa actual impedía esas ejecuciones, pero su reactivación habría conservado dos recorridos distintos y consumo fuera del episodio nuevo.
