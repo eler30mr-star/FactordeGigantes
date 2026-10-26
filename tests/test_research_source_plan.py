@@ -16,6 +16,27 @@ TARGET = {'claim_index': 1, 'statement': 'Empresa Ejemplo acordó una restituci�
 
 
 class TargetedRetrievalTests(unittest.TestCase):
+    def test_editorial_search_results_precede_unrelated_alphabetical_wiki_leads(self):
+        from tools.ai_clients import ProviderError
+        targeted=['https://z-context.example/z-business-shift', 'https://z-context.example/a-product-specs']
+        downloads=[]
+        class Search:
+            def search(self,provider,*a,**k):
+                if provider!='tavily':raise ProviderError('missing_key')
+                return [{'url':url,'title':TITLE,'discovered_by':'tavily'} for url in targeted]
+        def fetch(url,**_):
+            downloads.append(url)
+            return (('<p>'+TITLE+' cambió su posición en el mercado. '+
+                'Información documental pública pendiente de contraste independiente. '*3+'</p>').encode(),url,'text/html')
+        with patch('tools.ai_source_discovery.wikipedia_links',return_value=[
+                {'url':'https://a-legacy.example/a-product-specs','discovered_by':'wikipedia'},
+                {'url':targeted[0],'discovered_by':'wikipedia'}]):
+            discover_sources({'selected_wikidata_id':'Q100','research_queue':{'wikidata_id':'Q100','title':TITLE},
+                'editorial_topic':'Su pérdida de liderazgo','editorial_questions':['¿Qué cambió en el negocio de la empresa?']},
+                clients=Search(),document_fetcher=fetch)
+        self.assertEqual(downloads[0],targeted[0])
+        self.assertNotIn(targeted[1],downloads)  # Same-host bound still applies.
+
     def test_editorial_questions_guide_queries_without_becoming_claims(self):
         questions=['¿Qué decisiones cambiaron la posición de la empresa?', '¿Cómo evolucionó su negocio de software?']
         plan=search_plan(TITLE,[],REGULATORY_HOSTS,editorial_questions=questions)

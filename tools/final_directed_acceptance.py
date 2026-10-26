@@ -10,7 +10,7 @@ from pathlib import Path
 from tools.ai_clients import FreeClients, ProviderError
 from tools.ai_control import ControlClient
 from tools.ai_source_discovery import discover_sources
-from tools.channel_episode import run_episode
+from tools.channel_episode import run_episode_until_review
 
 FOLDER = Path('dist/final-directed-acceptance')
 COMPANY = 'BlackBerry'
@@ -99,14 +99,8 @@ def main():
             sources['_acceptance_selection_sha256'] = signature
             saved.write_text(json.dumps(sources, ensure_ascii=False, indent=2))
             return sources
-        result = run_episode(Control(), identity['request_id'], client_factory=Clients, discover=discover)
-        if (result.get('research', {}).get('editorial_focus_review', {}).get('status') == 'misaligned'
-                or result.get('draft', {}).get('status') == 'blocked_editorial_coverage'):
-            # One bounded recovery in this explicit acceptance, not a provider loop.
-            (FOLDER / 'ENFOQUE_ANTERIOR.json').write_text(json.dumps(result['research']['editorial_focus_review'], ensure_ascii=False, indent=2))
-            audit['previous_editorial_focus'] = result['research']['editorial_focus_review']
-            audit['editorial_replan_attempted'] = True
-            result = run_episode(Control(), identity['request_id'], client_factory=Clients, discover=discover)
+        result = run_episode_until_review(Control(), identity['request_id'], client_factory=Clients, discover=discover)
+        audit['continuation'] = result.get('continuation')
         (FOLDER / 'RESULTADO.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
         report = result.get('research', {})
         audit.update(state=result['state'], evidence_count=len(report.get('evidence_manifest', [])),
@@ -121,6 +115,8 @@ def main():
         audit['claims'] = [{'statement': claim['statement'], 'evidence_ids': claim['evidence_ids']}
                            for claim in report.get('candidate_claims', [])]
         audit['editorial_focus'] = report.get('editorial_focus_review')
+        audit['retrieval_budget'] = report.get('retrieval_budget')
+        audit['editorial_source_attempt'] = report.get('editorial_source_attempt')
         audit['source_classes'] = {kind: sum(e['source_class'] == kind for e in report.get('evidence_manifest', []))
             for kind in ('potential_official_primary', 'potential_official_pdf', 'public_document_candidate', 'public_authority_candidate')}
         print('ACEPTACION_EPISODIO:', json.dumps(audit, ensure_ascii=False))

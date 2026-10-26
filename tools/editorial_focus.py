@@ -35,7 +35,9 @@ def review_editorial_focus(report, topic, *, clients):
             'status': 'unavailable', 'judgments': [], 'research_questions': report.get('editorial_research_questions', [])[:4], 'publication_authorized': False}
     if not claims:
         return {**base, 'reason': 'no_candidate_claims'}
-    provider = next((p for p in ('gemini', 'mistral', 'openrouter') if readiness(p, clients.env) == 'ready'), None)
+    # An independent reviewer also keeps editorial checks from consuming the
+    # analyst's entire daily allowance. Each call keeps its own D1 reservation.
+    provider = next((p for p in ('groq', 'gemini', 'mistral', 'openrouter') if readiness(p, clients.env) == 'ready'), None)
     if not provider:
         return {**base, 'reason': 'free_editorial_reviewer_unavailable'}
     prompt = ('Eres el editor de Factor de Gigantes. Evalúa si estas afirmaciones permiten responder al ENFOQUE '

@@ -1,5 +1,15 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Investigación dirigida priorizada y continuación acotada del runner real
+
+La aceptación 40267281452 (CI previo 40267242405 aprobado) conservó diez pasajes y rechazó tres hechos con enfoque insuficiente. Sus nuevas descargas priorizaron documentación de producto sobre las búsquedas editoriales: se corrige la prioridad y la deduplicación para preguntas/tema, conservando el orden de resultados entre candidatos equivalentes y los mismos límites documentales. Artefacto 12627325639, SHA ZIP 140ed9db16f5bb642491ef8d8159d21965eefb19f22e31169051c62b873bd283.
+
+El runner de producción y la aceptación comparten ahora una continuación de hasta tres rondas guardadas: reenfoque, contraste y guion pueden avanzar en el mismo job. Se detiene al crear el borrador, ante pausa, reserva denegada, fallo remoto de proveedor o ausencia de cambios materiales. Una búsqueda sin pasajes nuevos conserva los hechos y URLs fallidas y no vuelve a gastar análisis sobre el mismo material. Cada llamada mantiene su reserva D1; cuotas y puertas humanas no se elevan ni sustituyen.
+
+Groq asume también la revisión de relevancia separada del analista Gemini, usando la modalidad gratuita confirmada y su propio cupo. El panel mantiene investigación como etapa pendiente cuando hay menos de seis hechos pertinentes. Pruebas: 69 Python enfocadas más 18 de descubrimiento/guion aprobadas y 163 contratos Node; los seis contratos del progreso se repitieron tras su corrección. Incluyen reanudar del padre al borrador sin duplicar, persistir antes de detener por cupo, pausa entre rondas, fallo remoto sin reintento, búsqueda sin evidencia y prioridad de resultados editoriales.
+
+Se ejecutará aceptación desde 40267281452 con este código; guion y video reales siguen pendientes hasta comprobar el resultado. Pausa general, automático apagado y publicación se conservan.
+
 ## 2026-10-26 · Reanudación integrada del episodio y continuidad de investigación
 
 Se retoma la aceptación desde el run 40224493562 después del cambio de día UTC, conservando identidad, fuentes, preguntas y SQLite. Se incorpora el contrato de progreso del episodio a CI. Resultado de proveedores y siguiente implementación pendientes de comprobación; no se afirma guion o video aceptado ni se cambian pausa o publicación.

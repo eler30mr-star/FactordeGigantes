@@ -22,7 +22,8 @@ export async function channelProgress(env,id){
    json_extract(report_json,'$.editorial_focus_review.research_questions') AS focus_questions,
    EXISTS(SELECT 1 FROM json_each(report_json,'$.source_quality.claim_gaps') WHERE json_array_length(value,'$.gaps')>0) AS missing_sources
    FROM market_ai_pipeline_runs WHERE id=?`).bind(research.research_run_id).first();
-  if(checkpoint&&['misaligned','unavailable'].includes(checkpoint.focus_status)){
+  if(checkpoint&&(['misaligned','unavailable'].includes(checkpoint.focus_status)||
+      (checkpoint.focus_status==='aligned'&&checkpoint.claims>0&&checkpoint.claims<6))){
    checkpointStage='focus';
    focusReason=checkpoint.focus_reason;
    try{const questions=JSON.parse(checkpoint.focus_questions||'[]');if(Array.isArray(questions))focusQuestions=questions.filter(q=>typeof q==='string'&&q.length<=220).slice(0,4);}catch{}

@@ -1,7 +1,7 @@
 import json
 import unittest
 from unittest.mock import patch
-from tools.channel_episode import run_episode, resolve_company, resolve_company_identity
+from tools.channel_episode import run_episode, run_episode_until_review, resolve_company, resolve_company_identity
 from tools.editorial_focus import focus_sha
 
 
@@ -193,3 +193,104 @@ class ChannelEpisodeTests(unittest.TestCase):
             result = run_episode(Control(), 'request', resolver=lambda _: 'Q100', discover=discover,
                 analyze=analyze, scriptwriter=script, client_factory=lambda **_: None)
         self.assertEqual(result['state'], 'review')
+
+
+class BoundedContinuationTests(unittest.TestCase):
+    def setup_control(self, report):
+        class Control:
+            def __init__(self):
+                self.report=report;self.writes=[];self.scripts=[];self.allowed=True;self.reservations=[]
+            def request(self,path,body):
+                if path.endswith('/context'):
+                    return {'allowed':self.allowed,'episode':{'episode_id':'chosen','company':'BlackBerry',
+                        'topic':'Pérdida de liderazgo','origin':'chat'},'checkpoint':{'run_id':'ai-'+'a'*28,'report':self.report}}
+                if path.endswith('/research'):
+                    self.report=body['report'];self.writes.append(self.report)
+                    return {'ok':True,'run_id':'ai-'+'b'*28}
+                self.scripts.append(body);return {'ok':True,'job_id':'job'}
+            def reserve(self,provider,role):
+                self.reservations.append((provider,role));return True
+        return Control()
+
+    def saved(self):
+        return focused({'company':'BlackBerry','selected_episode_id':'chosen','editorial_topic':'Pérdida de liderazgo',
+            'selected_wikidata_id':'Q100','candidate_claims':[{}],'evidence_manifest':[], 'stages':[],
+            'observed_official_websites':['https://www.blackberry.com'],
+            'source_quality':{'claim_gaps':[{'gaps':['no_independent_domain']}]}})
+
+    def test_one_job_replans_then_corroborates_saved_facts_and_creates_only_one_draft(self):
+        report=self.saved();report['editorial_focus_review']['status']='misaligned'
+        control=self.setup_control(report);calls=[]
+        def analyze(sources,**_):
+            calls.append('analyze');return focused({**sources,'candidate_claims':[{}]})
+        def corroborate(report,**_):
+            calls.append('corroborate');return {'report':{**report,'source_quality':{'claim_gaps':[]}}}
+        def script(report,*_,**kwargs):
+            return {'status':'blocked_sources' if report['source_quality']['claim_gaps'] else 'editorial_draft_unapproved'}
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',analyze=analyze,corroborate=corroborate,
+                scriptwriter=script,client_factory=lambda **_:None)
+        self.assertEqual(result['state'],'review');self.assertEqual(calls,['analyze','corroborate'])
+        self.assertEqual(result['continuation']['rounds'],2);self.assertEqual(len(control.scripts),1)
+        self.assertTrue(all(r['editorial_topic']=='Pérdida de liderazgo' for r in control.writes))
+
+    def test_denied_budget_stops_even_after_new_evidence_has_been_saved(self):
+        control=self.setup_control(self.saved());control.reserve=lambda *_:False;calls=[]
+        def corroborate(report,**options):
+            calls.append('corroborate');self.assertFalse(options['clients'].reserve('groq','review'))
+            return {'report':{**report,'evidence_manifest':[{'id':'E001','excerpt':'New saved public text'}]}}
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',corroborate=corroborate,
+                scriptwriter=lambda *_a,**_k:{'status':'blocked_sources'})
+        self.assertEqual(result['continuation'],{'rounds':1,'stop_reason':'budget_denied'})
+        self.assertEqual(calls,['corroborate']);self.assertTrue(control.writes[0]['evidence_manifest'])
+        self.assertEqual(control.scripts,[])
+
+    def test_unchanged_checkpoint_does_not_repeatedly_invoke_providers(self):
+        control=self.setup_control(self.saved());calls=[]
+        def corroborate(report,**_):calls.append('once');return {'report':report}
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',corroborate=corroborate,
+                scriptwriter=lambda *_a,**_k:{'status':'blocked_sources'},client_factory=lambda **_:None)
+        self.assertEqual(result['continuation']['stop_reason'],'no_material_progress')
+        self.assertEqual(calls,['once'])
+
+    def test_pause_between_rounds_prevents_another_source_or_model_call(self):
+        control=self.setup_control(self.saved());calls=[]
+        def corroborate(report,**_):
+            calls.append('once');control.allowed=False
+            return {'report':{**report,'evidence_manifest':[{'id':'E001'}]}}
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',corroborate=corroborate,
+                scriptwriter=lambda *_a,**_k:{'status':'blocked_sources'},client_factory=lambda **_:None)
+        self.assertEqual(result['state'],'paused_or_finished');self.assertEqual(calls,['once'])
+        self.assertFalse(control.scripts)
+
+    def test_remote_quota_failure_is_not_retried_with_a_new_client_in_same_job(self):
+        from tools.ai_clients import ProviderError
+        control=self.setup_control(self.saved());calls=[]
+        class Client:
+            def generate(self,*a,**k):calls.append('remote');raise ProviderError('quota_exhausted',429)
+        def corroborate(report,**options):
+            for _ in range(2):
+                with self.assertRaises(ProviderError):options['clients'].generate('groq','fixture')
+            return {'report':{**report,'evidence_manifest':[{'id':'E001'}]}}
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',corroborate=corroborate,
+                scriptwriter=lambda *_a,**_k:{'status':'blocked_sources'},client_factory=lambda **_:Client())
+        self.assertEqual(calls,['remote']);self.assertEqual(result['continuation']['stop_reason'],'provider_unavailable')
+
+    def test_replanning_without_new_sources_preserves_claims_and_skips_analyst(self):
+        import hashlib
+        report=self.saved();report['editorial_focus_review']['status']='misaligned'
+        report['focused_analysis_binding']=hashlib.sha256(json.dumps({'profile':'chosen_topic_v2',
+            'topic':'Pérdida de liderazgo','evidence':[]},ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+        control=self.setup_control(report)
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',discover=lambda *_a,**_k:{'evidence_manifest':[],
+                'retrieval_budget':{'attempted_urls':['https://example.com/failed']}},
+                analyze=lambda *_a,**_k:self.fail('No analizar otra vez los mismos documentos'),client_factory=lambda **_:None)
+        self.assertEqual(result['draft']['status'],'blocked_editorial_sources')
+        self.assertEqual(result['research']['candidate_claims'],report['candidate_claims'])
+        self.assertIn('https://example.com/failed',result['research']['retrieval_history_urls'])
+        self.assertEqual(result['continuation']['rounds'],1)

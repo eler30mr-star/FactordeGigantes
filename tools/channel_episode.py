@@ -7,7 +7,7 @@ import hashlib
 from pathlib import Path
 from urllib.parse import urlencode
 from tools.ai_control import ControlClient
-from tools.ai_clients import FreeClients
+from tools.ai_clients import FreeClients, ProviderError
 from tools.ai_source_discovery import discover_sources
 from tools.ai_research_pipeline import analyze_sources, validate_report_locally
 from tools.documentary_script import write_script
@@ -123,6 +123,14 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
             # The parent retains every old claim and citation. Prefer fresh focused
             # evidence; the analyst may select new facts under the SAME topic.
             fresh = sources['evidence_manifest']
+            if not fresh:
+                report = {**prior, 'retrieval_history_urls': list(dict.fromkeys([
+                    *history, *(sources.get('retrieval_budget') or {}).get('attempted_urls', [])]))[-40:],
+                    'editorial_source_attempt': {'status': 'no_new_documentary_evidence',
+                        'stages': sources.get('stages', []), 'retrieval_budget': sources.get('retrieval_budget', {})}}
+                persist(report)
+                return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_sources',
+                    'blocking_reasons': ['need_new_relevant_documents'], 'publication_authorized': False}}
             keys = {(e['url'], e.get('page'), e['excerpt']) for e in fresh}
             kept = fresh + [e for e in prior['evidence_manifest'] if (e['url'], e.get('page'), e['excerpt']) not in keys]
             sources['evidence_manifest'] = [{**e, 'id': f'E{n:03d}'} for n, e in enumerate(kept[:10], 1)]
@@ -219,6 +227,69 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
     return {'state': 'review', 'research': report, 'draft': draft, 'job_id': result['job_id']}
 
 
+def run_episode_until_review(control, request_id, *, max_rounds=3, **options):
+    """Advance saved stages in one job; never retry a denied reservation.
+
+    Every round still uses the production checkpoint contract and pause guards.
+    Three rounds is a ceiling, not a new provider or download allowance.
+    """
+    if type(max_rounds) is not int or not 1 <= max_rounds <= 3:
+        raise ValueError('Continuación fuera del presupuesto')
+    denied = False
+    stopped_providers = set()
+    factory = options.pop('client_factory', FreeClients)
+    def guarded_factory(**kwargs):
+        client = factory(**kwargs)
+        class Client:
+            def __getattr__(self, name): return getattr(client, name)
+            def invoke(self, method, provider, *args, **kwargs):
+                if provider in stopped_providers: raise ProviderError('provider_stopped')
+                try:
+                    return getattr(client, method)(provider, *args, **kwargs)
+                except ProviderError as exc:
+                    if exc.code in {'quota_exhausted', 'credentials_rejected', 'network_failure'}:
+                        stopped_providers.add(provider)
+                    raise
+            def generate(self, provider, *args, **kwargs):
+                return self.invoke('generate', provider, *args, **kwargs)
+            def search(self, provider, *args, **kwargs):
+                return self.invoke('search', provider, *args, **kwargs)
+        return Client()
+    class GuardedControl:
+        def request(self, *args, **kwargs):
+            return control.request(*args, **kwargs)
+        def reserve(self, *args, **kwargs):
+            nonlocal denied
+            accepted = control.reserve(*args, **kwargs)
+            if not accepted: denied = True
+            return accepted
+    def material(report):
+        return hashlib.sha256(json.dumps({k: report.get(k) for k in (
+            'selected_episode_id', 'editorial_topic', 'evidence_manifest', 'candidate_claims',
+            'reviews', 'editorial_focus_review', 'focused_analysis_binding')},
+            sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    initial = control.request('/api/market/channel-episode/context',
+        {'request_id': request_id, 'include_checkpoint': True})
+    if initial.get('allowed') is not True:
+        return {'state': 'paused_or_finished', 'continuation': {'rounds': 0, 'stop_reason': 'paused_or_finished'}}
+    previous = material(initial['checkpoint']['report']) if initial.get('checkpoint') else None
+    seen = {previous} if previous else set()
+    for round_number in range(1, max_rounds + 1):
+        result = run_episode(GuardedControl(), request_id, client_factory=guarded_factory, **options)
+        reason = 'round_limit'
+        if result['state'] != 'blocked': reason = result['state']
+        elif denied: reason = 'budget_denied'
+        elif stopped_providers: reason = 'provider_unavailable'
+        elif not result.get('research'): reason = 'no_saved_research'
+        else:
+            current = material(result['research'])
+            if current in seen: reason = 'no_material_progress'
+            seen.add(current)
+        result['continuation'] = {'rounds': round_number, 'stop_reason': reason}
+        if reason != 'round_limit': return result
+    return result
+
+
 def main():
     request_id = os.environ.get('EPISODE_REQUEST_ID', '')
     if not re.fullmatch(r'[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', request_id):
@@ -226,7 +297,7 @@ def main():
     control = ControlClient()
     folder = Path('dist/channel-episode'); folder.mkdir(parents=True, exist_ok=True)
     try:
-        result = run_episode(control, request_id)
+        result = run_episode_until_review(control, request_id)
         (folder / 'RESULTADO.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
         if result['state'] == 'blocked':
             control.request('/api/market/channel-episode/research', {'request_id': request_id, 'blocked': True})
