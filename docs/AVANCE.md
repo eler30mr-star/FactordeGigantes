@@ -1,5 +1,18 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Recuperación real guardada, CI y despliegue comprobados
+
+CI [40269205149](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40269205149) aprobado para código d0565d4. El job de recuperación ejecutó cero llamadas a proveedores y guardó `ai-00c0a72518f92b0a58e5bef64656`: cuatro afirmaciones candidatas del padre `ai-a45605068a9f2e8c1b87b5d7d3c6`, aún con enfoque insuficiente, y el lote de diez pasajes pendiente de análisis. Se conserva también el expediente vacío anterior como historial. No son cuatro hechos verificados ni un guion aceptado.
+
+[Artefacto recuperado 12626993725](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40269205149/artifacts/12626993725), ZIP SHA-256 `3307045e4dc9785e1d9ab47e1394561b9b1f5ced102d8d6da530899766e3875d`, 76.773 bytes, retención siete días. Incluye SQLite, fuentes, respuestas previas e informe RECUPERACION.json; la siguiente aceptación debe usar `resume_directed_run=40269205149`.
+
+Cloudflare: deployment `39bd8e2d-1305-452d-a540-206438291fbc`, versión `af1314f6-82af-4333-b755-1555c2f2bd45`, al 100 %. Lectura del script servido confirma análisis pendiente y recuperación del padre. Consulta D1 de solo lectura comprobó reservas del 2026-10-26: Gemini 4/4, Groq 4/4 y Tavily 8/8; cero escrituras en esa consulta. Son límites configurados del proyecto, no una afirmación sobre facturación o cuota comercial.
+
+Se retiran los disparadores temporales de aceptación/recuperación. Queda el contrato de progreso incorporado a CI, el runner acotado compartido por producción y prueba, las búsquedas recuperables y la protección del análisis pendiente. 93 Python enfocadas y 164 Node locales aprobadas; CI usa checkout completo y también aprobó QA audiovisual y smoke de producción. Guía, plan y aceptación reflejan el checkpoint exacto.
+
+Próximo bloque: cuando haya cupo, analizar el lote ya guardado SIN nuevas búsquedas, completar hechos pertinentes sobre pérdida de liderazgo y transformación, contrastarlos y generar guion. Luego revisión humana, render canónico y video del MISMO episodio en el panel. No se activaron investigadores generales, automático ni publicación. La persistencia de esta aceptación sigue siendo SQLite aislado; el recorrido completo autenticado y ambos modos hasta video continúan pendientes.
+
+
 ## 2026-10-26 · Fuentes pendientes separadas de los hechos anteriores
 
 La aceptación 40268588521 (CI 40268550623 aprobado) ejecutó planificador/revisor Groq y analista Gemini reales. El plan inglés produjo pasajes nuevos y mantuvo la pregunta; la continuación alcanzó tres rondas y se detuvo por reservas denegadas, sin elevar límites. Artefacto 12627602304, ZIP 62c4183f2485fbd1b23e1515587a749ae098fb1d9b733bfc011cfaa2d8c5bd37. El último análisis fallido dejó cero hechos en la versión activa aunque sus padres seguían guardados; no se generó guion ni video.
@@ -287,7 +300,7 @@ No se ejecutan suites de aplicación por ser cambios de documentación; no se mo
 3. **P2:** integrar y aceptar el recorrido real de las IA para ambos inicios, con reanudación y presupuestos; habilitación de investigadores según autorización vigente.
 4. **P3:** publicación/programación autorizada y confirmada en YouTube; aprendizaje con métricas propias disponibles.
 
-**Siguiente paso exacto:** implementar el contrato de episodio y las dos entradas del P0 con pruebas del orden de llamadas que impidan investigación antes de selección. No ampliar la recolección de datos como sustituto de ese bloque.
+**Siguiente paso exacto:** continuar P2 desde la aceptación recuperada 40269205149: analizar los pasajes pendientes sin descargar otra vez, completar cobertura/contraste y llevar el mismo episodio a guion y video con sus revisiones. La calibración del estudio YouTube sigue pendiente en P0; no ampliar la recolección de empresas.
 
 ## Historial previo a la corrección de dirección
 

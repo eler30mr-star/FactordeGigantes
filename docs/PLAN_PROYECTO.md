@@ -103,13 +103,13 @@ Resolver entrega autenticada del MP4, permisos, reproducción parcial y conserva
 
 ## 6. Prioridades de implementación y aceptación
 
-## Estado verificado al 2026-10-25
+## Estado verificado al 2026-10-26
 
 | Bloque | Implementación comprobada | Aceptación pendiente |
 | --- | --- | --- |
 | P0 | Modo persistente, chat, episodio único, reservas, estudio YouTube y conexión a investigación del elegido | Calibrar cobertura real; todavía ninguna selección automática validada |
 | P1 | Panel con seis etapas y acciones del episodio, lectura/revisión del guion, reproductor vinculado por SHA/run y extracción del MP4 real verificados | Revisión humana en navegador de audio, desplazamiento y experiencia completa |
-| P2 | Conexión episodio → investigación → guion y registro del video; reanudación diferenciada de análisis, contraste, revisión y guion desde resultados guardados; cierre por publicación confirmada implementado | Fuente corporativa recuperada; desvío editorial corregido en prueba real aislada. Dos hechos pertinentes pendientes de revisión/cobertura; completar ambos modos hasta video |
+| P2 | Conexión episodio → investigación → guion y registro del video; reanudación diferenciada de análisis, contraste, revisión y guion desde resultados guardados; cierre por publicación confirmada implementado | Continuación acotada y fuentes pendientes recuperadas en prueba real aislada: cuatro afirmaciones candidatas aún insuficientes y lote de diez pasajes por analizar. Completar cobertura, contraste y ambos modos hasta video |
 | P3 | Subida privada y autorización separada de publicación/programación implementadas | Consentimiento Google ampliado y primera publicación/programación autorizadas |
 
 La [aceptación real del mercado](ACEPTACION_MERCADO_REAL.md) ejecutó YouTube y Gemini y confirmó una muestra insuficiente: no se eligió una empresa ni se habilitó el selector. Las casillas de aceptación integral continúan abiertas; este estado distingue implementación de cierre operativo.
@@ -159,7 +159,7 @@ La infraestructura existente —Worker, D1, proveedores IA, narrador, montaje, O
 
 La pausa de investigadores registrada previamente se conserva. La conexión implementada no levanta por sí sola la pausa ni concede autorización de publicación. Se mantienen cero pagos, voz canónica, fuentes verificables, recursos con derechos, secretos protegidos y `main` exclusiva.
 
-**Siguiente bloque de desarrollo:** aceptar con proveedores reales el recorrido de episodio → investigación enfocada → guion → aprobación → render y registro del MP4, y calibrar el estudio YouTube cuando se habilite la prueba integrada. La publicación/programación autorizada ya tiene código y pruebas con Google simulado; aceptar su primer recorrido real tras consentimiento ampliado, revisión del video y autorización. El control, el reproductor y el estudio v2 ya tienen código y pruebas; no ampliar el radar antiguo. Registrar separadamente código, pruebas, despliegue y aceptación real.
+**Siguiente bloque de desarrollo:** reanudar el análisis ya guardado de la aceptación 40269205149 cuando haya cupo y completar investigación enfocada → guion → aprobación → render y registro del MP4; aceptar ambos inicios y calibrar el estudio YouTube. El runner ya puede avanzar hasta tres rondas persistidas, sin repetir fallos de cuota; un análisis pendiente no reemplaza los candidatos anteriores ni permite crear un borrador. La publicación/programación autorizada ya tiene código y pruebas con Google simulado; aceptar su primer recorrido real tras consentimiento ampliado, revisión del video y autorización. El control, el reproductor y el estudio v2 ya tienen código y pruebas; no ampliar el radar antiguo. Registrar separadamente código, pruebas, despliegue y aceptación real.
 
 ## Anexo — Plan e hitos anteriores, conservados como historial
 

@@ -16,3 +16,5 @@ Este recorrido está implementado y cubierto por contratos locales; la aceptaci�
 Si aparece **Retomar el enfoque elegido**, abre las preguntas faltantes: el sistema detectó o debe comprobar la relación entre las afirmaciones y tu tema. La reanudación conserva la empresa y el enfoque; el expediente anterior queda como versión padre. Si hay pocos hechos pertinentes, amplía la investigación en lugar de repetir indefinidamente los mismos.
 
 Un límite configurado de solicitudes IA conserva fuentes, hechos y preguntas. Podrás reanudar cuando haya cupo. Ese bloqueo no significa que el guion esté aprobado.
+
+La investigación puede avanzar hasta tres rondas guardadas en una misma ejecución. Se detiene ante un borrador, una pausa, límites de solicitudes, un fallo de proveedor o falta de evidencia nueva. Si un análisis falla después de recuperar documentos, conserva las afirmaciones anteriores y el nuevo lote por separado. **Reanudar el análisis** trabaja primero con ese lote guardado; el sistema no habilita el guion mientras esté pendiente.

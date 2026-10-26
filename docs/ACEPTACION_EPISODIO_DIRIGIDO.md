@@ -1,6 +1,19 @@
-# Aceptación real del episodio dirigido — 2026-10-25
+# Aceptación real del episodio dirigido — 2026-10-26
 
-## Estado más reciente: recuperación documental y corrección editorial
+## Estado actual: recuperación guardada para continuar el análisis
+
+Las ejecuciones [40267281452](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40267281452), [40267672911](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40267672911) y [40268588521](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40268588521) comprobaron búsqueda, límites y recuperación del mismo episodio. La búsqueda inglesa planificada por Groq recuperó pasajes nuevos; Gemini obtuvo cuatro afirmaciones candidatas, todavía con cobertura insuficiente y un detalle de producto ajeno. No se aceptó el guion. La continuación llegó a tres rondas; al agotarse las reservas, el último analista no pudo completar otro lote.
+
+Se corrigió la transición para guardar ese lote ANTES de llamar al modelo y mantener los hechos candidatos anteriores. El servidor bloquea el borrador mientras haya análisis pendiente. La recuperación [40269205149](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40269205149), sin claves ni llamadas a proveedores, ejecutó el contexto/persistencia reales sobre SQLite y conservó cuatro candidatos y diez pasajes en el lote pendiente, sin borrar sus versiones anteriores.
+
+**Checkpoint para continuar:** `resume_directed_run=40269205149`. [Artefacto 12626993725](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40269205149/artifacts/12626993725), ZIP SHA-256 `3307045e4dc9785e1d9ab47e1394561b9b1f5ced102d8d6da530899766e3875d`, retención siete días. Reanudar analiza las fuentes guardadas antes de buscar otras.
+
+CI 40269205149 aprobado; 93 pruebas Python enfocadas y 164 contratos Node locales aprobados. Deployment `39bd8e2d-1305-452d-a540-206438291fbc`, versión `af1314f6-82af-4333-b755-1555c2f2bd45`, al 100 %, código servido comprobado. D1 confirma límites diarios del proyecto alcanzados: Gemini 4, Groq 4, Tavily 8. No se elevaron ni se atribuye agotamiento comercial de las cuentas.
+
+**Sigue pendiente:** cobertura pertinente, contraste, guion válido y video de este flujo. Persistencia editorial aislada, reservas D1 reales; pausa general, automático y publicación se conservan. El episodio de desarrollo existente no sustituye esta aceptación.
+
+
+## Historial del 2026-10-25: recuperación documental y corrección editorial
 
 Run [40223314920](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40223314920) recuperó cuatro documentos de cuatro dominios, una fuente corporativa candidata y diez pasajes. El análisis inicial seguía compuesto por seis detalles de Priv/DTEK50, insuficientes para la pregunta empresarial elegida.
 
