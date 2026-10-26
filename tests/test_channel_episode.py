@@ -40,9 +40,10 @@ class ChannelEpisodeTests(unittest.TestCase):
                 analyze=lambda s,**_:focused({**s,'candidate_claims':[{}]}),
                 scriptwriter=lambda *_a,**_k:{'status':'editorial_draft_unapproved'},client_factory=lambda **_:None)
         self.assertEqual(result['state'],'review')
-        self.assertEqual(writes[0]['editorial_replanning']['reason'],'insufficient_relevant_facts')
-        self.assertEqual(writes[0]['editorial_replanning']['parent_run_id'],'ai-'+'a'*28)
-        self.assertTrue(writes[0]['editorial_replanning']['topic_unchanged'])
+        self.assertIn('pending_editorial_analysis',writes[0])
+        self.assertEqual(writes[-1]['editorial_replanning']['reason'],'insufficient_relevant_facts')
+        self.assertEqual(writes[-1]['editorial_replanning']['parent_run_id'],'ai-'+'a'*28)
+        self.assertTrue(writes[-1]['editorial_replanning']['topic_unchanged'])
 
     def test_off_topic_facts_stop_before_more_downloads_or_scripting(self):
         saved={'company':'BlackBerry','selected_episode_id':'chosen','editorial_topic':'Pérdida de liderazgo',
@@ -315,3 +316,28 @@ class BoundedContinuationTests(unittest.TestCase):
         self.assertEqual(result['research']['candidate_claims'],report['candidate_claims'])
         self.assertIn('https://example.com/failed',result['research']['retrieval_history_urls'])
         self.assertEqual(result['continuation']['rounds'],1)
+
+    def test_failed_replan_preserves_previous_facts_and_retries_saved_sources_only(self):
+        import copy
+        report=self.saved();report['editorial_focus_review']['status']='misaligned'
+        report.update(schema='fdg_ai_pipeline_v1',collected_on='2026-10-26',source_documents=[])
+        control=self.setup_control(report);snapshots=[]
+        def fail_analysis(sources,**_):
+            snapshots.append(copy.deepcopy(control.report))
+            return {**sources,'candidate_claims':[],'reviews':[], 'stages':[]}
+        forbidden=lambda *_a,**_k:self.fail('No resolver ni descargar durante la recuperación')
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',analyze=fail_analysis,
+                resolver=forbidden,discover=forbidden,client_factory=lambda **_:None)
+        self.assertEqual(result['draft']['status'],'blocked_editorial_analysis')
+        self.assertEqual(result['research']['candidate_claims'],report['candidate_claims'])
+        self.assertIn('pending_editorial_analysis',snapshots[0])  # Saved BEFORE the model call.
+        self.assertEqual(result['continuation']['rounds'],1)
+        def succeed(sources,**_):
+            self.assertEqual(sources['evidence_manifest'],report['evidence_manifest'])
+            return focused({**sources,'candidate_claims':[{}],'source_quality':{'claim_gaps':[]}})
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',analyze=succeed,resolver=forbidden,discover=forbidden,
+                scriptwriter=lambda *_a,**_k:{'status':'editorial_draft_unapproved'},client_factory=lambda **_:None)
+        self.assertEqual(result['state'],'review');self.assertNotIn('pending_editorial_analysis',result['research'])
+        self.assertEqual(result['research']['editorial_replanning']['parent_run_id'],'ai-'+'a'*28)

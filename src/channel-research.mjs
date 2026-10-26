@@ -45,9 +45,32 @@ export async function channelResearchContext(env,body){
  if(allowed&&body.include_checkpoint===true&&r.research_run_id){
   const saved=await env.DB.prepare('SELECT report_json FROM market_ai_pipeline_runs WHERE id=?').bind(r.research_run_id).first();
   if(!saved)return fail(409,'Falta el resultado de investigación guardado; no se repetirá en silencio');
-  const report=JSON.parse(saved.report_json);
+  let report=JSON.parse(saved.report_json);
   if(report.selected_episode_id!==r.episode_id||report.company!==r.company||report.editorial_topic!==r.topic)
    return fail(409,'La investigación guardada no corresponde al episodio');
+  // Repair older empty analyst checkpoints from their own bounded lineage.
+  // Keep the new sources pending, without erasing prior candidate facts or
+  // treating them as verified. Reads never mutate the stored versions.
+  if(report.candidate_claims?.length===0&&report.editorial_replanning?.parent_run_id){
+   const empty=report;let ancestor=report.editorial_replanning.parent_run_id;const visited=new Set([r.research_run_id]);
+   for(let depth=0;depth<5&&/^ai-[a-f0-9]{28}$/.test(ancestor)&&!visited.has(ancestor);depth++){
+    visited.add(ancestor);
+    const row=await env.DB.prepare('SELECT report_json FROM market_ai_pipeline_runs WHERE id=?').bind(ancestor).first();
+    if(!row)break;
+    const parent=JSON.parse(row.report_json);
+    if(parent.selected_episode_id!==r.episode_id||parent.company!==r.company||parent.editorial_topic!==r.topic||
+       parent.selected_wikidata_id!==empty.selected_wikidata_id)break;
+    if(parent.candidate_claims?.length){
+     const keys=['schema','collected_on','selected_wikidata_id','company','evidence_manifest','source_documents','stages',
+      'retrieval_budget','research_targets','discovery_plan','editorial_topic','editorial_retrieval_plan'];
+     const sources=Object.fromEntries(keys.filter(k=>Object.hasOwn(empty,k)).map(k=>[k,empty[k]]));
+     report={...parent,pending_editorial_analysis:{parent_run_id:ancestor,sources,last_attempt_stages:empty.stages},
+      editorial_checkpoint_recovery:{empty_run_id:r.research_run_id,last_candidate_run_id:ancestor}};
+     break;
+    }
+    ancestor=parent.editorial_replanning?.parent_run_id;
+   }
+  }
   checkpoint={run_id:r.research_run_id,report};
  }
  return {ok:true,allowed,episode:r,...(body.include_checkpoint===true?{checkpoint}:{})};

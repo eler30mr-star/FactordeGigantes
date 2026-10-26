@@ -96,3 +96,34 @@ test('late dispatch acknowledgement cannot revive an already blocked investigati
  assert.equal(raw.prepare('SELECT state FROM channel_episodes').get().state,'selected');
  assert.equal(raw.prepare('SELECT state FROM channel_episode_research').get().state,'blocked');
 });
+
+test('legacy empty analyst checkpoint recovers only same-episode lineage and keeps new sources pending',async()=>{
+ const {env,id,raw}=setup();
+ for(const p of readdirSync(new URL('../migrations/',import.meta.url)).filter(p=>p.endsWith('.sql')).sort())raw.exec(readFileSync(new URL('../migrations/'+p,import.meta.url),'utf8'));
+ const fixture=spawnSync('python',['tests/helpers/channel_research_fixture.py'],{cwd:new URL('../',import.meta.url),encoding:'utf8'});
+ assert.equal(fixture.status,0,fixture.stderr);const {research,script}=JSON.parse(fixture.stdout);
+ raw.prepare('UPDATE channel_episodes SET company=? WHERE id=?').run(research.company,id);
+ research.editorial_topic='La pérdida de liderazgo';research.selected_episode_id=id;
+ const request=await dispatchChannelResearch(env,id,async()=>({status:204}));
+ const parent=await storeChannelResearch(env,{request_id:request.request_id,report:research});
+ const empty={...research,candidate_claims:[],reviews:[],analysis_provider:null,status:'sources_only',
+  source_quality:{...research.source_quality,claims_requiring_review:0,claim_gaps:[],all_claims_verified:false,ready_for_script:false},
+  editorial_replanning:{parent_run_id:parent.run_id,topic_unchanged:true}};
+ const latest=await storeChannelResearch(env,{request_id:request.request_id,report:empty});
+ const count=raw.prepare('SELECT count(*) n FROM market_ai_pipeline_runs').get().n;
+ const context=await channelResearchContext(env,{request_id:request.request_id,include_checkpoint:true});
+ assert.equal(context.checkpoint.run_id,latest.run_id);
+ assert.deepEqual(context.checkpoint.report.candidate_claims.map(c=>c.statement),research.candidate_claims.map(c=>c.statement));
+ assert.deepEqual(context.checkpoint.report.pending_editorial_analysis.sources.evidence_manifest,empty.evidence_manifest);
+ assert.equal(context.checkpoint.report.pending_editorial_analysis.parent_run_id,parent.run_id);
+ assert.equal(raw.prepare('SELECT count(*) n FROM market_ai_pipeline_runs').get().n,count); // Read preserves history.
+ const saved=await storeChannelResearch(env,{request_id:request.request_id,report:context.checkpoint.report});
+ script.source_research_run_id=saved.run_id;
+ await assert.rejects(()=>storeChannelScript(env,{request_id:request.request_id,script}),/pendientes de análisis/);
+ assert.equal(raw.prepare('SELECT count(*) n FROM jobs').get().n,0);
+ // An unrelated parent cannot supply facts to this episode, even if the link exists.
+ const other={...research,selected_episode_id:crypto.randomUUID()};
+ raw.prepare('UPDATE market_ai_pipeline_runs SET report_json=? WHERE id=?').run(JSON.stringify(other),parent.run_id);
+ raw.prepare('UPDATE channel_episode_research SET research_run_id=? WHERE id=?').run(latest.run_id,request.request_id);
+ assert.equal((await channelResearchContext(env,{request_id:request.request_id,include_checkpoint:true})).checkpoint.report.candidate_claims.length,0);
+});

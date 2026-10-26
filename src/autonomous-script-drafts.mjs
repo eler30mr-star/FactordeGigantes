@@ -61,6 +61,7 @@ function chunks(text){
 }
 
 export async function prepareEditorialDraft(research,script,runId){
+ if(research?.pending_editorial_analysis)throw new RangeError('Hay fuentes nuevas pendientes de análisis para este episodio');
  if(!await editorialFocusReady(research))fail('Las afirmaciones no responden al enfoque elegido');
  researchGate(research);
  if(!script||JSON.stringify(script).length>48000)fail('Guion fuera del presupuesto');

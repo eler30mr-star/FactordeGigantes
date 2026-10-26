@@ -44,6 +44,8 @@ test('episode progress exposes the next real action and does not claim provider/
  p=await channelProgress(f.env,f.id);assert.equal(p.research.checkpoint_stage,'focus');assert.equal(p.research.editorial_questions.length,1);
  f.raw.prepare("UPDATE market_ai_pipeline_runs SET report_json=json_set(report_json,'$.editorial_focus_review.status','aligned') WHERE id='ai-saved'").run();
  p=await channelProgress(f.env,f.id);assert.equal(p.research.checkpoint_stage,'focus');assert.equal(p.steps[1].state,'blocked');assert.equal(p.steps[2].state,'pending');
+ f.raw.prepare("UPDATE market_ai_pipeline_runs SET report_json=json_set(report_json,'$.pending_editorial_analysis',json(?)) WHERE id='ai-saved'").run(JSON.stringify({sources:{}}));
+ p=await channelProgress(f.env,f.id);assert.equal(p.research.checkpoint_stage,'analysis');assert.match(p.message,/análisis/);
  f.env.FINAL_AI_INTEGRATION_ENABLED='1';f.job();p=await channelProgress(f.env,f.id);assert.equal(p.next_step,'submit_script');
  const response=await worker.fetch(new Request('https://factor.test/api/jobs/'+f.jobId+'/submit',{method:'POST',headers:{Authorization:'Bearer '+f.env.ADMIN_TOKEN}}),f.env);
  assert.equal(response.status,200);p=await channelProgress(f.env,f.id);assert.equal(p.next_step,'review_dossier');

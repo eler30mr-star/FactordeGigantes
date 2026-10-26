@@ -1,5 +1,15 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Fuentes pendientes separadas de los hechos anteriores
+
+La aceptación 40268588521 (CI 40268550623 aprobado) ejecutó planificador/revisor Groq y analista Gemini reales. El plan inglés produjo pasajes nuevos y mantuvo la pregunta; la continuación alcanzó tres rondas y se detuvo por reservas denegadas, sin elevar límites. Artefacto 12627602304, ZIP 62c4183f2485fbd1b23e1515587a749ae098fb1d9b733bfc011cfaa2d8c5bd37. El último análisis fallido dejó cero hechos en la versión activa aunque sus padres seguían guardados; no se generó guion ni video.
+
+Se corrige esa transición: los pasajes nuevos quedan persistidos ANTES del modelo como análisis pendiente, separados de los hechos candidatos anteriores. Un fallo conserva ambos. Reanudar usa esos mismos documentos y no repite resolución ni búsqueda. El Worker recupera checkpoints históricos vacíos recorriendo como máximo cinco padres de la MISMA empresa, tema, episodio y Wikidata; no modifica versiones al leer ni restaura datos de otro episodio. El borrador queda bloqueado en servidor mientras existan documentos pendientes de análisis. El panel muestra esta etapa como análisis.
+
+93 pruebas Python enfocadas y 164 contratos Node aprobados. Se comprueban persistencia previa, fallo/reanudación sin descargas, padre exacto, aislamiento entre episodios y rechazo del borrador con fuentes pendientes. Se prepara recuperación del artefacto real sin claves ni llamadas de proveedores, usando el mismo contexto y persistencia del Worker contra SQLite aislado. Resultado y nuevo artefacto pendientes de verificación.
+
+Los cupos diarios configurados de Gemini/Groq/Tavily impiden seguir hoy con inferencias/búsquedas de esa prueba. Falta cobertura suficiente, contraste, guion y video; no se declara terminado P2.
+
 ## 2026-10-26 · Recuperación lingüística de las consultas documentales
 
 Run 40267672911 (CI 40267636587 aprobado) comprobó el nuevo freno: ocho descargas sin pasajes nuevos, cero inferencias Gemini/Groq y padre preservado. Artefacto 12627396078, ZIP 2e5225107c2ce32d5297b56f035f90e302061f8d48c1587133cd39243fc892d3. Las búsquedas literales largas en español devolvieron manuales y documentos ajenos; el episodio sigue sin guion.
