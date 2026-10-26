@@ -84,6 +84,7 @@ test('HTTP recovery reserves once, only dispatches registration of the selected 
  const send=(token,path,body)=>worker.fetch(new Request('https://factor.test'+path,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)}),f.env);
  try{
   assert.equal((await send(f.env.RENDERER_TOKEN,'/api/channel-control/recover-video',{episode_id:f.id})).status,401);
+  assert.equal((await send(f.env.ADMIN_TOKEN,'/api/channel-control/recover-video',null)).status,400);
   const recover=()=>send(f.env.ADMIN_TOKEN,'/api/channel-control/recover-video',{episode_id:f.id});
   const results=await Promise.all([recover(),recover()]);
   assert.equal((await results[0].json()).started,true);assert.equal((await results[1].json()).started,false);assert.equal(calls.length,1);

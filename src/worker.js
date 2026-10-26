@@ -168,7 +168,7 @@ async function handle(request,env) {
   if (!env.DB) return err("D1 no configurado",503);
   if(!renderer&&url.pathname==='/api/channel-control/recover-video'){
     if(method!=='POST')return err('Método no admitido',405);
-    try{const result=await recoverEpisodeVideo(env,(await parseBody(request)).episode_id);return json(result,result.ok?200:result.status);}
+    try{const result=await recoverEpisodeVideo(env,(await parseBody(request))?.episode_id);return json(result,result.ok?200:result.status);}
     catch(e){if(e instanceof RangeError)return err('Episodio inválido',400);throw e;}
   }
   if(!renderer&&['/api/channel-control/progress','/api/channel-control/complete'].includes(url.pathname)){
