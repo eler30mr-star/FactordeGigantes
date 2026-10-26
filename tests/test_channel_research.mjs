@@ -127,3 +127,27 @@ test('legacy empty analyst checkpoint recovers only same-episode lineage and kee
  raw.prepare('UPDATE channel_episode_research SET research_run_id=? WHERE id=?').run(latest.run_id,request.request_id);
  assert.equal((await channelResearchContext(env,{request_id:request.request_id,include_checkpoint:true})).checkpoint.report.candidate_claims.length,0);
 });
+
+test('checkpoint returns observed primary excerpts only from this exact episode, topic and company',async()=>{
+ const {env,id,raw}=setup();
+ for(const p of readdirSync(new URL('../migrations/',import.meta.url)).filter(p=>p.endsWith('.sql')).sort())raw.exec(readFileSync(new URL('../migrations/'+p,import.meta.url),'utf8'));
+ const request=await dispatchChannelResearch(env,id,async()=>({status:204}));
+ const base={selected_episode_id:id,company:'BlackBerry',editorial_topic:'La pérdida de liderazgo',selected_wikidata_id:'Q100',
+  candidate_claims:[],evidence_manifest:[{id:'E001',company:'BlackBerry',wikidata_id:'Q100',
+   url:'https://corporate.example/report.pdf',source_class:'potential_official_pdf',document_sha256:'a'.repeat(64),
+   page:1,excerpt:'Una cita corporativa observada en una versión previa de este mismo episodio, pendiente de contraste independiente.'}]};
+ const insert=raw.prepare("INSERT INTO market_ai_pipeline_runs(id,collected_on,wikidata_id,status,analysis_provider,evidence_count,claims_count,report_json) VALUES (?,date('now'),'Q100','sources_only',NULL,1,0,?)");
+ const own='ai-'+'a'.repeat(28),current='ai-'+'b'.repeat(28);
+ insert.run(own,JSON.stringify(base));
+ for(const [n,change] of [{selected_episode_id:crypto.randomUUID()},{company:'Otra empresa'},{editorial_topic:'Otro enfoque'},{selected_wikidata_id:'Q200'}].entries()){
+  insert.run('ai-'+String(n+1).repeat(28),JSON.stringify({...base,...change}));
+ }
+ insert.run(current,JSON.stringify({...base,evidence_manifest:[{...base.evidence_manifest[0],source_class:'public_document_candidate'}]}));
+ raw.prepare('UPDATE channel_episode_research SET research_run_id=? WHERE id=?').run(current,request.request_id);
+ const before=raw.prepare('SELECT count(*) n FROM market_ai_pipeline_runs').get().n;
+ const context=await channelResearchContext(env,{request_id:request.request_id,include_checkpoint:true});
+ assert.equal(context.checkpoint.documentary_history.source_run_id,own);
+ assert.deepEqual(context.checkpoint.documentary_history.evidence_manifest,base.evidence_manifest);
+ assert.equal(raw.prepare('SELECT count(*) n FROM market_ai_pipeline_runs').get().n,before);
+ assert.equal((await channelResearchContext(env,{request_id:request.request_id})).checkpoint,undefined);
+});

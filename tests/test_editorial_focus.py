@@ -3,12 +3,34 @@ import json
 import subprocess
 import unittest
 from tools.ai_clients import FreeClients
-from tools.editorial_focus import review_editorial_focus, valid_focus
+from tools.editorial_focus import review_editorial_focus, valid_focus, filter_editorial_claims, focus_sha
 
 TOPIC='Por qué perdió su liderazgo y cómo cambió su negocio'
 
 
 class EditorialFocusTests(unittest.TestCase):
+    def test_filter_keeps_exact_relevant_facts_and_remaps_reviews_without_new_inference(self):
+        from test_review_support_assignment import context
+        report={**context(),'selected_episode_id':'chosen','editorial_topic':TOPIC,
+            'candidate_claims':[{'statement':f'La empresa cambió su estrategia comercial en la etapa {n}.',
+                'evidence_ids':['E001','E002'],'status':'candidate_unverified','human_verified':False} for n in range(7)],
+            'reviews':[{'claim_index':n,'assessment':'supported_by_excerpt','evidence_ids':['E001','E002'],
+                'reason':'Fixture de apoyo documental sin verificación humana.','human_verified':False} for n in range(1,8)]}
+        review={'schema':'fdg_editorial_focus_v1','status':'misaligned','topic':TOPIC,
+            'claims_sha256':focus_sha(TOPIC,report['candidate_claims']),'publication_authorized':False,
+            'judgments':[{'claim_index':n,'relevance':'off_topic' if n==3 else 'central',
+                'reason':'Juicio previo vinculado a esta afirmación concreta.'} for n in range(1,8)]}
+        report['editorial_focus_review']=review;before=copy.deepcopy(report)
+        result=filter_editorial_claims(report,TOPIC,parent_run_id='ai-'+'a'*28)
+        self.assertEqual(report,before)
+        self.assertEqual(result['candidate_claims'],[c for n,c in enumerate(before['candidate_claims'],1) if n!=3])
+        self.assertEqual([r['claim_index'] for r in result['reviews']],list(range(1,7)))
+        self.assertTrue(valid_focus(result['editorial_focus_review'],TOPIC,result['candidate_claims']))
+        self.assertFalse(result['source_quality']['all_claims_verified'])
+        self.assertEqual(result['editorial_filter']['removed_judgments'][0]['claim_index'],3)
+        review['claims_sha256']='f'*64
+        self.assertIsNone(filter_editorial_claims(report,TOPIC,parent_run_id='ai-'+'a'*28))
+
     def test_gemini_handles_editorial_work_with_its_own_reserved_role(self):
         calls=[]
         value={'judgments':[{'claim_index':n,'relevance':'central','reason':'Responde directamente a la pregunta elegida.'} for n in range(1,7)],

@@ -376,3 +376,34 @@ class BoundedContinuationTests(unittest.TestCase):
                 scriptwriter=lambda *_a,**_k:{'status':'editorial_draft_unapproved'},client_factory=lambda **_:None)
         self.assertEqual(result['state'],'review');self.assertNotIn('pending_editorial_analysis',result['research'])
         self.assertEqual(result['research']['editorial_replanning']['parent_run_id'],'ai-'+'a'*28)
+
+    def test_replanning_retains_active_citations_and_primary_history_alongside_new_sources(self):
+        import hashlib
+        report=self.saved();report['editorial_focus_review']['status']='misaligned'
+        old={'id':'E001','url':'https://reporter.example/old','excerpt':'Observed old quote',
+            'company':'BlackBerry','wikidata_id':'Q100','source_class':'public_document_candidate'}
+        report['evidence_manifest']=[old]
+        for c in report['candidate_claims']:c['evidence_ids']=['E001']
+        report['focused_analysis_binding']=hashlib.sha256(json.dumps({'profile':'chosen_topic_v2',
+            'topic':'Pérdida de liderazgo','evidence':[old]},ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+        primary={**old,'url':'https://corporate.example/report.pdf','source_class':'potential_official_pdf'}
+        control=self.setup_control(report);original=control.request
+        def request(path,body):
+            result=original(path,body)
+            if path.endswith('/context'):
+                result['checkpoint']['documentary_history']={'source_run_id':'ai-'+'c'*28,'evidence_manifest':[primary]}
+            return result
+        control.request=request
+        fresh=[{**old,'id':f'E{n:03d}','url':f'https://new{n}.example/article','excerpt':f'Fresh quote {n}'} for n in range(10)]
+        def analyze(sources,**_):
+            urls=[e['url'] for e in sources['evidence_manifest']]
+            self.assertIn(primary['url'],urls);self.assertIn(old['url'],urls);self.assertIn(fresh[0]['url'],urls)
+            self.assertEqual(len(urls),10)
+            return focused({**sources,'candidate_claims':[{'statement':'La empresa cambió su liderazgo en el mercado.','evidence_ids':['E001']}],
+                'source_quality':{'claim_gaps':[]}})
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',analyze=analyze,discover=lambda *a,**k:{'evidence_manifest':fresh},
+                scriptwriter=lambda *a,**k:{'status':'editorial_draft_unapproved'},client_factory=lambda **_:None)
+        self.assertEqual(result['state'],'review')
+        self.assertEqual(result['research']['retained_documentary_history']['retained_passages'],1)
+        self.assertTrue(all(isinstance(url,str) for url in result['research']['retrieval_history_urls']))

@@ -26,7 +26,7 @@ jobs:
       - name: Continuar episodio desde fuentes guardadas con presupuesto Gemini autorizado
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=episode-acceptance -f confirm_final_acceptance=true -f resume_directed_run=40305110189
+        run: gh workflow run topic-discovery-smoke.yml --ref main --repo "$GITHUB_REPOSITORY" -f phase=episode-acceptance -f confirm_final_acceptance=true -f resume_directed_run=40305484324
   stage-export:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[stage-export]')
     needs: [checks, audiovisual-quality, production-smoke]

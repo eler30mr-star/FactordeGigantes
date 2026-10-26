@@ -13,7 +13,7 @@ from tools.ai_research_pipeline import analyze_sources, validate_report_locally,
 from tools.documentary_script import write_script
 from tools.corroborate_research import continue_corroboration
 from tools.review_research import review_existing
-from tools.editorial_focus import review_editorial_focus, valid_focus, focus_sha
+from tools.editorial_focus import review_editorial_focus, valid_focus, focus_sha, filter_editorial_claims
 from tools.editorial_search import plan_editorial_search, valid_search_plan
 from tools.topic_discovery import property_ids, COMPANY_TYPES
 from tools.market_sources import get_json
@@ -108,6 +108,10 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
             'evidence': report.get('evidence_manifest', [])}, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
     old_focus = (report.get('editorial_focus_review') or {}) if checkpoint else {}
     pending = report.get('pending_editorial_analysis') if checkpoint else None
+    if checkpoint and not pending:
+        filtered=filter_editorial_claims(report,episode['topic'],parent_run_id=receipt['run_id'])
+        if filtered:
+            report=filtered;receipt=persist(report);old_focus=report['editorial_focus_review']
     replanning = bool(checkpoint and (pending or (old_focus.get('status') in {'misaligned', 'aligned'}
         and (old_focus.get('status') == 'misaligned' or len(report.get('candidate_claims', [])) < 6) and old_focus.get('topic') == episode['topic']
         and old_focus.get('claims_sha256') == focus_sha(episode['topic'], report.get('candidate_claims', [])))))
@@ -152,9 +156,22 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
                 persist(report)
                 return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_sources',
                     'blocking_reasons': ['need_new_relevant_documents'], 'publication_authorized': False}}
-            keys = {(e['url'], e.get('page'), e['excerpt']) for e in fresh}
-            kept = fresh + [e for e in prior['evidence_manifest'] if (e['url'], e.get('page'), e['excerpt']) not in keys]
+            active={ref for c in prior['candidate_claims'] for ref in c['evidence_ids']}
+            retained=[e for e in prior['evidence_manifest'] if e['id'] in active or
+                e['source_class'] in {'potential_official_primary','potential_official_pdf','public_authority_candidate'}]
+            primary_history=(checkpoint.get('documentary_history') or {}).get('evidence_manifest', [])[:2]
+            for e in primary_history:
+                if e.get('company')!=episode['company'] or e.get('wikidata_id')!=qid:
+                    raise ValueError('Historical document belongs to another selection')
+            kept=[];seen=set()
+            # Keep active support and an observed primary, then add new excerpts.
+            for e in [*primary_history,*retained,*fresh,*prior['evidence_manifest']]:
+                key=(e['url'],e.get('page'),e['excerpt'])
+                if key not in seen:kept.append(e);seen.add(key)
             sources['evidence_manifest'] = [{**e, 'id': f'E{n:03d}'} for n, e in enumerate(kept[:10], 1)]
+            if primary_history:
+                sources['retained_documentary_history']={'source_run_id':checkpoint['documentary_history']['source_run_id'],
+                    'retained_passages':len(primary_history)}
             if plan: sources['editorial_retrieval_plan'] = plan
         else:
             sources = {**prior, 'stages': [s for s in prior['stages']
@@ -164,7 +181,8 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
         # analyst must not replace the last candidate facts with an empty set.
         pending = {'parent_run_id': parent_run_id, 'sources': {k: sources[k] for k in (
             'schema', 'collected_on', 'selected_wikidata_id', 'company', 'evidence_manifest', 'source_documents',
-            'stages', 'retrieval_budget', 'research_targets', 'discovery_plan', 'editorial_topic', 'editorial_retrieval_plan')
+            'stages', 'retrieval_budget', 'research_targets', 'discovery_plan', 'editorial_topic', 'editorial_retrieval_plan',
+            'retained_documentary_history')
             if k in sources}}
         persist({**prior, 'pending_editorial_analysis': pending})
         report = analyze(sources, clients=clients, review_clients=client_factory(reserve=reserve))
@@ -176,6 +194,7 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
                 'blocking_reasons': ['saved_sources_await_analysis'], 'publication_authorized': False}}
         report.pop('pending_editorial_analysis', None)
         if sources.get('editorial_retrieval_plan'): report['editorial_retrieval_plan'] = sources['editorial_retrieval_plan']
+        if sources.get('retained_documentary_history'): report['retained_documentary_history'] = sources['retained_documentary_history']
         report.update(editorial_topic=episode['topic'], selected_episode_id=episode['episode_id'], **metadata)
         report['focused_analysis_binding'] = analysis_binding(report)
         report['editorial_research_questions'] = questions
@@ -189,6 +208,8 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
             report.get('editorial_focus_review'), episode['topic'], report['candidate_claims']):
         report['editorial_focus_review'] = focus_reviewer(report, episode['topic'], clients=client_factory(reserve=reserve))
         receipt = persist(report)
+        filtered=filter_editorial_claims(report,episode['topic'],parent_run_id=receipt['run_id'])
+        if filtered:report=filtered;receipt=persist(report)
         if report['editorial_focus_review']['status'] != 'aligned':
             return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_focus',
                 'blocking_reasons': ['editorial_review_unavailable' if report['editorial_focus_review']['status']=='unavailable' else 'chosen_topic_not_covered'], 'publication_authorized': False}}
@@ -249,6 +270,8 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
     if report.get('candidate_claims') and not valid_focus(report.get('editorial_focus_review'), episode['topic'], report['candidate_claims']):
         report['editorial_focus_review'] = focus_reviewer(report, episode['topic'], clients=client_factory(reserve=reserve))
         receipt = persist(report)
+        filtered=filter_editorial_claims(report,episode['topic'],parent_run_id=receipt['run_id'])
+        if filtered:report=filtered;receipt=persist(report)
     if not valid_focus(report.get('editorial_focus_review'), episode['topic'], report.get('candidate_claims', [])):
         return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_focus',
             'blocking_reasons': ['editorial_review_unavailable' if report.get('editorial_focus_review', {}).get('status')=='unavailable' else 'chosen_topic_not_covered'], 'publication_authorized': False}}

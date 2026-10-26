@@ -72,6 +72,19 @@ export async function channelResearchContext(env,body){
    }
   }
   checkpoint={run_id:r.research_run_id,report};
+  if(!report.evidence_manifest?.some(e=>['potential_official_primary','potential_official_pdf','public_authority_candidate'].includes(e.source_class))){
+   const historical=await env.DB.prepare(`SELECT id,report_json FROM market_ai_pipeline_runs
+    WHERE json_extract(report_json,'$.selected_episode_id')=? AND json_extract(report_json,'$.company')=?
+     AND json_extract(report_json,'$.editorial_topic')=? AND json_extract(report_json,'$.selected_wikidata_id')=?
+     AND EXISTS(SELECT 1 FROM json_each(report_json,'$.evidence_manifest')
+       WHERE json_extract(value,'$.source_class') IN ('potential_official_primary','potential_official_pdf','public_authority_candidate'))
+    ORDER BY rowid DESC LIMIT 1`).bind(r.episode_id,r.company,r.topic,report.selected_wikidata_id).first();
+   if(historical){
+    const primary=JSON.parse(historical.report_json).evidence_manifest.filter(e=>
+     ['potential_official_primary','potential_official_pdf','public_authority_candidate'].includes(e.source_class)).slice(0,2);
+    checkpoint.documentary_history={source_run_id:historical.id,evidence_manifest:primary};
+   }
+  }
  }
  return {ok:true,allowed,episode:r,...(body.include_checkpoint===true?{checkpoint}:{})};
 }

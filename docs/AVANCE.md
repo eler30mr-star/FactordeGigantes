@@ -1,5 +1,15 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Tres rondas reales con Gemini; conservación de hechos pertinentes y originales
+
+Aceptación 40305484324 success (CI 40305414936 aprobado). Reutilizó por SHA las respuestas de análisis y revisión de la corrida fallida, y Gemini continuó juicio editorial, análisis y revisión de dos lotes adicionales pese a Groq/Tavily sin cupo. Tras tres rondas quedaron cinco afirmaciones candidatas sobre cuota, reestructuración y ciberseguridad; una cifra de empleados fue declarada ajena al enfoque. Aún faltan contraste y fuente primaria activa. Artefacto 12641849135, ZIP 4f0f14328aa9efa686a17900c9f0aab5623b5297457d0e10baf35487e1b971e8. No hubo guion ni video nuevo.
+
+Se incorpora filtrado del juicio editorial ya vinculado: retirar solo las afirmaciones off_topic, sin reescribir hechos ni inventar un juicio nuevo, remapear índices de revisiones, recalcular vacíos y conservar el padre/descarte. La correspondencia restante debe seguir pasando el mismo contrato; menos de seis hechos sigue siendo insuficiente. El nuevo lote conserva citas activas y originales en vez de sustituirlos todos por las primeras diez citas frescas.
+
+El contexto puede recuperar hasta dos pasajes primarios ya descargados del MISMO episodio/empresa/tema/Wikidata cuando el expediente activo los perdió. Es una lectura de su historial, no investigación de otras candidatas ni nuevas fuentes suministradas por Codex. Se conserva el identificador de la versión origen, los extractos literales y sus etiquetas candidatas sin conceder verificaciones. El historial de URLs fallidas se conserva separado de esos pasajes.
+
+90 pruebas Python enfocadas aprobadas. Los contratos prueban filtrado sin mutación, SHA/índices, conservación de apoyo/original junto a evidencia nueva e historial aislado de otros episodios/empresas/enfoques. Suite Node completa en comprobación; CI y siguiente aceptación desde 40305484324 pendientes de verificación. No se altera la voz ni la autorización humana.
+
 ## 2026-10-26 · Respuestas reales Gemini conservadas al corregir etapas del checkpoint
 
 CI 40305049348 aprobado para 78c55a9. La aceptación 40305110189 ejecutó Gemini real para análisis (3.026 entrada/378 salida) y revisión (3.653 entrada/1.269 salida), tras reserva Groq denegada; ambas respuestas quedaron guardadas. La validación posterior rechazó el informe por acumulación de etapas antiguas en las fuentes pendientes. Artefacto 12642156031, ZIP fd156f615cbc2f8e7c86d9d8d7a5d389c061d09c90a37ee44a6ce8f8046ea565. No se produjo un guion.

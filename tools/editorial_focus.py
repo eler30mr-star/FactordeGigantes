@@ -5,6 +5,7 @@ This evaluates relevance, never truth, rights or publication authorization.
 import hashlib
 import json
 import math
+import copy
 from tools.ai_clients import ProviderError, readiness
 
 
@@ -27,6 +28,39 @@ def valid_focus(review, topic, claims):
         and not any(r.get('relevance') == 'off_topic' for r in review['judgments'])
         and sum(r.get('relevance') == 'central' for r in review['judgments']) >= math.ceil(len(claims) / 2)
         and len(claims) > 0)
+
+
+def filter_editorial_claims(report, topic, *, parent_run_id):
+    """Keep exact relevant facts and judgments; preserve removals in the parent."""
+    review = report.get('editorial_focus_review') or {}
+    claims = report.get('candidate_claims', [])
+    rows = review.get('judgments')
+    if (review.get('schema')!='fdg_editorial_focus_v1' or review.get('status')!='misaligned'
+            or review.get('topic')!=topic or review.get('claims_sha256')!=focus_sha(topic,claims)
+            or review.get('publication_authorized') is not False or not isinstance(rows,list)
+            or len(rows)!=len(claims) or any(not isinstance(r,dict) for r in rows)):
+        return None
+    indices=[r.get('claim_index') for r in rows]
+    if (any(type(n) is not int for n in indices) or sorted(indices)!=list(range(1,len(claims)+1))
+            or any(r.get('relevance') not in {'central','supporting','off_topic'}
+                or not isinstance(r.get('reason'),str) or not 10<=len(r['reason'])<=300 for r in rows)):
+        return None
+    kept=sorted(r['claim_index'] for r in rows if r['relevance']!='off_topic')
+    if not kept or len(kept)==len(claims):return None
+    remap={old:new for new,old in enumerate(kept,1)}
+    out=copy.deepcopy(report)
+    out['candidate_claims']=[out['candidate_claims'][old-1] for old in kept]
+    out['reviews']=[{**r,'claim_index':remap[r['claim_index']]} for r in out.get('reviews',[]) if r['claim_index'] in remap]
+    out['editorial_focus_review']={**review,'status':'aligned',
+        'claims_sha256':focus_sha(topic,out['candidate_claims']),
+        'judgments':[{**r,'claim_index':remap[r['claim_index']]} for r in sorted(rows,key=lambda r:r['claim_index']) if r['claim_index'] in remap],
+        'derivation':'subset_of_bound_judgments_v1','parent_claims_sha256':review['claims_sha256']}
+    if not valid_focus(out['editorial_focus_review'],topic,out['candidate_claims']):return None
+    from tools.ai_research_pipeline import evidence_gaps
+    out['source_quality']=evidence_gaps(out['evidence_manifest'],out['candidate_claims'])
+    out['editorial_filter']={'parent_run_id':parent_run_id,'previous_claims_sha256':review['claims_sha256'],
+        'removed_judgments':[r for r in rows if r['relevance']=='off_topic'],'statements_rewritten':False}
+    return out
 
 
 def review_editorial_focus(report, topic, *, clients):

@@ -118,6 +118,8 @@ def main():
         audit['retrieval_budget'] = report.get('retrieval_budget')
         audit['editorial_source_attempt'] = report.get('editorial_source_attempt')
         audit['editorial_retrieval_plan'] = report.get('editorial_retrieval_plan')
+        audit['editorial_filter'] = report.get('editorial_filter')
+        audit['retained_documentary_history'] = report.get('retained_documentary_history')
         audit['source_classes'] = {kind: sum(e['source_class'] == kind for e in report.get('evidence_manifest', []))
             for kind in ('potential_official_primary', 'potential_official_pdf', 'public_document_candidate', 'public_authority_candidate')}
         print('ACEPTACION_EPISODIO:', json.dumps(audit, ensure_ascii=False))
