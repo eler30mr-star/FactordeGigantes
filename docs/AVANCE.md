@@ -1,5 +1,18 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Continuación Gemini desplegada y aceptación actual conservada
+
+CI [40308145631](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40308145631) aprobado para 8423c1f. La prueba [40308206020](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40308206020) intentó nuevos originales públicos con títulos y contexto de referencias. No aportaron nuevos pasajes, por lo que el runner preservó los cinco candidatos pertinentes, diez pasajes, siete documentos/dominios y una fuente primaria candidata, y ejecutó cero inferencias adicionales. No existe todavía guion ni video aceptado de este recorrido.
+
+[Artefacto actual 12642864174](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40308206020/artifacts/12642864174), ZIP `fb27214b2f68e81ed226a1756a6f25ce80c08f51a51315ee21d9e3dbe8a04c83`, 155.702 bytes, siete días. Continuar con `resume_directed_run=40308206020`. Persistencia editorial en SQLite aislado, presupuestos D1 reales; no confundir con aprobación ni con un episodio del propietario en producción.
+
+Deployment Cloudflare `d0362261-0f69-49a5-ad3f-a76595caba3e`, versión `d386a999-2526-497f-8165-d8b33753d9fc`, al 100 %. El script servido confirma historial documental del episodio, contrato ampliado de etapas de revisión y Gemini [100,3000]. Consulta D1 de solo lectura confirmó Gemini 22/100, Groq 4/4 y Tavily 8/8 el 2026-10-26; cero escrituras. La última prueba no elevó ese consumo. El bloqueo actual es cobertura/contraste y recuperación de documentos, no agotamiento del presupuesto Gemini.
+
+Se retira el disparador temporal y se actualizan guía, panel, plan y aceptación. El sistema asigna a Gemini análisis, enfoque, planificación de búsquedas y guion; puede respaldar la revisión Groq sin convertir un juicio de IA en corroboración independiente. Las citas activas/originales y las versiones de hechos descartados se conservan, sin reescribir afirmaciones ni dar permisos. Pruebas locales: 90 Python en el bloque de roles/retención y 49 en el de recuperación (con pruebas compartidas), 168 Node aprobados; CI completo aprobado.
+
+Siguiente objetivo concreto: completar los hechos pertinentes y su apoyo documental antes de generar el guion; conservar los cinco candidatos y trabajar únicamente sobre esta empresa/enfoque. Tavily conserva por ahora el presupuesto 8/200. Automático, pausa general, revisión factual/derechos, render canónico y publicación mantienen sus controles. Ambos modos hasta video y la aceptación del panel por el propietario siguen pendientes.
+
+
 ## 2026-10-26 · Cinco afirmaciones pertinentes y originales conservados; contexto de referencias para dirigir lecturas
 
 Run 40306828485 success, CI 40306767114 aprobado. Gemini completó tres rondas reales y la depuración conservó cinco afirmaciones clasificadas como centrales/de contexto. El expediente mantiene diez pasajes de siete documentos/dominios y una fuente primaria candidata; los cinco hechos todavía necesitan contraste y la cobertura mínima aún no alcanza seis. Artefacto 12643341530, ZIP 61245ab1ceb1abefec9ed34513311fcb31e7667b6dfea8db5924959ec45792b3. Son candidatos, sin guion ni video aceptados. 168 contratos Node aprobados.

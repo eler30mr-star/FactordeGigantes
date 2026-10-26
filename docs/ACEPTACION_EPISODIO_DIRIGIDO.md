@@ -1,6 +1,18 @@
 # Aceptación real del episodio dirigido — 2026-10-26
 
-## Estado actual: recuperación guardada para continuar el análisis
+## Estado actual: Gemini ejecuta análisis y revisión; cobertura y contraste pendientes
+
+El código 78c55a9 conectó la revisión de respaldo Gemini conservando las mismas matrices y referencias. La primera ejecución 40305110189 produjo análisis/revisión reales, pero una acumulación de etapas históricas impidió guardar el informe. La corrección 869f3dd permitió a 40305484324 reutilizar las dos respuestas por SHA y continuar tres rondas, sin repetir esas inferencias.
+
+La ejecución [40306828485](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40306828485) validó el filtrado de hechos ajenos y la conservación de originales. Quedaron **cinco afirmaciones candidatas pertinentes**, diez pasajes de siete documentos/dominios y una fuente primaria candidata. Cada hecho aún necesita contraste; no se generó guion ni video válidos.
+
+La ejecución [40308206020](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40308206020) comprobó la lectura con títulos/contexto observados de referencias. Sus nuevas descargas no aportaron evidencia, por lo que ejecutó **cero inferencias**, conservó los candidatos y se detuvo. El texto de Wikipedia solo prioriza originales; las citas factuales siguen siendo ventanas literales de los archivos descargados.
+
+**Checkpoint actual:** `resume_directed_run=40308206020`. [Artefacto 12642864174](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40308206020/artifacts/12642864174), ZIP SHA-256 `fb27214b2f68e81ed226a1756a6f25ce80c08f51a51315ee21d9e3dbe8a04c83`, retención siete días. Incluye SQLite, versiones, fuentes y respuestas. Continúa siendo persistencia editorial aislada con presupuestos D1 reales; no un episodio de producción aprobado por el propietario.
+
+CI 40308145631 aprobado para 8423c1f. El Worker servido confirma el contexto histórico del episodio, las etapas explícitas de revisión y Gemini [100,3000]. La consulta D1 posterior a las pruebas comprobó Gemini 22, Groq 4, Tavily 8 solicitudes del día. El próximo objetivo es conseguir apoyo documental suficiente para los hechos y ampliar la cobertura antes del guion. No reactivar campañas ni conceder aprobaciones humanas a partir de estos resultados.
+
+## Historial: recuperación guardada para continuar el análisis
 
 Las ejecuciones [40267281452](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40267281452), [40267672911](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40267672911) y [40268588521](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40268588521) comprobaron búsqueda, límites y recuperación del mismo episodio. La búsqueda inglesa planificada por Groq recuperó pasajes nuevos; Gemini obtuvo cuatro afirmaciones candidatas, todavía con cobertura insuficiente y un detalle de producto ajeno. No se aceptó el guion. La continuación llegó a tres rondas; al agotarse las reservas, el último analista no pudo completar otro lote.
 

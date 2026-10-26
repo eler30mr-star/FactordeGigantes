@@ -13,10 +13,14 @@ guion/publicación. El narrador canónico no cambia.
 | Exa | Ampliar descubrimiento semántico | Dos búsquedas, sin Contents/Agent/Answer/Monitors, con clave y modalidad gratuita confirmada |
 | Cloudflare AI | Clasificar pasajes como documentales, promocionales o inciertos | Una inferencia por binding AI, solo si el modo gratuito fue confirmado en el Worker |
 | Qwen3-0.6B local | Extracción preliminar y respaldo del analista | Una inferencia CPU con cuatro pasajes; sin clave ni API pagada |
-| Gemini 3.8 Flash | Analista principal del expediente | Una llamada, sin grounding ni herramientas externas cobrables |
+| Gemini 3.5 Flash-Lite | Análisis, enfoque editorial, búsquedas y guion; respaldo de revisión documental | Una inferencia por cliente y función, cada una con reserva; sin grounding ni herramientas cobrables |
 | Mistral Small | Alternativa del analista | Solo si Gemini no entrega afirmaciones válidas; modelo/acceso sujetos al plan de la cuenta |
 | OpenRouter free | Última alternativa remota | Solo si lo anterior falla; router `openrouter/free`, precio máximo de entrada/salida cero, sin plugins |
-| Groq GPT-OSS-120B | Revisar afirmaciones contra los extractos | Una llamada si existen afirmaciones; no usa Browser Search ni Compound |
+| Groq GPT-OSS-120B | Primer revisor de afirmaciones contra los extractos | Una llamada si hay disponibilidad; Gemini puede respaldarlo; sin Browser Search ni Compound |
+
+**Distribución vigente (2026-10-26):** Gemini realiza el análisis, la revisión del enfoque y el guion con clientes separados y reservas individuales. Si Groq no tiene cupo o disponibilidad, Gemini puede ejecutar la misma revisión por pasaje con rol `review`. La coincidencia entre funciones del mismo modelo no es corroboración independiente: siguen haciendo falta documentos originales y emisores distintos, sin aprobar hechos ni derechos automáticamente. Un análisis exitoso no sustituye una etapa de revisión explícita.
+
+La reanudación conserva citas activas y originales del mismo episodio. Puede retirar únicamente hechos que un juicio editorial vinculado marque como ajenos, conservándolos en la versión padre. Wikipedia aporta URLs, títulos y contexto para priorizar lecturas; solo el texto literal de los documentos descargados entra en las citas factuales.
 
 Si las alternativas remotas no están disponibles, se reutiliza la extracción
 Qwen; no se carga un segundo modelo ni se repite su inferencia. La clasificación

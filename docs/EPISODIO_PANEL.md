@@ -18,3 +18,5 @@ Si aparece **Retomar el enfoque elegido**, abre las preguntas faltantes: el sist
 Un límite configurado de solicitudes IA conserva fuentes, hechos y preguntas. Podrás reanudar cuando haya cupo. Ese bloqueo no significa que el guion esté aprobado.
 
 La investigación puede avanzar hasta tres rondas guardadas en una misma ejecución. Se detiene ante un borrador, una pausa, límites de solicitudes, un fallo de proveedor o falta de evidencia nueva. Si un análisis falla después de recuperar documentos, conserva las afirmaciones anteriores y el nuevo lote por separado. **Reanudar el análisis** trabaja primero con ese lote guardado; el sistema no habilita el guion mientras esté pendiente.
+
+Antes del guion, el sistema puede retirar hechos que la revisión marque como ajenos al tema y conserva su versión anterior. Las ampliaciones mantienen citas útiles y originales ya descargados del mismo episodio. Si no aparece evidencia nueva, se detiene sin repetir el análisis; el bloqueo indica que faltan documentos para completar la explicación o el contraste.
