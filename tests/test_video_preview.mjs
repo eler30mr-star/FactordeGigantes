@@ -107,3 +107,16 @@ test('panel mounts real video controls after preparation and releases Blob on re
  await button.events.click();assert.equal(video.src,'blob:local-preview');assert.equal(video.hidden,false);
  assert.match(status.textContent,/pendientes/);assert.equal(urls.length,1);cleanup();assert.equal(revoked,'blob:local-preview');
 });
+
+test('decoder errors allow preparing the same file again and release the previous Blob',async()=>{
+ const f=await fixture(),root=new Node(),revoked=[];let created=0,downloads=0;
+ const dispose=mountVideoPreview(root,{id:f.id,title:'Muestra de reproducción'},{documentRef:{createElement(){return new Node();}},
+  urlApi:{createObjectURL(){return 'blob:preview-'+(++created);},revokeObjectURL(url){revoked.push(url);}},
+  fetchArchive:async()=>{downloads++;return new Response(f.zip,{headers:{'X-Archive-Bytes':String(f.zip.length),'X-Archive-SHA256':f.digest,'X-Video-Bytes':String(f.movie.length)}});}});
+ const [button,status,video]=root.children;
+ await button.events.click();assert.equal(button.hidden,true);
+ video.events.error();assert.equal(button.hidden,false);assert.match(status.textContent,/sin regenerar/);
+ await button.events.click();assert.equal(downloads,2);assert.equal(video.src,'blob:preview-2');assert.deepEqual(revoked,['blob:preview-1']);
+ dispose();assert.deepEqual(revoked,['blob:preview-1','blob:preview-2']);
+ const old=status.textContent;video.events.error();assert.equal(status.textContent,old);
+});

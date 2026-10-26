@@ -1,5 +1,17 @@
 name: FDG - registrar episodio narrado terminado
 on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'Ejecución del MP4 ya terminado; nunca inicia otro montaje'
+        type: string
+        required: true
+      job_id:
+        type: string
+        required: true
+      delivery_request_id:
+        type: string
+        required: true
   workflow_run:
     workflows: ['FDG - episodio completo de desarrollo']
     types: [completed]
@@ -7,15 +19,16 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: fdg-register-${{ github.event.workflow_run.id }}
+  group: fdg-register-${{ inputs.source_run_id || github.event.workflow_run.id }}
   cancel-in-progress: false
 jobs:
   register:
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'eler30mr-star/FactordeGigantes') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main' &&
       github.event.workflow_run.event == 'workflow_dispatch' &&
-      github.event.workflow_run.repository.full_name == 'eler30mr-star/FactordeGigantes'
+      github.event.workflow_run.repository.full_name == 'eler30mr-star/FactordeGigantes')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -27,11 +40,28 @@ jobs:
         with:
           python-version: '3.12'
       - name: Registrar el MP4 existente para reproducir y revisar en el panel
+        id: registration
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id || github.event.workflow_run.id }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
         run: |
           [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]
           python -m tools.youtube_delivery register "$SOURCE_RUN_ID" --out dist/review --if-narrated
+      - name: Confirmar recuperación o dejar el registro disponible para reintento
+        if: always() && github.event_name == 'workflow_dispatch'
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+          DELIVERY_JOB_ID: ${{ inputs.job_id }}
+          DELIVERY_REQUEST_ID: ${{ inputs.delivery_request_id }}
+          DELIVERY_STATUS: ${{ steps.registration.outcome == 'success' && 'ready' || 'failed' }}
+        run: |
+          python - <<'PY'
+          import os
+          from tools.production_job import ProductionClient
+          ProductionClient().request(os.environ['DELIVERY_JOB_ID'],'video-registration',{
+              'request_id':os.environ['DELIVERY_REQUEST_ID'],'status':os.environ['DELIVERY_STATUS']})
+          print('REGISTRO_DEL_VIDEO:',os.environ['DELIVERY_STATUS'],'NUEVAS_INFERENCIAS: 0')
+          PY

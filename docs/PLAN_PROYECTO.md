@@ -95,6 +95,8 @@ La portada debe responder: **qué video se está haciendo, por qué se eligió, 
 
 Resolver entrega autenticada del MP4, permisos, reproducción parcial y conservación suficiente para la revisión. Mostrar disponibilidad y caducidad reales y un error recuperable cuando falte el archivo. No mostrar un montaje técnico como video final aceptado.
 
+**Recuperación implementada — 2026-10-26:** un montaje terminado cuyo registro falló puede recuperarse desde el episodio, reutilizando el MP4 y sus huellas/run. La reserva y los callbacks evitan duplicados y resultados obsoletos; no se reejecutan las IA ni la voz. El reproductor permite reintentar la preparación del archivo y descarta la vista previa al cambiar de episodio. La comprobación de reproducción/audio/desplazamiento se incorpora a CI mediante una muestra sintética claramente identificada; no acredita un nuevo episodio autónomo.
+
 ## 5. Límites que corrigen el desvío
 
 - No investigar, extraer PDFs o armar expedientes de todas las empresas antes de elegir el episodio.

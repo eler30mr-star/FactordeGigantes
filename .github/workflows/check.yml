@@ -8,7 +8,7 @@ permissions:
 jobs:
   audiovisual-quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,6 +28,17 @@ jobs:
         run: |
           python -m pip install 'Pillow==11.3.0'
           python -m unittest tests.test_av_quality tests.test_episode_engine -v
+      - name: Comprobar reproducción, audio, pausa, desplazamiento y recuperación en Chromium sin IA
+        run: |
+          python -m pip install 'playwright==1.56.0'
+          python -m tools.browser_video_acceptance --out dist/browser-acceptance
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fdg-browser-player-acceptance
+          path: dist/browser-acceptance/
+          retention-days: 7
+          if-no-files-found: warn
   production-smoke:
     needs: [checks, audiovisual-quality]
     runs-on: ubuntu-latest

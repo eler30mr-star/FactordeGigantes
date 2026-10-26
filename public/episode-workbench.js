@@ -11,6 +11,7 @@ export function mountEpisodeWorkbench(root,{request,openDossier,openExport,fetch
  status.setAttribute('role','status');stages.className='episode-stages';actions.className='actions';
  root.replaceChildren(status,stages,actions,script,video);
  let current=null,timer=null,generation=0,busy=false,videoId=null,cleanup=null,scriptJob=null;
+ const clearVideo=()=>{cleanup?.();cleanup=null;videoId=null;video.replaceChildren();};
  const stop=()=>{if(timer!==null)cancel(timer);timer=null;};
  function button(label,callback,enabled=true){
   const b=el('button',label);b.type='button';b.disabled=!enabled||busy;actions.append(b);
@@ -33,7 +34,9 @@ export function mountEpisodeWorkbench(root,{request,openDossier,openExport,fetch
   };
  }
  async function load(episode){
-  stop();const epoch=++generation;current=episode;
+  stop();const epoch=++generation;
+  if(current?.id!==episode?.id){clearVideo();scriptJob=null;script.replaceChildren();}
+  current=episode;
   if(!episode){status.textContent='Indica una empresa y un tema por chat para comenzar.';stages.replaceChildren();actions.replaceChildren();scriptJob=null;script.replaceChildren();cleanup?.();cleanup=null;videoId=null;video.replaceChildren();return;}
   try{
    const data=await request('/api/channel-control/progress?episode_id='+encodeURIComponent(episode.id));
@@ -60,6 +63,16 @@ export function mountEpisodeWorkbench(root,{request,openDossier,openExport,fetch
      if(['dispatch','retry-render'].includes(action)&&!confirmAction('¿Autorizas la narración y el montaje de este episodio con la voz canónica?'))return;
      await request('/api/jobs/'+encodeURIComponent(data.job.id)+'/'+action,'POST',action==='approve'?{confirmed:true}:{});
     });
+   }
+   if(data.next_step==='recover_video')button('Recuperar video terminado',async()=>{
+    const result=await request('/api/channel-control/recover-video','POST',{episode_id:episode.id});
+    if(!result.started&&!result.reused)throw Error(result.reason==='dispatch_unknown'?
+     'Envío incierto. Revisa Actions antes de repetir.':'El registro ya está solicitado. Espera su resultado.');
+   });
+   if(data.next_step==='check_video_delivery'){
+    const link=el('a','Comprobar registro del video en Actions');
+    link.href='https://github.com/eler30mr-star/FactordeGigantes/actions/workflows/register-finished-episode.yml';
+    link.target='_blank';link.rel='noopener noreferrer';actions.append(link);
    }
    if(data.preview){
     if(videoId!==data.preview.export_id){

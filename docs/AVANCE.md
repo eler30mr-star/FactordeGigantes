@@ -1,5 +1,17 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Recuperación del video terminado y aceptación del reproductor en navegador
+
+El propietario pide completar el recorrido hasta el video en el panel. Se corrige un bloqueo de entrega: si el registro posterior al montaje fallaba, el panel permanecía esperando sin ofrecer una acción. Ahora ofrece recuperar el video terminado usando exclusivamente el job, SHA y run asociados al episodio; nunca vuelve a ejecutar búsqueda, investigación, guion, TTS ni render.
+
+La recuperación reserva su envío atómicamente en events y despacha el workflow de registro existente, en main. Una solicitud activa no se duplica, un despacho incierto queda pendiente de comprobar, y un fallo confirmado permite reintentar. Los callbacks sólo admiten RENDERER_TOKEN, deben corresponder a la solicitud actual y no pueden declarar listo un video que aún no tenga el registro exacto. ADMIN solicita la recuperación, sin asumir la función del renderer. No se cambian presupuestos ni se añaden límites de IA.
+
+El reproductor permite volver a preparar el mismo archivo tras un error del navegador y libera el Blob anterior. Al cambiar de episodio se retira inmediatamente la vista previa anterior, antes de esperar la respuesta de la nueva selección.
+
+Pruebas locales: 180 contratos Node y 37 Python aprobados, más sintaxis JS/Python y YAML. Incluyen HTTP ADMIN/renderer, solicitudes simultáneas, recuperación del mismo MP4, callback obsoleto, resultado incierto y limpieza de vista previa. Se agrega aceptación de navegador con MP4 sintético explícito de seis segundos: decodificación, audio medido, pausa, desplazamiento, caducidad, reintento y liberación de Blob. El contenedor local no permite arrancar Chromium; esa aceptación se ejecutará en el job audiovisual de CI, con todas las peticiones interceptadas y cero modelos. No se presenta la muestra como narración canónica ni como episodio terminado.
+
+CI, navegador y despliegue pendientes al registrar esta entrada. Continúa pendiente la aceptación de producción de un episodio seleccionado por estudio o indicado por el propietario, con investigación, voz canónica y video; no se activa la pausa existente ni se fabrica una aprobación editorial/publicación.
+
 ## 2026-10-26 · Estudio acotado y motivos visibles antes de gastar más consultas
 
 Se corrigen tres fallos del estudio YouTube: con cero videos observados todavía podía solicitar una propuesta a IA; una coincidencia parcial como Palm dentro de Palmolive podía pasar la validación inicial; y se pedían comparaciones habituales de canales aun cuando la muestra final no reunía condiciones necesarias de selección.

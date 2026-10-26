@@ -59,7 +59,7 @@ export function mountVideoPreview(root,row,{fetchArchive,documentRef=document,ur
  video.setAttribute('aria-label',row.title);root.append(button,status,video);
  let objectUrl=null,controller=null,disposed=false;
  button.addEventListener('click',async()=>{
-  if(disposed)return;button.disabled=true;controller=new AbortController();
+  if(disposed||button.disabled)return;button.disabled=true;controller=new AbortController();
   try{
    status.textContent='Preparando el video para revisión…';
    const response=await fetchArchive('/api/youtube/exports/'+row.id+'/preview',{signal:controller.signal});
@@ -71,11 +71,15 @@ export function mountVideoPreview(root,row,{fetchArchive,documentRef=document,ur
    const blob=await extractPreview(zip,{archiveHash:response.headers.get('X-Archive-SHA256'),videoHash:row.id,
     videoBytes:Number(response.headers.get('X-Video-Bytes')),signal:controller.signal});
    if(disposed)return;
+   if(objectUrl)urlApi.revokeObjectURL(objectUrl);
    objectUrl=urlApi.createObjectURL(blob);video.src=objectUrl;video.hidden=false;button.hidden=true;
    status.textContent='Video listo para reproducir. Su revisión y aprobación siguen pendientes.';
   }catch(e){if(!disposed)status.textContent=e.name==='AbortError'?'Preparación cancelada.':e.message;}
   finally{if(!disposed)button.disabled=false;}
  });
- video.addEventListener('error',()=>{status.textContent='El navegador no pudo reproducir el MP4. Conserva la opción de descarga.';});
+ video.addEventListener('error',()=>{if(disposed)return;
+  button.hidden=false;button.textContent='Volver a preparar el video';
+  status.textContent='El navegador no pudo reproducir el MP4. Puedes volver a preparar el archivo sin regenerar el episodio.';
+ });
  return ()=>{disposed=true;controller?.abort();video.pause();video.removeAttribute('src');video.load();if(objectUrl)urlApi.revokeObjectURL(objectUrl);};
 }

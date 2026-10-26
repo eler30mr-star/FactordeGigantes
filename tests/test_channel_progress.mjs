@@ -5,6 +5,7 @@ import {readFileSync,readdirSync} from 'node:fs';
 import {channelProgress,completeChannelEpisode} from '../src/channel-progress.mjs';
 import {receiveChannelInstruction} from '../src/channel-control.mjs';
 import {mountEpisodeWorkbench} from '../public/episode-workbench.js';
+import {recoverEpisodeVideo,reportEpisodeDelivery,episodeDeliveryStatus} from '../src/episode-delivery.mjs';
 import worker from '../src/worker.js';
 
 function setup(){
@@ -57,13 +58,72 @@ test('episode progress exposes the next real action and does not claim provider/
 
 test('preview is associated by exact job event, video hash AND run; unrelated export never appears',async()=>{
  const f=setup();f.research();f.job('ready');f.video('999');
- let p=await channelProgress(f.env,f.id);assert.equal(p.preview,null);assert.equal(p.next_step,'wait');
+ let p=await channelProgress(f.env,f.id);assert.equal(p.preview,null);assert.equal(p.next_step,'recover_video');
  f.raw.exec("UPDATE youtube_exports SET source_run_id='123'");p=await channelProgress(f.env,f.id);
  assert.equal(p.preview.export_id,f.hash);assert.equal(p.next_step,'review_video');
  f.raw.exec("UPDATE youtube_exports SET state='approved'");assert.equal((await channelProgress(f.env,f.id)).next_step,'upload_video');
  f.raw.exec("UPDATE youtube_exports SET state='uploaded'");assert.equal((await channelProgress(f.env,f.id)).next_step,'publish_video');
  f.publish('unknown');p=await channelProgress(f.env,f.id);assert.equal(p.next_step,'check_publication');assert.equal(p.steps[5].state,'blocked');
  assert.equal((await completeChannelEpisode(f.env,{episode_id:f.id,confirmed:true})).status,409);
+});
+
+function finishedWithoutRegistration(){
+ const f=setup();f.research();f.job('ready');f.video();f.raw.exec('DELETE FROM youtube_exports');
+ f.env.GITHUB_REPO='eler30mr-star/FactordeGigantes';f.env.GITHUB_DISPATCH_TOKEN='local-delivery-test-token-000000';
+ return f;
+}
+
+test('HTTP recovery reserves once, only dispatches registration of the selected episode, and exposes completion',async()=>{
+ const f=finishedWithoutRegistration(),previous=globalThis.fetch,calls=[];
+ globalThis.fetch=async(url,options)=>{
+  assert.match(url,/\/register-finished-episode\.yml\/dispatches$/);
+  const payload=JSON.parse(options.body);calls.push(payload);
+  assert.equal(payload.ref,'main');assert.equal(payload.inputs.source_run_id,'123');assert.equal(payload.inputs.job_id,f.jobId);
+  return new Response(null,{status:204});
+ };
+ const send=(token,path,body)=>worker.fetch(new Request('https://factor.test'+path,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)}),f.env);
+ try{
+  assert.equal((await send(f.env.RENDERER_TOKEN,'/api/channel-control/recover-video',{episode_id:f.id})).status,401);
+  const recover=()=>send(f.env.ADMIN_TOKEN,'/api/channel-control/recover-video',{episode_id:f.id});
+  const results=await Promise.all([recover(),recover()]);
+  assert.equal((await results[0].json()).started,true);assert.equal((await results[1].json()).started,false);assert.equal(calls.length,1);
+  assert.equal((await channelProgress(f.env,f.id)).next_step,'wait');
+  const requestId=calls[0].inputs.delivery_request_id;
+  assert.equal((await send(f.env.ADMIN_TOKEN,'/api/renderer/jobs/'+f.jobId+'/video-registration',{request_id:requestId,status:'ready'})).status,401);
+  assert.equal((await reportEpisodeDelivery(f.env,f.jobId,{request_id:requestId,status:'ready'})).status,409);
+  f.raw.prepare("INSERT INTO youtube_exports(id,source_run_id,artifact_id,archive_sha256,video_bytes,episode_json,export_json,metadata_json) VALUES(?,'123','456',?,20000,'{}','{}','{}')").run(f.hash,'b'.repeat(64));
+  assert.equal((await send(f.env.RENDERER_TOKEN,'/api/renderer/jobs/'+f.jobId+'/video-registration',{request_id:requestId,status:'ready'})).status,200);
+  assert.equal((await channelProgress(f.env,f.id)).next_step,'review_video');
+  assert.equal((await recoverEpisodeVideo(f.env,f.id)).reused,true);assert.equal(calls.length,1);
+  assert.equal(f.raw.prepare("SELECT count(*) n FROM events WHERE action='render_dispatched'").get().n,0);
+ }finally{globalThis.fetch=previous;f.raw.close();}
+});
+
+test('failed delivery can retry the same MP4 and stale callbacks cannot release a newer request',async()=>{
+ const f=finishedWithoutRegistration(),fetcher=async()=>new Response(null,{status:204});
+ try{
+  const first=await recoverEpisodeVideo(f.env,f.id,fetcher);
+  await reportEpisodeDelivery(f.env,f.jobId,{request_id:first.request_id,status:'failed'});
+  assert.equal((await channelProgress(f.env,f.id)).next_step,'recover_video');
+  for(let attempt=2;attempt<=4;attempt++){
+   const next=await recoverEpisodeVideo(f.env,f.id,fetcher);assert.equal(next.started,true);
+   assert.equal((await reportEpisodeDelivery(f.env,f.jobId,{request_id:first.request_id,status:'failed'})).status,409);
+   assert.equal((await episodeDeliveryStatus(f.env.DB,f.jobId)).state,'sent');
+   await reportEpisodeDelivery(f.env,f.jobId,{request_id:next.request_id,status:'failed'});
+  }
+  assert.equal((await recoverEpisodeVideo(f.env,f.id,fetcher)).started,true);
+  assert.equal(f.raw.prepare("SELECT count(*) n FROM events WHERE action='episode_delivery_requested'").get().n,5);
+ }finally{f.raw.close();}
+});
+
+test('uncertain dispatch blocks blind repetition; unfinished or unrelated episodes never dispatch registration',async()=>{
+ const f=finishedWithoutRegistration();let calls=0;
+ try{
+  assert.equal((await recoverEpisodeVideo(f.env,crypto.randomUUID(),()=>assert.fail())).status,409);
+  const result=await recoverEpisodeVideo(f.env,f.id,async()=>{calls++;throw Error('local network substitute');});
+  assert.equal(result.reason,'dispatch_unknown');assert.equal((await channelProgress(f.env,f.id)).next_step,'check_video_delivery');
+  assert.equal((await recoverEpisodeVideo(f.env,f.id,()=>assert.fail())).started,false);assert.equal(calls,1);
+ }finally{f.raw.close();}
 });
 
 test('closing needs the exact confirmed publication, is idempotent and frees the next episode slot',async()=>{
@@ -126,4 +186,23 @@ test('workbench refreshes active work, stops when disposed and disables paused r
  next='resume_research';paused=true;await mounted.load(episode);assert.equal(cancelled,1);
  assert.equal(root.children[2].children[0].textContent,'Reanudar desde el guion');assert.equal(root.children[2].children[0].disabled,true);
  mounted.dispose();
+});
+
+test('workbench recovery requests registration only and changing episode immediately clears the old preview',async()=>{
+ const root=new Element(),first={id:crypto.randomUUID()},second={id:crypto.randomUUID()},calls=[];
+ let pending,hold=false,next='recover_video';
+ const mounted=mountEpisodeWorkbench(root,{documentRef:doc,request:async(path,method,body)=>{
+  calls.push({path,method,body});
+  if(method==='POST')return {ok:true,started:true};
+  if(hold)return new Promise(resolve=>{pending=resolve;});
+  return {episode:first,steps:[],message:'Montaje terminado',next_step:next};
+ },refresh:async()=>{},schedule:()=>1,cancel:()=>{}});
+ await mounted.load(first);
+ const recover=root.children[2].children[0];assert.equal(recover.textContent,'Recuperar video terminado');
+ await recover.listeners.click();
+ assert.deepEqual(calls.find(c=>c.method==='POST'),{path:'/api/channel-control/recover-video',method:'POST',body:{episode_id:first.id}});
+ root.children[4].append(new Element('video'));hold=true;
+ const loading=mounted.load(second);assert.equal(root.children[4].children.length,0);
+ pending({episode:second,steps:[],message:'Nueva elección',next_step:'start_research',action_enabled:false});
+ await loading;mounted.dispose();
 });

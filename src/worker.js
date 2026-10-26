@@ -4,6 +4,7 @@ import {beginOpportunityStudy,finishOpportunityStudy,checkOpportunityStudy,failO
 import {videoPreview} from './video-preview.mjs';
 import {channelStatus,setAutomaticMode,receiveChannelInstruction,automaticGate} from './channel-control.mjs';
 import {channelProgress,completeChannelEpisode} from './channel-progress.mjs';
+import {recoverEpisodeVideo,reportEpisodeDelivery} from './episode-delivery.mjs';
 import {readEpisodeInput,acceptEpisodeExport,failEpisodeExport,previewFromEvents} from './episode-production.mjs';
 import {readProductionProgress} from './production-progress.mjs';
 import {youtubeConnectionStatus,startYoutubeConnection,finishYoutubeConnection,disconnectYoutube} from './youtube-connection.mjs';
@@ -165,6 +166,11 @@ async function handle(request,env) {
     return err("Acceso no autorizado",401);
   }
   if (!env.DB) return err("D1 no configurado",503);
+  if(!renderer&&url.pathname==='/api/channel-control/recover-video'){
+    if(method!=='POST')return err('Método no admitido',405);
+    try{const result=await recoverEpisodeVideo(env,(await parseBody(request)).episode_id);return json(result,result.ok?200:result.status);}
+    catch(e){if(e instanceof RangeError)return err('Episodio inválido',400);throw e;}
+  }
   if(!renderer&&['/api/channel-control/progress','/api/channel-control/complete'].includes(url.pathname)){
     const closing=url.pathname.endsWith('/complete');
     if(method!==(closing?'POST':'GET'))return err('Método no admitido',405);
@@ -479,6 +485,11 @@ async function handle(request,env) {
     const id=parts[3];
     const row=await find(env,id);
     if (!row) return err("Trabajo inexistente",404);
+    if(parts.length===5&&parts[4]==='video-registration'){
+      if(method!=='POST')return err('Método no admitido',405);
+      try{const result=await reportEpisodeDelivery(env,id,await parseBody(request));return json(result,result.ok?200:result.status);}
+      catch(e){if(e instanceof RangeError)return err('Entrega inválida',400);throw e;}
+    }
     if(parts.length===5 && ['episode','episode-report'].includes(parts[4])){
       if(!await hasAutonomousOrigin(env.DB,id))return err('Se requiere guion autónomo trazable',404);
       if(parts[4]==='episode' && method==='GET'){

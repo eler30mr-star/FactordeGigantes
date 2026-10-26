@@ -29,7 +29,7 @@ class ProductionClient:
 
     def request(self,job_id,path,body=None):
         if not isinstance(job_id,str) or not UUID.fullmatch(job_id):raise ValueError('Trabajo inválido')
-        if path not in ('episode','episode-report'):raise ValueError('Ruta de producción inválida')
+        if path not in ('episode','episode-report','video-registration'):raise ValueError('Ruta de producción inválida')
         headers={'Authorization':'Bearer '+self.token,'User-Agent':'FactorDeGigantesProduction/1.0','Accept':'application/json'}
         if body is not None:headers['Content-Type']='application/json'
         request=Request(self.base+'/api/renderer/jobs/'+job_id+'/'+path,
@@ -91,3 +91,4 @@ def main():
 
 
 if __name__=='__main__':main()
+

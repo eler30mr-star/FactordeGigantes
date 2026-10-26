@@ -1,4 +1,5 @@
 import {previewFromEvents} from './episode-production.mjs';
+import {episodeDeliveryStatus} from './episode-delivery.mjs';
 const UUID=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
 const fail=(status,error)=>({ok:false,status,error});
 
@@ -91,6 +92,12 @@ export async function channelProgress(env,id){
   if(video.state==='uploaded'){steps[4].state='done';steps[5].state='current';next='publish_video';message='Video subido como privado. Falta autorizar su publicación o programación.';}
   if(publication?.state==='confirmed'&&video.state==='uploaded'&&publication.video_id===video.video_id&&publication.channel_id===video.target_channel_id){steps[5].state='done';next='complete';message=publication.mode==='scheduled'?'Programación confirmada por YouTube.':'Publicación confirmada por YouTube.';}
   else if(publication){next='check_publication';message=publication.state==='unknown'?'Publicación incierta. Comprueba YouTube antes de repetir.':'Consulta el resultado de la autorización de publicación.';if(publication.state==='unknown'||publication.state==='failed')steps[5].state='blocked';}
+ }
+ if(job?.status==='ready'&&preview&&!video){
+  const delivery=await episodeDeliveryStatus(env.DB,job.id);
+  next='recover_video';message='El montaje está terminado. Recupera su registro para verlo en el panel, sin repetir la producción.';
+  if(delivery&&['reserved','sent'].includes(delivery.state)){next='wait';message='Recuperando el archivo terminado para reproducirlo. No se repiten voz ni montaje.';}
+  if(delivery?.state==='unknown'){next='check_video_delivery';message='El envío del registro es incierto. Revisa Actions antes de repetir; el montaje se conserva.';}
  }
  const blockedByPause=paused&&['start_research','resume_research'].includes(next);
  if(blockedByPause){steps[research?.research_run_id&&!['corroboration','analysis','focus'].includes(checkpointStage)?2:1].state='blocked';message+=' La investigación sigue pausada; la elección y los resultados se conservan.';}

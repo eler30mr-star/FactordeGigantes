@@ -25,6 +25,15 @@ class ProductionJobTests(unittest.TestCase):
             with self.assertRaises(ValueError):client.request(job,path)
         self.assertEqual(opener.call_count,1)
 
+    def test_registration_callback_uses_the_existing_renderer_scope_without_models(self):
+        opener=Mock(return_value=io.BytesIO(json.dumps({'ok':True,'automatic_publication_allowed':False}).encode()))
+        client=ProductionClient(base=BASE,token='r'*32,opener=opener)
+        client.request(JOB,'video-registration',{'request_id':JOB,'status':'failed'})
+        request=opener.call_args.args[0]
+        self.assertEqual(request.get_method(),'POST')
+        self.assertTrue(request.full_url.endswith('/'+JOB+'/video-registration'))
+        self.assertEqual(json.loads(request.data)['status'],'failed')
+
     def test_rejects_unbounded_or_unconfirmed_response_and_never_logs_provider_body(self):
         for raw in (b'x'*260001,b'{"ok":true}',b'{"ok":true,"automatic_publication_allowed":true}'):
             client=ProductionClient(base=BASE,token='r'*32,opener=lambda *a,**k:io.BytesIO(raw))
@@ -56,3 +65,4 @@ class ProductionJobTests(unittest.TestCase):
             self.assertEqual(client.request.call_args.args[2]['export']['approved_manifest_sha256'],'a'*64)
             with self.assertRaises(ValueError):report_job(JOB,root,status='ready',run_id='bad',client=client)
             with self.assertRaises(ValueError):report_job(JOB[:-1]+'2',root,status='ready',run_id='123',client=client)
+
