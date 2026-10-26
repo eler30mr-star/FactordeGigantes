@@ -69,6 +69,36 @@ test('reservas D1 tienen límite diario, mensual y no pueden reutilizarse',async
  assert.equal((await reserveAiBudget(db,'exa','next-month',new Date('2026-11-01'))).allowed,true);
  await assert.rejects(reserveAiBudget(db,'paid-provider','invalid'),RangeError);
 });
+
+test('Gemini conserva cuatro reservas previas y permite sólo 96 adicionales con el nuevo tope diario',async()=>{
+ const {db,raw}=setup(),day=new Date('2026-10-26T12:00:00Z');
+ const seed=raw.prepare('INSERT INTO ai_budget_reservations(id,provider,reserved_day,reserved_month) VALUES (?,\'gemini\',\'2026-10-26\',\'2026-10\')');
+ for(let i=0;i<4;i++)seed.run('gemini-previous-'+i);
+ const results=await Promise.all(Array.from({length:97},(_,i)=>reserveAiBudget(db,'gemini','gemini-new-'+i,day)));
+ assert.equal(results[0].allowed,true); // La quinta llamada ya no queda bloqueada.
+ assert.equal(results.filter(r=>r.allowed).length,96);
+ assert.ok(results.every(r=>r.daily_cap===100&&r.monthly_cap===3000));
+ assert.equal(raw.prepare("SELECT count(*) n FROM ai_budget_reservations WHERE provider='gemini' AND reserved_day='2026-10-26'").get().n,100);
+ assert.equal(raw.prepare("SELECT count(*) n FROM ai_budget_reservations WHERE id LIKE 'gemini-previous-%'").get().n,4);
+ assert.equal((await reserveAiBudget(db,'gemini','gemini-over-daily',day)).allowed,false);
+ assert.equal((await reserveAiBudget(db,'gemini','gemini-previous-0',new Date('2026-10-27T00:00:00Z'))).allowed,false);
+ assert.equal((await reserveAiBudget(db,'gemini','gemini-next-day',new Date('2026-10-27T00:00:00Z'))).allowed,true);
+ const read=await readAiReports(db);
+ assert.deepEqual(read.caps.gemini,[100,3000]);
+ assert.deepEqual(read.caps.groq,[4,100]);assert.deepEqual(read.caps.tavily,[8,200]);
+});
+
+test('Gemini admite la reserva mensual 3000, rechaza la 3001 y abre cupo al cambiar de mes UTC',async()=>{
+ const {db,raw}=setup();
+ raw.exec(`WITH RECURSIVE calls(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM calls WHERE n<2999)
+  INSERT INTO ai_budget_reservations(id,provider,reserved_day,reserved_month)
+  SELECT 'gemini-month-'||n,'gemini',date('2026-10-01','+'||((n-1)/100)||' days'),'2026-10' FROM calls`);
+ assert.equal((await reserveAiBudget(db,'gemini','gemini-month-last',new Date('2026-10-30T23:59:00Z'))).allowed,true);
+ // El día 31 tiene cupo diario, pero el mes ya alcanzó 3000 reservas.
+ assert.equal((await reserveAiBudget(db,'gemini','gemini-month-over',new Date('2026-10-31T00:00:00Z'))).allowed,false);
+ assert.equal(raw.prepare("SELECT count(*) n FROM ai_budget_reservations WHERE provider='gemini' AND reserved_month='2026-10'").get().n,3000);
+ assert.equal((await reserveAiBudget(db,'gemini','gemini-next-month',new Date('2026-11-01T00:00:00Z'))).allowed,true);
+});
 test('ingesta conserva citas e impide aprobación, mezclas e inventar referencias',()=>{
  validateAiReport(report());
  for(const mutate of [r=>r.ready_for_script=true,r=>r.facts_verified_automatically=1,
@@ -219,3 +249,4 @@ test('ninguna escritura IA admite tokens ADMIN o RENDERER',async()=>{
  assert.equal((await worker.fetch(new Request('https://factor.test/api/market/ai-pipeline',{
   headers:{Authorization:'Bearer '+env.ADMIN_TOKEN}}),env,{})).status,200);
 });
+

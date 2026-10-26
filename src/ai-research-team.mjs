@@ -4,7 +4,7 @@ import claimPolicy from './research-claim-policy.json' with {type:'json'};
 const regulatoryTerms=new RegExp(claimPolicy.regulatory_terms);
 const claimNeedsRegulator=text=>regulatoryTerms.test(text.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase());
 const regulatoryHost=host=>regulatoryAuthorities.some(d=>host===d||host.endsWith('.'+d));
-export const AI_CAPS=Object.freeze({tavily:[8,200],exa:[4,60],gemini:[4,100],
+export const AI_CAPS=Object.freeze({tavily:[8,200],exa:[4,60],gemini:[100,3000],
  groq:[4,100],mistral:[2,40],openrouter:[2,40],cloudflare:[4,100]});
 const PROVIDERS=new Set([...Object.keys(AI_CAPS),'qwen','wikipedia','gdelt','d1_history','document_citations']);
 const FLAGS=['facts_verified_automatically','ready_for_script','ready_for_youtube','publication_authorized'];

@@ -1,5 +1,14 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Presupuesto Gemini autorizado: 100 llamadas diarias y 3.000 mensuales
+
+El propietario eligió expresamente este presupuesto y pidió implementar el plan. Se cambia solo Gemini en AI_CAPS de [4,100] a [100,3000]. La reserva condicional D1, los identificadores de un solo uso y los períodos UTC se conservan; no se eliminan reservas ni se reinician contadores. La respuesta de reserva y la lectura administrativa de caps usan la misma constante, por lo que exponen automáticamente los nuevos valores. No requiere migración.
+
+Se actualiza la guía para distinguir llamadas de temas y el límite de una instancia de cliente del presupuesto diario/mensual. Son topes internos, sin afirmar cuotas comerciales de Google. Se mantiene la exigencia de modalidad gratuita confirmada y el freno existente ante rechazos de cuota. Groq/Tavily y los demás proveedores conservan su configuración; no se activan investigadores generales ni se despachan nuevas pruebas de proveedores por este cambio.
+
+Validación local: 15 contratos Node/SQLite aprobados, incluidos dos casos nuevos. Cuatro reservas existentes se conservan y permiten exactamente 96 adicionales ante solicitudes concurrentes; la siguiente se rechaza. La reserva mensual 3.000 se acepta y la 3.001 se rechaza aun con cupo diario; el mes UTC siguiente permite una nueva reserva. Reutilizar un identificador continúa rechazado. La lectura administrativa devuelve Gemini [100,3000] y conserva los topes Groq/Tavily. CI completo y despliegue de este commit pendientes de verificación.
+
+
 ## 2026-10-26 · Recuperación real guardada, CI y despliegue comprobados
 
 CI [40269205149](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40269205149) aprobado para código d0565d4. El job de recuperación ejecutó cero llamadas a proveedores y guardó `ai-00c0a72518f92b0a58e5bef64656`: cuatro afirmaciones candidatas del padre `ai-a45605068a9f2e8c1b87b5d7d3c6`, aún con enfoque insuficiente, y el lote de diez pasajes pendiente de análisis. Se conserva también el expediente vacío anterior como historial. No son cuatro hechos verificados ni un guion aceptado.

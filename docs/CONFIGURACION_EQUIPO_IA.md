@@ -95,15 +95,17 @@ condicional aplica límites diarios y mensuales, incluso si se repite el workflo
 La reserva es de un solo uso. Un error/timeout consume la reserva por prudencia;
 no se vuelve a llamar ni se devuelve capacidad ante resultado ambiguo.
 
-| Proveedor | Máximo diario | Máximo mensual | Máximo por ejecución |
+| Proveedor | Máximo diario | Máximo mensual | Máximo por instancia de cliente |
 | --- | ---: | ---: | ---: |
 | Tavily | 8 | 200 | 2 búsquedas básicas |
 | Exa | 4 | 60 | 2 búsquedas |
-| Gemini | 4 | 100 | 1 inferencia |
+| Gemini | 100 | 3.000 | 1 inferencia |
 | Groq | 4 | 100 | 1 inferencia |
 | Mistral | 2 | 40 | 1 inferencia |
 | OpenRouter | 2 | 40 | 1 inferencia |
 | Cloudflare | 4 | 100 | 1 clasificación |
+
+Gemini dispone de un presupuesto interno de **100 llamadas diarias y 3.000 mensuales**, elegido por el propietario el 2026-10-26. Se cuentan llamadas, no temas: un mismo episodio puede necesitar análisis, revisión y guion. Los períodos se calculan en UTC y las reservas ya consumidas se conservan; con cuatro reservas del día quedan 96 disponibles. Una nueva ejecución no reinicia los contadores. El límite por instancia de cliente sigue vigente y las etapas del runner mantienen sus reservas individuales.
 
 Son límites **propios del proyecto en solicitudes**, no la cuota global del
 proveedor, ni créditos monetarios/neurones garantizados. Otras aplicaciones con
