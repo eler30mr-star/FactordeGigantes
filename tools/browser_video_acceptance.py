@@ -75,6 +75,7 @@ def run(out):
                 if request.headers.get('authorization') != 'Bearer ' + token:
                     return route.fulfill(status=401, json={'error': 'Acceso no autorizado'})
                 if flags['expired']:
+                    print('SIMULACION_CADUCIDAD: HTTP 410', flush=True)
                     return route.fulfill(status=410, json={'error': 'El archivo de revisión ha caducado.'})
                 return route.fulfill(content_type='application/zip', body=package, headers={
                     'X-Archive-Bytes': str(len(package)), 'X-Archive-SHA256': digest(package),
@@ -117,7 +118,12 @@ def run(out):
             page.evaluate('window.dispose();document.querySelector("#player").replaceChildren();window.mount()')
             flags['expired'] = True
             page.get_by_role('button', name='Ver video en el panel').click()
-            page.get_by_role('status').filter(has_text='caducado').wait_for()
+            try:
+                page.wait_for_function('document.querySelector("[role=status]").textContent.includes("caducado")')
+            except Exception:
+                print('ESTADO_CADUCIDAD:', page.locator('#player').inner_text(), 'LLAMADAS:', len(calls), flush=True)
+                page.screenshot(path=str(out / 'ERROR_CADUCIDAD.png'))
+                raise
             assert page.locator('video').get_attribute('src') is None
             assert page.get_by_role('button').is_enabled()
             flags['expired'] = False
