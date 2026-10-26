@@ -197,6 +197,25 @@ class ChannelEpisodeTests(unittest.TestCase):
 
 
 class BoundedContinuationTests(unittest.TestCase):
+    def test_pending_analysis_retains_sources_without_accumulating_old_model_stages(self):
+        report=self.saved()
+        saved_sources={'schema':'fdg_ai_sources_v1','collected_on':'2026-10-26','company':'BlackBerry',
+            'selected_wikidata_id':'Q100','editorial_topic':'Pérdida de liderazgo','evidence_manifest':[],
+            'source_documents':[],'stages':[{'provider':'wikipedia','role':'discover','status':'success'},
+                {'provider':'gemini','role':'analyze','status':'budget_denied'},
+                {'provider':'groq','role':'review','status':'budget_denied'}]}
+        report['pending_editorial_analysis']={'parent_run_id':'ai-'+'a'*28,'sources':saved_sources}
+        control=self.setup_control(report)
+        def analyze(sources,**_):
+            self.assertEqual(sources['stages'],saved_sources['stages'][:1])
+            return focused({**sources,'candidate_claims':[{}],'source_quality':{'claim_gaps':[]}})
+        forbidden=lambda *_a,**_k:self.fail('No repetir descargas ni identidad')
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',analyze=analyze,resolver=forbidden,discover=forbidden,
+                scriptwriter=lambda *_a,**_k:{'status':'editorial_draft_unapproved'},client_factory=lambda **_:None)
+        self.assertEqual(result['state'],'review')
+        self.assertEqual(saved_sources['stages'][1]['status'],'budget_denied')
+
     def test_successful_reviewer_or_public_source_fallback_can_continue_without_repeating_denied_reservation(self):
         for provider in ('groq','tavily'):
             control=self.setup_control(self.saved());reservations=[];rounds=[]

@@ -121,7 +121,8 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
             *(prior.get('retrieval_budget') or {}).get('attempted_urls', [])]))[-40:]
         parent_run_id = pending.get('parent_run_id') if pending else receipt['run_id']
         if pending:
-            sources = pending['sources']
+            sources = {**pending['sources'], 'stages': [s for s in pending['sources']['stages']
+                if s['provider'] in {'wikipedia','gdelt','tavily','exa','d1_history','document_citations'}]}
             if (sources.get('company') != episode['company'] or sources.get('selected_wikidata_id') != qid
                     or sources.get('editorial_topic') != episode['topic']):
                 raise ValueError('Pending sources belong to another choice')

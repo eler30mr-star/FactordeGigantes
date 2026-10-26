@@ -1,5 +1,11 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Respuestas reales Gemini conservadas al corregir etapas del checkpoint
+
+CI 40305049348 aprobado para 78c55a9. La aceptación 40305110189 ejecutó Gemini real para análisis (3.026 entrada/378 salida) y revisión (3.653 entrada/1.269 salida), tras reserva Groq denegada; ambas respuestas quedaron guardadas. La validación posterior rechazó el informe por acumulación de etapas antiguas en las fuentes pendientes. Artefacto 12642156031, ZIP fd156f615cbc2f8e7c86d9d8d7a5d389c061d09c90a37ee44a6ce8f8046ea565. No se produjo un guion.
+
+Se corrige la reanudación para pasar al analista solo las etapas de descubrimiento del lote pendiente, conservando las etapas fallidas en la versión padre. La evidencia y el prompt permanecen, de modo que la aceptación puede reutilizar por SHA las respuestas Gemini guardadas. 18 pruebas del runner aprobadas, incluida conservación del original, filtro de etapas y ausencia de nuevas descargas. Se reanuda desde 40305110189 con este arreglo; resultado aún por comprobar.
+
 ## 2026-10-26 · Gemini asume trabajo editorial y respaldo de revisión documental
 
 Tras el presupuesto autorizado de Gemini, el propietario pidió continuar y señaló su papel principal. El runner conserva clientes separados y acotados para análisis y revisión; Gemini lleva análisis, juicio editorial, formulación de búsquedas y guion. Groq sigue siendo primer revisor documental; si falta disponibilidad o cupo, Gemini puede revisar con su propia reserva D1 y rol explícito review. No se incrementan cupos de Groq/Tavily ni se toma una coincidencia de modelos como fuente independiente.
