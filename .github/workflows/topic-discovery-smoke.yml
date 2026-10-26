@@ -5,15 +5,12 @@ on:
       phase:
         description: 'Investigar o reanudar únicamente el borrador desde D1'
         type: choice
-        options: [episode-acceptance, acceptance, episode, opportunity, research, corroborate, review, script, profile]
+        options: [acceptance, episode, opportunity, research, corroborate, review, script, profile]
         default: research
       reassess_only:
         type: boolean
         default: false
       resume_acceptance_run:
-        type: string
-        default: ''
-      resume_directed_run:
         type: string
         default: ''
       confirm_final_acceptance:
@@ -47,55 +44,6 @@ concurrency:
   group: fdg-topic-discovery-market
   cancel-in-progress: false
 jobs:
-  final-directed-acceptance:
-    permissions:
-      contents: read
-      id-token: write
-      actions: read
-    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'episode-acceptance' && inputs.confirm_final_acceptance == true && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - run: python -m pip install 'pypdf==5.9.0'
-      - uses: actions/download-artifact@v4
-        if: inputs.resume_directed_run != ''
-        with:
-          name: fdg-final-directed-acceptance
-          path: dist/previous-directed/
-          run-id: ${{ inputs.resume_directed_run }}
-          github-token: ${{ github.token }}
-      - name: Probar investigación y guion reales con persistencia editorial aislada
-        env:
-          CONFIRM_FINAL_ACCEPTANCE: ${{ inputs.confirm_final_acceptance }}
-          RESUME_DIRECTED_RUN: ${{ inputs.resume_directed_run }}
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
-          GEMINI_RESEARCH_FREE_CONFIRMED: ${{ vars.GEMINI_RESEARCH_FREE_CONFIRMED || '1' }}
-          GROQ_RESEARCH_FREE_CONFIRMED: ${{ vars.GROQ_RESEARCH_FREE_CONFIRMED || '1' }}
-          TAVILY_RESEARCH_FREE_CONFIRMED: ${{ vars.TAVILY_RESEARCH_FREE_CONFIRMED || '1' }}
-          EXA_RESEARCH_FREE_CONFIRMED: ${{ vars.EXA_RESEARCH_FREE_CONFIRMED }}
-          MISTRAL_RESEARCH_FREE_CONFIRMED: ${{ vars.MISTRAL_RESEARCH_FREE_CONFIRMED }}
-          OPENROUTER_RESEARCH_FREE_CONFIRMED: ${{ vars.OPENROUTER_RESEARCH_FREE_CONFIRMED }}
-        run: python -m tools.final_directed_acceptance
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: fdg-final-directed-acceptance
-          path: dist/final-directed-acceptance/
-          retention-days: 7
-          if-no-files-found: error
   final-market-acceptance:
     permissions:
       contents: read

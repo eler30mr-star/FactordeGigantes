@@ -1,5 +1,16 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Corrección del propietario: retirar pruebas de empresa fija y volver a selección real
+
+El propietario cuestionó el consumo y reiteró el orden obligatorio: selección de tema/empresa según políticas, después investigación de lo necesario para ese video. Se comprobó por consulta D1 de solo lectura el gasto Gemini del día: 8 reservas de análisis, 8 de enfoque editorial y 6 de revisión documental; 22 en total y ninguna de guion. Corresponden a las pruebas de desarrollo que el agente encadenó con BlackBerry como ejemplo fijo. No acreditan una selección de mercado ni una empresa indicada por el propietario para producir hoy. Se detienen esas corridas; no se incrementa Tavily para continuarlas.
+
+Se retira del workflow la fase episode-acceptance, su job y el input resume_directed_run. El comando histórico final_directed_acceptance queda cerrado incluso con CONFIRM_FINAL_ACCEPTANCE=true: termina antes de crear una selección, pedir claves/reservas o llamar modelos/buscadores. Solo conserva los auxiliares de archivo para inspección/recuperación SQLite de la evidencia histórica. No se borran artefactos ni registros.
+
+La entrada de investigación de episodios sigue siendo phase=episode y exige una solicitud real del episodio persistido por el estudio o el chat. No se cambian las políticas, umbrales, la voz, los límites autorizados Gemini ni las revisiones factuales. El siguiente objetivo vuelve a P0: demostrar búsqueda YouTube y decisión única según políticas antes de investigar en profundidad; en modo dirigido la elección debe venir del propietario.
+
+Pruebas locales sin proveedores: 21 Python (incluyen el bloqueo de la prueba retirada aun con confirmación antigua y su retirada del workflow) y 26 Node de chat, estudio, selección persistida e investigación aprobadas. Se comprueba insuficiencia del estudio sin crear episodio, ausencia de selección investigable, selección única y conservación del modo. CI de este cambio pendiente de verificación. No se ejecutan nuevas pruebas reales de IA ni búsquedas para validar esta corrección.
+
+
 ## 2026-10-26 · Continuación Gemini desplegada y aceptación actual conservada
 
 CI [40308145631](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40308145631) aprobado para 8423c1f. La prueba [40308206020](https://github.com/eler30mr-star/FactordeGigantes/actions/runs/40308206020) intentó nuevos originales públicos con títulos y contexto de referencias. No aportaron nuevos pasajes, por lo que el runner preservó los cinco candidatos pertinentes, diez pasajes, siete documentos/dominios y una fuente primaria candidata, y ejecutó cero inferencias adicionales. No existe todavía guion ni video aceptado de este recorrido.
@@ -356,7 +367,7 @@ No se ejecutan suites de aplicación por ser cambios de documentación; no se mo
 3. **P2:** integrar y aceptar el recorrido real de las IA para ambos inicios, con reanudación y presupuestos; habilitación de investigadores según autorización vigente.
 4. **P3:** publicación/programación autorizada y confirmada en YouTube; aprendizaje con métricas propias disponibles.
 
-**Siguiente paso exacto:** continuar P2 desde la aceptación recuperada 40269205149: analizar los pasajes pendientes sin descargar otra vez, completar cobertura/contraste y llevar el mismo episodio a guion y video con sus revisiones. La calibración del estudio YouTube sigue pendiente en P0; no ampliar la recolección de empresas.
+**Siguiente paso exacto:** validar el estudio YouTube y la selección única de P0 según las políticas existentes; solo el episodio realmente seleccionado habilita investigación de lo necesario para su video. El chat permite una elección expresa del propietario. La prueba fija de BlackBerry está retirada y archivada; no retomarla como objetivo de producción ni ampliar presupuestos para sostenerla.
 
 ## Historial previo a la corrección de dirección
 

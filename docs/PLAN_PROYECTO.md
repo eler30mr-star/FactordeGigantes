@@ -2,6 +2,8 @@
 
 > **Dirección vigente del propietario — 2026-10-25.** Este bloque define el producto y el orden de trabajo. Prevalece sobre prioridades, secuencias y propuestas incompatibles del historial conservado al final y de los documentos técnicos anteriores. Los hitos históricos acreditan componentes, no la aceptación del sistema completo. Se mantienen las reglas de seguridad, veracidad, licencias, voz canónica, cero pagos y trabajo exclusivo en `main`.
 
+**Corrección del propietario — 2026-10-26:** primero elegir un tema y una empresa según las políticas ya implementadas; después investigar únicamente lo necesario para ese video. Se retira la aceptación de empresa fija BlackBerry y no se presenta como selección del mercado ni como encargo del propietario. Las pruebas de contratos se ejecutan sin APIs reales. Una prueba integrada con proveedores debe recorrer una selección real y trazable del estudio o del chat.
+
 ## 1. Objetivo del producto
 
 Construir un **sistema de automatización de producción y publicación del canal de YouTube Factor de Gigantes**, con IA y supervisión del propietario. El resultado operativo es un video del canal que avanza desde una elección editorial hasta su reproducción en el panel y su publicación autorizada.
@@ -109,7 +111,7 @@ Resolver entrega autenticada del MP4, permisos, reproducción parcial y conserva
 | --- | --- | --- |
 | P0 | Modo persistente, chat, episodio único, reservas, estudio YouTube y conexión a investigación del elegido | Calibrar cobertura real; todavía ninguna selección automática validada |
 | P1 | Panel con seis etapas y acciones del episodio, lectura/revisión del guion, reproductor vinculado por SHA/run y extracción del MP4 real verificados | Revisión humana en navegador de audio, desplazamiento y experiencia completa |
-| P2 | Conexión episodio → investigación → guion y registro del video; reanudación diferenciada de análisis, contraste, revisión y guion desde resultados guardados; cierre por publicación confirmada implementado | Gemini ejecutó análisis y revisión de respaldo reales; cinco afirmaciones candidatas pertinentes, originales conservados y diez pasajes. Falta completar cobertura/contraste y aceptar ambos modos hasta video |
+| P2 | Conexión episodio → investigación → guion y registro del video; reanudación diferenciada de análisis, contraste, revisión y guion desde resultados guardados; cierre por publicación confirmada implementado | La prueba fija queda archivada; aceptar el recorrido de un episodio elegido por estudio o chat, desde selección hasta video |
 | P3 | Subida privada y autorización separada de publicación/programación implementadas | Consentimiento Google ampliado y primera publicación/programación autorizadas |
 
 La [aceptación real del mercado](ACEPTACION_MERCADO_REAL.md) ejecutó YouTube y Gemini y confirmó una muestra insuficiente: no se eligió una empresa ni se habilitó el selector. Las casillas de aceptación integral continúan abiertas; este estado distingue implementación de cierre operativo.
@@ -159,7 +161,7 @@ La infraestructura existente —Worker, D1, proveedores IA, narrador, montaje, O
 
 La pausa de investigadores registrada previamente se conserva. La conexión implementada no levanta por sí sola la pausa ni concede autorización de publicación. Se mantienen cero pagos, voz canónica, fuentes verificables, recursos con derechos, secretos protegidos y `main` exclusiva.
 
-**Siguiente bloque de desarrollo:** continuar desde la aceptación 40308206020, completar cobertura y contraste factual de los hechos pertinentes y cerrar investigación enfocada → guion → aprobación → render y registro del MP4; aceptar ambos inicios y calibrar el estudio YouTube. El runner ya puede avanzar hasta tres rondas persistidas, sin repetir fallos de cuota; un análisis pendiente no reemplaza los candidatos anteriores ni permite crear un borrador. La publicación/programación autorizada ya tiene código y pruebas con Google simulado; aceptar su primer recorrido real tras consentimiento ampliado, revisión del video y autorización. El control, el reproductor y el estudio v2 ya tienen código y pruebas; no ampliar el radar antiguo. Registrar separadamente código, pruebas, despliegue y aceptación real.
+**Siguiente bloque de desarrollo:** validar el estudio y la selección única de P0 con las políticas vigentes; después enlazar ese episodio persistido con investigación enfocada → guion → aprobación → render y registro del MP4. Aceptar ambos inicios. La prueba fija de BlackBerry queda archivada y no debe retomarse como sustituto de selección real. El runner ya puede avanzar hasta tres rondas persistidas, sin repetir fallos de cuota; un análisis pendiente no reemplaza los candidatos anteriores ni permite crear un borrador. La publicación/programación autorizada ya tiene código y pruebas con Google simulado; aceptar su primer recorrido real tras consentimiento ampliado, revisión del video y autorización. El control, el reproductor y el estudio v2 ya tienen código y pruebas; no ampliar el radar antiguo. Registrar separadamente código, pruebas, despliegue y aceptación real.
 
 ## Anexo — Plan e hitos anteriores, conservados como historial
 
