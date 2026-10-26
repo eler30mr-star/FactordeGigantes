@@ -214,6 +214,10 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     questions = selection.get('editorial_questions', [])
     if not isinstance(questions, list) or len(questions) > 4 or any(not isinstance(q, str) or not 10 <= len(q) <= 220 for q in questions):
         raise ValueError('Preguntas editoriales inválidas')
+    terms = selection.get('editorial_search_terms', [])
+    if not isinstance(terms, list) or len(terms) not in (0, 2) or any(not isinstance(t, str)
+            or not 10 <= len(t) <= 180 or re.search(r'https?://|[\r\n\x00]', t) for t in terms):
+        raise ValueError('Términos editoriales inválidos')
     day = datetime.now(timezone.utc).date().isoformat()
     out = {"schema": "fdg_ai_sources_v1", "collected_on": day,
            "selected_wikidata_id": qid, "company": title, "evidence_manifest": [],
@@ -296,10 +300,10 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     focus = selection.get('editorial_topic')
     if focus is not None and (not isinstance(focus, str) or not 5 <= len(focus) <= 300):
         raise ValueError('Enfoque editorial inválido')
-    queries = search_plan(title, targets, REGULATORY_HOSTS, editorial_questions=questions)
+    queries = search_plan(title, targets, REGULATORY_HOSTS, editorial_questions=questions, editorial_search_terms=terms)
     if official_hosts and queries[0]['intent'] != 'find_regulatory_original':
         queries[0]['include_domains'] = sorted(official_hosts)
-    if focus and not targets and not questions:
+    if focus and not targets and not questions and not terms:
         queries = [{**q, 'query': f'"{title}" {focus} ' +
                     ('original documents annual report' if i == 0 else 'independent reporting')}
                    for i, q in enumerate(queries)]
@@ -347,6 +351,8 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
     generic = {"the", "and", "company", "corporation", "group", "holding", "holdings",
                "inc", "limited", "ltd", "llc", "empresa", "compania", "grupo", "sociedad"}
     words = [w for w in re.findall(r"\w+", normalized(title)) if len(w) >= 3 and w not in generic]
+    topical_words = {w for term in terms for w in re.findall(r'\w{4,}', normalized(term))
+                     if w not in generic and w not in words}
     def rank(lead):
         parsed = urlsplit(lead["url"])
         path = normalized(parsed.path + " " + (lead.get("title") if isinstance(lead.get("title"), str) else ""))
@@ -358,8 +364,9 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
         targeted=bool(targets or questions or focus) and lead.get('discovered_by') in ('tavily','exa')
         document_link = bool(re.search(r'annual.report|financial|earnings|press.release|news.release|\.pdf(?:$|\?)',
                                       normalized(parsed.path+' '+str(lead.get('title', '')))))
+        topical_overlap = min(4, len(topical_words & set(re.findall(r'\w{4,}', path))))
         return (-int(lead["url"] in expand_urls), -int(targeted), -int(official_host(parsed.hostname)), -int(regulatory_host(parsed.hostname)), int(archive),
-                -int(document_link), -int(relevant), -int(parsed.path.lower().endswith(".pdf")))
+                -topical_overlap, -int(document_link), -int(relevant), -int(parsed.path.lower().endswith(".pdf")))
 
     # Intercalar gobierno/justicia con publicaciones independientes. El orden
     # alfabético de Wikipedia enviaba cuatro solicitudes y se detenía aunque
@@ -422,7 +429,7 @@ def discover_sources(selection, *, clients, wiki_fetcher=fetch_public,
                            "first_block_preview": str(next(iter(analysis["blocks"]), ""))[:160]})
             digest = hashlib.sha256(raw).hexdigest()
             fragments = []
-            for passage in select_passages(analysis, title, targets, editorial_questions=questions):
+            for passage in select_passages(analysis, title, targets, editorial_questions=terms or questions):
                 fragments.append({"id": "", "wikidata_id": qid, "company": title,
                     "url": resolved, "document_sha256": digest,
                     **passage, "source_id": qid + "-observed-document",

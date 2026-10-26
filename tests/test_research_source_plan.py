@@ -16,6 +16,27 @@ TARGET = {'claim_index': 1, 'statement': 'Empresa Ejemplo acordó una restituci�
 
 
 class TargetedRetrievalTests(unittest.TestCase):
+    def test_english_retrieval_terms_reach_queries_and_literal_passage_ranking(self):
+        from tools.ai_clients import ProviderError
+        terms=['leadership loss smartphone market share annual report','hardware exit software transition independent analysis']
+        queries=[]
+        class Search:
+            def search(self,provider,query,**filters):
+                if provider!='tavily':raise ProviderError('missing_key')
+                queries.append(query)
+                return [{'url':'https://reporter.example/business','title':TITLE,'discovered_by':provider}]
+        intro=TITLE+' announced a telephone with a keyboard and speakers, as described in technical specifications for this device.'
+        focused=TITLE+' reported a loss of smartphone market share and a transition from hardware to software, requiring documentary verification.'
+        raw=('<p>'+intro+'</p><p>'+focused+'</p>').encode()
+        with patch('tools.ai_source_discovery.wikipedia_links',return_value=[]):
+            sources=discover_sources({'selected_wikidata_id':'Q100','research_queue':{'wikidata_id':'Q100','title':TITLE},
+                'editorial_topic':'Pérdida de liderazgo y transformación','editorial_search_terms':terms,
+                'editorial_questions':['¿Qué decisiones cambiaron la posición competitiva de la empresa?']},
+                clients=Search(),document_fetcher=lambda url,**_:(raw,url,'text/html'))
+        self.assertEqual(queries,[f'"{TITLE}" '+term for term in terms])
+        self.assertEqual(sources['evidence_manifest'][0]['excerpt'],focused)
+        validate_report_locally(source_report(sources))
+
     def test_editorial_search_results_precede_unrelated_alphabetical_wiki_leads(self):
         from tools.ai_clients import ProviderError
         targeted=['https://z-context.example/z-business-shift', 'https://z-context.example/a-product-specs']

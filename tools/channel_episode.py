@@ -14,6 +14,7 @@ from tools.documentary_script import write_script
 from tools.corroborate_research import continue_corroboration
 from tools.review_research import review_existing
 from tools.editorial_focus import review_editorial_focus, valid_focus, focus_sha
+from tools.editorial_search import plan_editorial_search, valid_search_plan
 from tools.topic_discovery import property_ids, COMPANY_TYPES
 from tools.market_sources import get_json
 from tools.research_engine import fetch_public, validate_url
@@ -57,7 +58,7 @@ def resolve_company(company, fetcher=get_json):
     return resolve_company_identity(company, fetcher)['wikidata_id']
 
 
-def run_episode(control, request_id, *, resolver=resolve_company_identity, discover=discover_sources, analyze=analyze_sources, scriptwriter=write_script, client_factory=FreeClients, corroborate=continue_corroboration, focus_reviewer=review_editorial_focus):
+def run_episode(control, request_id, *, resolver=resolve_company_identity, discover=discover_sources, analyze=analyze_sources, scriptwriter=write_script, client_factory=FreeClients, corroborate=continue_corroboration, focus_reviewer=review_editorial_focus, search_planner=plan_editorial_search):
     path = '/api/market/channel-episode/'
     context = control.request(path + 'context', {'request_id': request_id, 'include_checkpoint': True})
     if context.get('allowed') is not True:
@@ -118,27 +119,40 @@ def run_episode(control, request_id, *, resolver=resolve_company_identity, disco
             *prior.get('corroboration_continuation', {}).get('attempted_urls', []),
             *(prior.get('retrieval_budget') or {}).get('attempted_urls', [])]))[-40:]
         if prior.get('focused_analysis_binding') == analysis_binding(prior):
+            plan = prior.get('editorial_retrieval_plan')
+            if prior.get('editorial_source_attempt') or plan:
+                plan = search_planner(episode['company'], episode['topic'], questions,
+                    clients=client_factory(reserve=reserve), previous=plan)
+                if not valid_search_plan(plan, episode['company'], episode['topic']):
+                    report = {**prior, 'editorial_retrieval_plan': plan}
+                    persist(report)
+                    return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_search_plan',
+                        'blocking_reasons': [plan.get('reason', 'invalid_search_plan')], 'publication_authorized': False}}
             sources = focused_discover({**selection, 'editorial_questions': questions,
+                **({'editorial_search_terms': plan['search_terms']} if plan else {}),
                 'prior_attempted_urls': history}, clients=clients)
             # The parent retains every old claim and citation. Prefer fresh focused
             # evidence; the analyst may select new facts under the SAME topic.
             fresh = sources['evidence_manifest']
             if not fresh:
-                report = {**prior, 'retrieval_history_urls': list(dict.fromkeys([
+                report = {**prior, **({'editorial_retrieval_plan': plan} if plan else {}), 'retrieval_history_urls': list(dict.fromkeys([
                     *history, *(sources.get('retrieval_budget') or {}).get('attempted_urls', [])]))[-40:],
                     'editorial_source_attempt': {'status': 'no_new_documentary_evidence',
-                        'stages': sources.get('stages', []), 'retrieval_budget': sources.get('retrieval_budget', {})}}
+                        'stages': sources.get('stages', []), 'retrieval_budget': sources.get('retrieval_budget', {}),
+                        'discovery_plan': sources.get('discovery_plan', [])}}
                 persist(report)
                 return {'state': 'blocked', 'research': report, 'draft': {'status': 'blocked_editorial_sources',
                     'blocking_reasons': ['need_new_relevant_documents'], 'publication_authorized': False}}
             keys = {(e['url'], e.get('page'), e['excerpt']) for e in fresh}
             kept = fresh + [e for e in prior['evidence_manifest'] if (e['url'], e.get('page'), e['excerpt']) not in keys]
             sources['evidence_manifest'] = [{**e, 'id': f'E{n:03d}'} for n, e in enumerate(kept[:10], 1)]
+            if plan: sources['editorial_retrieval_plan'] = plan
         else:
             sources = {**prior, 'stages': [s for s in prior['stages']
                 if s['provider'] in {'wikipedia', 'gdelt', 'tavily', 'exa', 'd1_history', 'document_citations'}]}
         sources['editorial_topic'] = episode['topic']
         report = analyze(sources, clients=clients)
+        if sources.get('editorial_retrieval_plan'): report['editorial_retrieval_plan'] = sources['editorial_retrieval_plan']
         report.update(editorial_topic=episode['topic'], selected_episode_id=episode['episode_id'], **metadata)
         report['focused_analysis_binding'] = analysis_binding(report)
         report['editorial_research_questions'] = questions

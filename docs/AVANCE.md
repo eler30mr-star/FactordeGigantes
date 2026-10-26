@@ -1,5 +1,13 @@
 # Historial de avance — Factor de Gigantes
 
+## 2026-10-26 · Recuperación lingüística de las consultas documentales
+
+Run 40267672911 (CI 40267636587 aprobado) comprobó el nuevo freno: ocho descargas sin pasajes nuevos, cero inferencias Gemini/Groq y padre preservado. Artefacto 12627396078, ZIP 2e5225107c2ce32d5297b56f035f90e302061f8d48c1587133cd39243fc892d3. Las búsquedas literales largas en español devolvieron manuales y documentos ajenos; el episodio sigue sin guion.
+
+Se añade planificación IA acotada de dos términos de búsqueda en inglés después de una recuperación editorial sin evidencia. El plan se vincula a empresa y pregunta exactas, se conserva y reutiliza; no produce fuentes, URLs ni afirmaciones. El buscador recibe esos términos y el extractor los usa para escoger ventanas literales. Una reserva o respuesta inválida detiene el replanteo antes de nuevas descargas. La recuperación mantiene los filtros de original/independiente y los límites existentes. Los candidatos con términos del enfoque preceden a documentos genéricos entre pistas equivalentes.
+
+90 pruebas Python enfocadas aprobadas antes de añadir dos contratos de integración; 30 pruebas de planificación/runner/búsqueda aprobadas después. Se lanza continuación desde 40267672911 con este cambio; resultado real pendiente, sin elevar cuotas ni activar producción general.
+
 ## 2026-10-26 · Investigación dirigida priorizada y continuación acotada del runner real
 
 La aceptación 40267281452 (CI previo 40267242405 aprobado) conservó diez pasajes y rechazó tres hechos con enfoque insuficiente. Sus nuevas descargas priorizaron documentación de producto sobre las búsquedas editoriales: se corrige la prioridad y la deduplicación para preguntas/tema, conservando el orden de resultados entre candidatos equivalentes y los mismos límites documentales. Artefacto 12627325639, SHA ZIP 140ed9db16f5bb642491ef8d8159d21965eefb19f22e31169051c62b873bd283.

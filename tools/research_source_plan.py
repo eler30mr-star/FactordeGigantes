@@ -21,9 +21,12 @@ def prioritized_targets(targets):
         "no_original_primary_document" not in t["gaps"], t["claim_index"]))
 
 
-def search_plan(title, targets, regulatory_domains, editorial_questions=None):
+def search_plan(title, targets, regulatory_domains, editorial_questions=None, editorial_search_terms=None):
     excluded = ["wikipedia.org", "wikimedia.org", "wikidata.org"]
     if not targets:
+        if editorial_search_terms:
+            return [{'intent': 'find_primary_documents', 'query': f'"{title}" {editorial_search_terms[0]}', 'exclude_domains': excluded},
+                    {'intent': 'find_independent_context', 'query': f'"{title}" {editorial_search_terms[1]}', 'exclude_domains': excluded}]
         if editorial_questions:
             return [{'intent': 'find_primary_documents', 'query': f'"{title}" {editorial_questions[0]} original documents', 'exclude_domains': excluded},
                     {'intent': 'find_independent_context', 'query': f'"{title}" {editorial_questions[min(1, len(editorial_questions)-1)]} independent reporting', 'exclude_domains': excluded}]

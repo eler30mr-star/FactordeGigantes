@@ -196,6 +196,27 @@ class ChannelEpisodeTests(unittest.TestCase):
 
 
 class BoundedContinuationTests(unittest.TestCase):
+    def test_failed_editorial_discovery_reuses_query_plan_and_hands_terms_to_real_selection(self):
+        import hashlib
+        report=self.saved();report['editorial_focus_review']['status']='misaligned'
+        report['focused_analysis_binding']=hashlib.sha256(json.dumps({'profile':'chosen_topic_v2',
+            'topic':'Pérdida de liderazgo','evidence':[]},ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+        report['editorial_source_attempt']={'status':'no_new_documentary_evidence'}
+        plan={'schema':'fdg_editorial_search_v1','company':'BlackBerry','topic':'Pérdida de liderazgo',
+            'status':'ready','publication_authorized':False,'search_terms':[
+                'smartphone market leadership original annual report','smartphone market leadership independent analysis']}
+        control=self.setup_control(report);selections=[]
+        def discover(selection,**_):
+            selections.append(selection)
+            return {'evidence_manifest':[],'retrieval_budget':{'attempted_urls':['https://example.com/missing']}}
+        with patch('tools.channel_episode.validate_report_locally'):
+            result=run_episode_until_review(control,'request',search_planner=lambda *a,**k:plan,
+                discover=discover,analyze=lambda *_a,**_k:self.fail('No analyze on empty discovery'),client_factory=lambda **_:None)
+        self.assertEqual(selections[0]['editorial_search_terms'],plan['search_terms'])
+        self.assertEqual(selections[0]['editorial_topic'],'Pérdida de liderazgo')
+        self.assertEqual(result['research']['editorial_retrieval_plan'],plan)
+        self.assertEqual(result['research']['candidate_claims'],report['candidate_claims'])
+
     def setup_control(self, report):
         class Control:
             def __init__(self):
